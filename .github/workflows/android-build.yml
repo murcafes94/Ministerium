@@ -60,32 +60,62 @@ jobs:
           text = universal.read_text()
           text = text.replace(
               "import java.util.UUID;",
-              "import java.lang.reflect.Method;\\nimport java.util.UUID;",
+              "import java.lang.reflect.Method;\nimport java.util.UUID;",
               1,
           )
           text = text.replace(
-              "webView.setCustomSelectionActionModeCallback(new ActionMode.Callback() {",
-              "ActionMode.Callback callback = new ActionMode.Callback() {",
+              "webView.setCustomSelectionActionModeCallback(",
+              "installSelectionCallback(webView, ",
               1,
           )
-          closing = "        });\\n    }\\n\\n    private static void add"
-          replacement = "        };\\n        try {\\n            Method method = WebView.class.getMethod(\\n                    \\\"setCustomSelectionActionModeCallback\\\", ActionMode.Callback.class);\\n            method.invoke(webView, callback);\\n        } catch (Exception ignored) {\\n            // Compatibilidad con android.jar antiguos.\\n        }\\n    }\\n\\n    private static void add"
-          if closing not in text:
-              raise SystemExit("UniversalSelectionMenu callback block not found")
-          universal.write_text(text.replace(closing, replacement, 1))
+          helper = """
+          
+              private static void installSelectionCallback(
+                      WebView webView, ActionMode.Callback callback) {
+                  try {
+                      Method method = WebView.class.getMethod(
+                              "setCustomSelectionActionModeCallback", ActionMode.Callback.class);
+                      method.invoke(webView, callback);
+                  } catch (Exception ignored) {
+                      // Compatibilidad con android.jar antiguos.
+                  }
+              }
+          """
+          if "installSelectionCallback(webView, " not in text:
+              raise SystemExit("UniversalSelectionMenu call not found")
+          if "private static void installSelectionCallback" not in text:
+              text = text.rsplit("\n}", 1)[0] + helper + "\n}"
+          universal.write_text(text)
 
           continue_store = Path("app/src/main/java/com/fabri/ministerium/ContinueReadingStore.java")
           text = continue_store.read_text()
           text = text.replace(
               "import org.json.JSONObject;",
-              "import org.json.JSONArray;\\nimport org.json.JSONObject;",
+              "import org.json.JSONArray;\nimport org.json.JSONObject;",
               1,
           )
-          old = "            String[] names = JSONObject.getNames(position.extras);\\n            if (names != null) for (String name : names) {"
-          new = "            JSONArray names = position.extras.names();\\n            if (names != null) for (int i = 0; i < names.length(); i++) {\\n                String name = names.optString(i, \\\"\\\");\\n                if (name.isEmpty()) continue;"
-          if old not in text:
-              raise SystemExit("ContinueReadingStore JSON names block not found")
-          continue_store.write_text(text.replace(old, new, 1))
+          text = text.replace(
+              "JSONObject.getNames(position.extras)",
+              "jsonNames(position.extras)",
+              1,
+          )
+          helper = """
+          
+              private static String[] jsonNames(JSONObject object) {
+                  JSONArray names = object == null ? null : object.names();
+                  if (names == null) return new String[0];
+                  String[] result = new String[names.length()];
+                  for (int i = 0; i < names.length(); i++) {
+                      result[i] = names.optString(i, "");
+                  }
+                  return result;
+              }
+          """
+          if "jsonNames(position.extras)" not in text:
+              raise SystemExit("ContinueReadingStore JSON call not found")
+          if "private static String[] jsonNames" not in text:
+              text = text.rsplit("\n}", 1)[0] + helper + "\n}"
+          continue_store.write_text(text)
           PY
 
       - name: Set up JDK 17 for Android SDK tools
