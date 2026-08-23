@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "channel": "stable",
+  "versionCode": 0,
+  "versionName": "0.0.0",
+  "minimumSupportedVersionCode": 0,
+  "tag": "v0.0.0",
+  "apk": "Ministerium-0.0.0.apk",
+  "sha256": "",
+  "mandatory": false,
+  "publishedAt": "",
+  "notes": []
+}
