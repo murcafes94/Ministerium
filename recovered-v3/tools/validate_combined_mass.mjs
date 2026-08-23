@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 
+// Contrato de regresión: Misa + Laudes/Vísperas debe seguir siendo una sola pantalla.
 const activity = fs.readFileSync(
   'app/src/main/java/com/fabri/ministerium/CombinedMassActivity.java', 'utf8');
 const composer = fs.readFileSync(
