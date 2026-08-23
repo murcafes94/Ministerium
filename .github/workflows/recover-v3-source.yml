@@ -1,0 +1,66 @@
+name: Recover Ministerium 3.0 source
+
+on:
+  push:
+    branches:
+      - planning/ministerium-3.0-recovery
+    paths:
+      - ".github/workflows/recover-v3-source.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout recovery branch
+        uses: actions/checkout@v4
+        with:
+          ref: planning/ministerium-3.0-recovery
+          fetch-depth: 0
+
+      - name: Rebuild uploaded source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat \
+            "ministerium-v3.zip (1).part-00" \
+            "ministerium-v3.zip (1).part-01" \
+            "bootstrap/v3/ministerium-v3.zip (1).part-02" \
+            "bootstrap/v3/ministerium-v3.zip.part-03" \
+            "bootstrap/v3/ministerium-v3.zip.part-04" \
+            "bootstrap/v3/ministerium-v3.zip.part-05" \
+            "bootstrap/v3/ministerium-v3.zip.part-06" \
+            > /tmp/Ministerium-GitHub-Ready-v3.0.0.zip
+
+          actual=$(sha256sum /tmp/Ministerium-GitHub-Ready-v3.0.0.zip | awk '{print $1}')
+          expected="0241a66b2003564193b982024266639735ceff736a9a1284a2bf061a64953b06"
+          echo "Expected: $expected"
+          echo "Actual:   $actual"
+          test "$actual" = "$expected"
+
+      - name: Extract source into recovery tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf recovered-v3
+          mkdir -p recovered-v3
+          unzip -q /tmp/Ministerium-GitHub-Ready-v3.0.0.zip -d recovered-v3
+          find recovered-v3 -type d -name .git -prune -exec rm -rf {} + || true
+          find recovered-v3 -type f | sort > docs/RECOVERED_V3_FILES.txt
+          echo "Recovered $(wc -l < docs/RECOVERED_V3_FILES.txt) files"
+
+      - name: Commit recovered source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Ministerium Recovery Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add recovered-v3 docs/RECOVERED_V3_FILES.txt
+          if git diff --cached --quiet; then
+            echo "Nothing new to commit"
+            exit 0
+          fi
+          git commit -m "recovery: desplegar código fuente Ministerium 3.0"
+          git push origin planning/ministerium-3.0-recovery
