@@ -18,7 +18,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -164,3 +164,20 @@ jobs:
             apk-sha256.txt
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(sed -n "s/.*versionName '\([^']*\)'.*/\1/p" app/build.gradle | head -n 1)
+          test -n "$VERSION"
+          TAG="v$VERSION"
+          gh release create "$TAG" \
+            app/build/outputs/apk/debug/*.apk \
+            apk-sha256.txt \
+            --title "Ministerium $VERSION" \
+            --generate-notes \
+            --latest
