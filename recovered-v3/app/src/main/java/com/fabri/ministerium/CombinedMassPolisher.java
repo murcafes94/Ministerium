@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 public final class CombinedMassPolisher {
     private static final Pattern LINK = Pattern.compile(
             "(?is)<a\\s+[^>]*href=[\\\"'][^\\\"']*[\\\"'][^>]*>(.*?)</a>");
+    private static final Pattern ROW = Pattern.compile("(?is)<tr\\b[^>]*>.*?</tr>");
 
     private CombinedMassPolisher() {}
 
@@ -21,6 +22,8 @@ public final class CombinedMassPolisher {
         CombinedMassComposer.Result base = CombinedMassComposer.compose(
                 context, date, hourKey, language);
         String html = cleanMissalNavigation(base.html);
+        html = fixPaterBlock(html);
+        html = applyLatinAmericanOrdinary(html);
 
         LiturgicalDay day = LiturgicalResolver.resolve(context, date);
         if (!hasRequiredSaint(day)) {
@@ -100,7 +103,53 @@ public final class CombinedMassPolisher {
         value = value.replaceAll("(?is)<h3\\b[^>]*>\\s*Oración colecta\\s*</h3>", "");
         value = value.replaceAll("(?is)<h3\\b[^>]*>\\s*Oración sobre las ofrendas\\s*</h3>", "");
         value = value.replaceAll("(?is)<h3\\b[^>]*>\\s*Oración después de la comunión\\s*</h3>", "");
-        return value;
+
+        Matcher rows = ROW.matcher(value);
+        StringBuffer cleaned = new StringBuffer();
+        while (rows.find()) {
+            String plain = normalize(rows.group().replaceAll("<[^>]+>", " ")
+                    .replace("&nbsp;", " ").replace("&#160;", " "));
+            boolean navigation = "saltar".equals(plain) || "seguir".equals(plain)
+                    || "credo".equals(plain) || "credo de los apostoles".equals(plain)
+                    || "inicio devocionario".equals(plain);
+            rows.appendReplacement(cleaned,
+                    Matcher.quoteReplacement(navigation ? "" : rows.group()));
+        }
+        rows.appendTail(cleaned);
+        return cleaned.toString();
+    }
+
+    /**
+     * El EPUB coloca «libera nos a malo» dentro del Pater; por eso no se puede
+     * localizar el embolismo buscando simplemente las palabras «Libera nos».
+     * Este ajuste mueve la fila real del Padre nuestro dentro de su bloque
+     * ESP/LAT, dejando el embolismo y el resto del rito después.
+     */
+    private static String fixPaterBlock(String html) {
+        Pattern pattern = Pattern.compile(
+                "(?is)(<div\\s+id=\\\"paterBlock\\\">)(.*?)(</div>)"
+                        + "(\\s*<table\\s+class=\\\"missal-table\\\">)"
+                        + "(<tr\\b[^>]*>.*?Pater\\s+noster.*?</tr>)(.*?</table>)");
+        Matcher matcher = pattern.matcher(html);
+        if (!matcher.find()) return html;
+        String replacement = matcher.group(1) + matcher.group(2)
+                + "<table class=\"missal-table\">" + matcher.group(5) + "</table>"
+                + matcher.group(3) + matcher.group(4) + matcher.group(6);
+        return matcher.replaceFirst(Matcher.quoteReplacement(replacement));
+    }
+
+    /** Sustituciones exactas del Ordinario para la variante latinoamericana usada por la app. */
+    private static String applyLatinAmericanOrdinary(String html) {
+        return html
+                .replace("El Señor esté con vosotros", "El Señor esté con ustedes")
+                .replace("estén con todos vosotros", "estén con todos ustedes")
+                .replace("La paz del Señor esté siempre con vosotros",
+                        "La paz del Señor esté siempre con ustedes")
+                .replace("descienda sobre vosotros", "descienda sobre ustedes")
+                .replace("Podéis ir en paz", "Pueden ir en paz")
+                .replace("Orad, hermanos", "Oren, hermanos")
+                .replace("este sacrificio, mío y vuestro",
+                        "este sacrificio, mío y de ustedes");
     }
 
     private static String cleanLinks(String html) {
