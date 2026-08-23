@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/cream"
+    android:fillViewport="true">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="28dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/wine_dark"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="8dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="10dp">
+            <Button
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:backgroundTint="@android:color/transparent"
+                android:text="‹"
+                android:textColor="#FFFFFF"
+                android:textSize="28sp" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Lecturas de la Misa"
+                    android:textColor="#FFFFFF"
+                    android:textSize="21sp"
+                    android:textStyle="bold" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Actualización mensual · lectura sin conexión"
+                    android:textColor="#E9DBD7"
+                    android:textSize="12sp" />
+            </LinearLayout>
+            <Button
+                android:id="@+id/btnChooseDate"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:backgroundTint="@android:color/transparent"
+                android:contentDescription="Elegir fecha"
+                android:text="▣"
+                android:textColor="@color/gold"
+                android:textSize="22sp" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingTop="14dp"
+            android:paddingEnd="12dp">
+            <Button android:id="@+id/btnPreviousDay" android:layout_width="48dp" android:layout_height="48dp" android:backgroundTint="@android:color/transparent" android:text="‹" android:textColor="@color/wine" android:textSize="30sp" />
+            <TextView android:id="@+id/txtMassDate" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textColor="@color/ink" android:textSize="18sp" android:textStyle="bold" />
+            <Button android:id="@+id/btnNextDay" android:layout_width="48dp" android:layout_height="48dp" android:backgroundTint="@android:color/transparent" android:text="›" android:textColor="@color/wine" android:textSize="30sp" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="22dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginEnd="22dp"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="15dp">
+            <TextView
+                android:id="@+id/txtMassCelebration"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/wine"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+            <TextView
+                android:id="@+id/txtMassLiturgicalDetails"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:textColor="@color/muted"
+                android:textSize="12sp" />
+        </LinearLayout>
+        <TextView
+            android:id="@+id/txtReadingsStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="22dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="22dp"
+            android:background="@drawable/bg_card"
+            android:padding="15dp"
+            android:textColor="@color/muted"
+            android:textSize="13sp" />
+        <ProgressBar
+            android:id="@+id/readingsProgress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:layout_marginStart="22dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="22dp"
+            android:visibility="gone" />
+        <Button android:id="@+id/btnTodayReadings" android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginStart="22dp" android:layout_marginTop="16dp" android:layout_marginEnd="22dp" android:background="@drawable/bg_button" android:text="Leer las lecturas" android:textAllCaps="false" android:textColor="#FFFFFF" android:textSize="15sp" android:textStyle="bold" />
+        <Button android:id="@+id/btnSyncReadings" android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginStart="22dp" android:layout_marginTop="10dp" android:layout_marginEnd="22dp" android:background="@drawable/bg_button_secondary" android:text="Actualizar lecturas de este mes" android:textAllCaps="false" android:textColor="@color/wine" android:textStyle="bold" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="22dp" android:layout_marginTop="24dp" android:letterSpacing="0.1" android:text="OTROS RECURSOS" android:textColor="@color/wine" android:textSize="12sp" android:textStyle="bold" />
+        <Button android:id="@+id/btnUsccbDate" android:layout_width="match_parent" android:layout_height="50dp" android:layout_marginStart="22dp" android:layout_marginTop="10dp" android:layout_marginEnd="22dp" android:background="@drawable/bg_button_secondary" android:text="Ver esta fecha en USCCB" android:textAllCaps="false" android:textColor="@color/ink" />
+        <Button android:id="@+id/btnOpenMissal" android:layout_width="match_parent" android:layout_height="50dp" android:layout_marginStart="22dp" android:layout_marginTop="10dp" android:layout_marginEnd="22dp" android:background="@drawable/bg_button_secondary" android:text="Abrir el Misal de esta celebración" android:textAllCaps="false" android:textColor="@color/ink" />
+        <Button android:id="@+id/btnLocalCalendar" android:layout_width="match_parent" android:layout_height="50dp" android:layout_marginStart="22dp" android:layout_marginTop="10dp" android:layout_marginEnd="22dp" android:background="@drawable/bg_button_secondary" android:text="Calendario litúrgico de Ecuador 2026" android:textAllCaps="false" android:textColor="@color/ink" />
+        <Button android:id="@+id/btnUsccbCalendar" android:layout_width="match_parent" android:layout_height="50dp" android:layout_marginStart="22dp" android:layout_marginTop="10dp" android:layout_marginEnd="22dp" android:background="@drawable/bg_button_secondary" android:text="Calendario de lecturas · USCCB" android:textAllCaps="false" android:textColor="@color/ink" />
+    </LinearLayout>
+</ScrollView>

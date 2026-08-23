@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "channel": "stable",
+  "packages": [
+    {"id":"calendar-ec","version":"2026.1","url":"https://REEMPLAZAR/calendar.zip","sha256":"REEMPLAZAR"},
+    {"id":"breviarium","version":"2026.1","url":"https://REEMPLAZAR/breviarium.zip","sha256":"REEMPLAZAR"},
+    {"id":"lectionary","version":"2026.08","url":"https://REEMPLAZAR/lectionary.zip","sha256":"REEMPLAZAR"},
+    {"id":"rituals","version":"3.0.0","url":"https://REEMPLAZAR/rituals.zip","sha256":"REEMPLAZAR"}
+  ]
+}

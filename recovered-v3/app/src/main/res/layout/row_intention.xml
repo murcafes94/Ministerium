@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_card"
+    android:gravity="center_vertical"
+    android:minHeight="64dp"
+    android:orientation="horizontal"
+    android:paddingStart="16dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="8dp"
+    android:paddingBottom="8dp">
+
+    <TextView
+        android:id="@+id/txtIntention"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:lineSpacingExtra="3dp"
+        android:textColor="@color/ink"
+        android:textSize="16sp" />
+
+    <Button
+        android:id="@+id/btnEditIntention"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:backgroundTint="@android:color/transparent"
+        android:contentDescription="Editar intención"
+        android:text="✎"
+        android:textColor="@color/wine"
+        android:textSize="20sp" />
+
+    <Button
+        android:id="@+id/btnDeleteIntention"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:backgroundTint="@android:color/transparent"
+        android:contentDescription="Eliminar intención"
+        android:text="×"
+        android:textColor="@color/wine"
+        android:textSize="24sp" />
+</LinearLayout>

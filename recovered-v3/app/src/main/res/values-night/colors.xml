@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="wine">#8E3342</color>
+    <color name="wine_dark">#351016</color>
+    <color name="gold">#D9B96F</color>
+    <color name="cream">#171412</color>
+    <color name="paper">#26211E</color>
+    <color name="ink">#F3EDE4</color>
+    <color name="muted">#C8BDB0</color>
+    <color name="line">#4C433D</color>
+</resources>

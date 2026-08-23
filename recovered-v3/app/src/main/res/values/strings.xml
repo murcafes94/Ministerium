@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Ministerium</string>
+    <string name="app_subtitle">Devoción y liturgia sin conexión</string>
+    <string name="search">Buscar</string>
+    <string name="favorites">Favoritos</string>
+    <string name="theme">Tema</string>
+    <string name="open_original">Página original</string>
+    <string name="previous">Anterior</string>
+    <string name="next">Siguiente</string>
+    <string name="font_smaller">A−</string>
+    <string name="font_larger">A+</string>
+</resources>

@@ -1,0 +1,70 @@
+MINISTERIUM - PROYECTO PARA ANDROID STUDIO
+
+VERSIÓN ACTUAL: 3.0.0
+
+1. Abre el archivo GUIA-INICIO-ANDROID-STUDIO.md y sigue los pasos en orden.
+2. Este paquete está preparado para el Android Studio 4.2.1 que ya instalaste.
+3. No se recomienda el emulador en una laptop con 8 GB y HDD. Puedes generar
+   el APK sin teléfono y transferirlo después, o usar depuración USB.
+4. Descomprime esta carpeta en C:\Android\Ministerium.
+5. En Android Studio selecciona Open y abre la carpeta Ministerium.
+6. Antes de abrirlo instala Android 11 (API 30) desde Configure > SDK Manager.
+7. Espera a que termine la primera sincronización antes de pulsar Run.
+
+Esta actualización contiene el Bendicional práctico, las oraciones básicas,
+el Devocionario EPUB de Opus Dei, los seis tomos de la Liturgia de las Horas,
+la Liturgia Horarum latina 2026, el Misal Diario Romano, el calendario
+ecuatoriano 2026, el Ritual Del Bautismo de Niños y los
+formularios para enfermos y difuntos.
+La versión 1.5.0 añadió Completas en todos los tiempos, Primeras Vísperas del
+domingo los sábados, composición correcta de memorias, cánticos evangélicos
+completos, horarios orientativos, intenciones en su lugar litúrgico, Rosario
+ampliado, Devocionario simplificado y rúbricas de Bautismo en color.
+La versión 1.6.0 hace visibles los horarios de cada Hora, usa el himno y las
+antífonas propias de las memorias, resuelve las llamadas semanales del Tiempo
+Ordinario y actualiza las letanías y la oración final del Rosario.
+La versión 1.7.0 completa las lecturas y la oración del Oficio, compone el
+Oficio de las memorias con su segunda lectura propia, permite elegir el tema de
+toda la aplicación y añade un recordatorio diario para la Hora seleccionada.
+La versión 1.7.1 corrige el cierre inmediato que podía producirse al iniciar en
+Android 16 al recuperar una configuración anterior del tema.
+La versión 1.8.0 permite programar por separado los ocho recordatorios de la
+Liturgia de las Horas y corrige Completas para usar Domingo I el sábado y
+Domingo II el domingo.
+La versión 1.8.1 aplica al Invitatorio de las memorias la antífona propia del
+santo o, cuando no existe, la del común seleccionado.
+La versión 1.9.0 corrige los rangos litúrgicos y el himno del Oficio, deja siete
+recordatorios sin Invitatorio, separa tema y campana, e incorpora Liturgia
+latina, Misal, calendario mensual y enlaces a las lecturas de USCCB.
+La versión 2.0.0 descarga y guarda las lecturas del mes, muestra una frase del
+Evangelio en el aviso matutino, organiza la Liturgia latina por fecha y crea un
+lector bilingüe español/latín. La actualización anual latina valida que el EPUB
+sea del año y del idioma correctos antes de instalarlo.
+La versión 2.0.1 corrige el contraste del modo oscuro en la Liturgia latina y el
+Misal, y organiza las lecturas por entradilla, referencia, párrafos, respuesta y
+estrofas del salmo.
+La versión 2.1.0 aplica la salmodia propia de las memorias cuando el formulario
+la indica, sincroniza el lector bilingüe e incorpora Magisterio, Derecho
+Canónico, devociones complementarias y tres exámenes de conciencia.
+La versión 2.2.0 reorganiza la Biblia con recientes, subrayados, planes y el
+módulo preparado del diccionario; renueva la presentación del Leccionario y
+ordena el Misal por celebración, Ordinario, propios, comunes y necesidades.
+La versión 2.2.1 integra dos diccionarios bíblicos extraídos de PDF como 2.843 y
+881 recuadros de texto, el Diccionario de Teología EUNSA 2006 y el Diccionario
+de la lengua española, 15.ª edición, todos con búsqueda y funcionamiento offline.
+La versión 2.3.0 convierte los 1.752 cánones y sus comentarios en texto local,
+abre los diccionarios al seleccionar una palabra, enlaza el Misal con las
+oraciones propias del día, actualiza anualmente el calendario, añade planes por
+libro bíblico y completa la salmodia propia de fiestas y solemnidades.
+La versión 2.3.1 separa todos los capítulos bíblicos, completa también la
+salmodia del domingo I de memorias obligatorias, alinea por secciones la
+Liturgia bilingüe, añade traducción en línea de selecciones y muestra cada canon
+en español y latín desde el mismo PDF, conservando el comentario superpuesto;
+también permite cancelar con confirmación el plan de lectura activo.
+La versión 3.0.0 renueva lectores y estudio, corrige los flujos litúrgicos,
+separa Misal y Leccionario, incorpora uniones conforme a OGLH, planes con
+progreso real, TTS español, copias verificables y actualizaciones modulares.
+Consulta NOVEDADES-3.0.0.md.
+La primera sincronización necesita Internet. En la app, la conexión sólo se usa
+para actualizar las lecturas mensuales, el año latino o abrir fuentes web; lo
+que ya se guardó sigue funcionando sin conexión.

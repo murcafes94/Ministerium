@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "versionName": "3.0.0",
+  "versionCode": 30,
+  "channel": "stable",
+  "publishedAt": "YYYY-MM-DDTHH:mm:ssZ",
+  "apk": {
+    "url": "https://REEMPLAZAR/ministerium-3.0.0.apk",
+    "sha256": "REEMPLAZAR_CON_SHA256_DEL_APK",
+    "signatureSha256": "REEMPLAZAR_CON_HUELLA_DE_FIRMA",
+    "minimumAndroid": 23
+  },
+  "changelog": "NOVEDADES-3.0.0.md",
+  "packagesManifest": "content-packages.template.json"
+}

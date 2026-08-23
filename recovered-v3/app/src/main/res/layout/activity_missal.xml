@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/cream" android:orientation="vertical">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:background="@color/wine_dark" android:gravity="center_vertical"
+        android:orientation="horizontal" android:paddingStart="8dp"
+        android:paddingTop="10dp" android:paddingEnd="12dp" android:paddingBottom="10dp">
+        <Button android:id="@+id/btnBack" android:layout_width="48dp"
+            android:layout_height="48dp" android:backgroundTint="@android:color/transparent"
+            android:text="‹" android:textColor="#FFFFFF" android:textSize="28sp" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Misal Diario Romano" android:textColor="#FFFFFF"
+                android:textSize="21sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Celebración y Ordinario sin conexión" android:textColor="#E9DBD7"
+                android:textSize="12sp" />
+        </LinearLayout>
+        <Button android:id="@+id/btnChooseDate" android:layout_width="48dp"
+            android:layout_height="48dp" android:backgroundTint="@android:color/transparent"
+            android:contentDescription="Elegir fecha" android:text="▣"
+            android:textColor="@color/gold" android:textSize="22sp" />
+    </LinearLayout>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:gravity="center_vertical" android:orientation="horizontal"
+        android:paddingStart="10dp" android:paddingTop="10dp" android:paddingEnd="10dp">
+        <Button android:id="@+id/btnPreviousDay" android:layout_width="48dp"
+            android:layout_height="48dp" android:backgroundTint="@android:color/transparent"
+            android:text="‹" android:textColor="@color/wine" android:textSize="30sp" />
+        <TextView android:id="@+id/txtMissalDate" android:layout_width="0dp"
+            android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center"
+            android:textColor="@color/ink" android:textSize="17sp" android:textStyle="bold" />
+        <Button android:id="@+id/btnNextDay" android:layout_width="48dp"
+            android:layout_height="48dp" android:backgroundTint="@android:color/transparent"
+            android:text="›" android:textColor="@color/wine" android:textSize="30sp" />
+    </LinearLayout>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginStart="18dp" android:layout_marginTop="5dp"
+        android:layout_marginEnd="18dp" android:background="@drawable/bg_card"
+        android:orientation="vertical" android:padding="16dp">
+        <TextView android:id="@+id/txtMissalCelebration" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:textColor="@color/wine"
+            android:textSize="18sp" android:textStyle="bold" />
+        <TextView android:id="@+id/txtMissalDetails" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="6dp"
+            android:textColor="@color/muted" android:textSize="12sp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="10dp" android:orientation="horizontal">
+            <Spinner android:id="@+id/spinnerMassMode" android:layout_width="0dp"
+                android:layout_height="48dp" android:layout_weight="1" />
+            <Spinner android:id="@+id/spinnerMassLanguage" android:layout_width="0dp"
+                android:layout_height="48dp" android:layout_marginStart="8dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Modo e idioma · la unión con una Hora es explícita y solo corresponde a celebración comunitaria."
+            android:textColor="@color/muted" android:textSize="11sp" />
+        <Button android:id="@+id/btnDailyMissal" android:layout_width="match_parent"
+            android:layout_height="50dp" android:layout_marginTop="12dp"
+            android:background="@drawable/bg_button" android:text="Abrir celebración del día"
+            android:textAllCaps="false" android:textColor="#FFFFFF" />
+        <Button android:id="@+id/btnMissalReadings" android:layout_width="match_parent"
+            android:layout_height="48dp" android:layout_marginTop="7dp"
+            android:background="@drawable/bg_button_secondary" android:text="Abrir lecturas del día"
+            android:textAllCaps="false" android:textColor="@color/wine" />
+    </LinearLayout>
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginStart="20dp" android:layout_marginTop="16dp"
+        android:text="ORDINARIO, PROPIOS Y OTRAS CELEBRACIONES"
+        android:textColor="@color/wine" android:textSize="11sp" android:textStyle="bold" />
+    <ListView android:id="@+id/listMissalSections" android:layout_width="match_parent"
+        android:layout_height="0dp" android:layout_marginTop="6dp" android:layout_weight="1"
+        android:divider="@android:color/transparent" android:dividerHeight="8dp"
+        android:paddingStart="12dp" android:paddingEnd="12dp" />
+</LinearLayout>

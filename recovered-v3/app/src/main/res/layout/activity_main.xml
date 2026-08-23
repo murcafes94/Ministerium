@@ -1,0 +1,462 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/cream"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="28dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_header"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="22dp"
+            android:paddingTop="26dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="24dp">
+
+            <TextView
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_icon_gold"
+                android:gravity="center"
+                android:text="✠"
+                android:textColor="@color/wine_dark"
+                android:textSize="25sp" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.08"
+                    android:text="MINISTERIUM"
+                    android:textColor="#FFFFFF"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:letterSpacing="0.08"
+                    android:text="DEVOCIÓN Y LITURGIA"
+                    android:textColor="#E9DBD7"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btnNotifications"
+                android:layout_width="44dp"
+                android:layout_height="48dp"
+                android:backgroundTint="@android:color/transparent"
+                android:contentDescription="Abrir recordatorios"
+                android:text="🔔"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp" />
+
+            <Button
+                android:id="@+id/btnTheme"
+                android:layout_width="44dp"
+                android:layout_height="48dp"
+                android:backgroundTint="@android:color/transparent"
+                android:contentDescription="Cambiar tema"
+                android:text="◐"
+                android:textColor="#FFFFFF"
+                android:textSize="22sp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="22dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginEnd="22dp"
+            android:text="Recursos para la oración y el ministerio"
+            android:textColor="@color/ink"
+            android:textSize="25sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="22dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginEnd="22dp"
+            android:text="Consulta textos completos sin conexión y guárdalos para volver a ellos."
+            android:textColor="@color/muted"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/btnSearch"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginStart="22dp"
+            android:layout_marginTop="18dp"
+            android:layout_marginEnd="22dp"
+            android:background="@drawable/bg_button_secondary"
+            android:drawableStart="@android:drawable/ic_menu_search"
+            android:drawablePadding="10dp"
+            android:gravity="start|center_vertical"
+            android:paddingStart="18dp"
+            android:paddingEnd="18dp"
+            android:text="Buscar en la biblioteca"
+            android:textAllCaps="false"
+            android:textColor="@color/ink"
+            android:textSize="15sp" />
+
+        <LinearLayout
+            android:id="@+id/sectionContinue"
+            style="@style/HomeCard"
+            android:visibility="gone">
+
+            <TextView
+                style="@style/HomeCardIcon"
+                android:background="@drawable/bg_icon_gold"
+                android:text="↻"
+                android:textColor="@color/wine_dark"
+                android:textSize="22sp" />
+
+            <LinearLayout style="@style/HomeCardBody">
+                <TextView
+                    android:id="@+id/txtContinueTitle"
+                    style="@style/HomeCardTitle"
+                    android:text="Continuar leyendo" />
+                <TextView
+                    android:id="@+id/txtContinueSubtitle"
+                    style="@style/HomeCardSubtitle"
+                    android:text="Última lectura" />
+            </LinearLayout>
+            <TextView style="@style/HomeCardChevron" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="22dp"
+            android:layout_marginTop="25dp"
+            android:letterSpacing="0.12"
+            android:text="BIBLIA Y MAGISTERIO"
+            android:textColor="@color/wine"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <LinearLayout android:id="@+id/cardBible" style="@style/HomeCard">
+            <TextView style="@style/HomeCardIcon" android:background="@drawable/bg_icon_gold" android:text="B" android:textColor="@color/wine_dark" android:textSize="19sp" android:textStyle="bold" />
+            <LinearLayout style="@style/HomeCardBody">
+                <TextView style="@style/HomeCardTitle" android:text="Biblia de Jerusalén" />
+                <TextView style="@style/HomeCardSubtitle" android:text="73 libros, notas y referencias · sin conexión" />
+            </LinearLayout>
+            <TextView style="@style/HomeCardChevron" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/cardMagisterium" style="@style/HomeCard">
+            <TextView style="@style/HomeCardIcon" android:background="@drawable/bg_icon_outline" android:text="M" android:textColor="@color/wine" android:textSize="19sp" android:textStyle="bold" />
+            <LinearLayout style="@style/HomeCardBody">
+                <TextView style="@style/HomeCardTitle" android:text="Magisterio y Derecho" />
+                <TextView style="@style/HomeCardSubtitle" android:text="Vaticano II, Catecismo, Doctrina Social y Derecho Canónico" />
+            </LinearLayout>
+            <TextView style="@style/HomeCardChevron" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/cardMyStudy" style="@style/HomeCard">
+            <TextView style="@style/HomeCardIcon" android:background="@drawable/bg_icon_outline"
+                android:text="✎" android:textColor="@color/wine" android:textSize="20sp" />
+            <LinearLayout style="@style/HomeCardBody">
+                <TextView style="@style/HomeCardTitle" android:text="Mi estudio" />
+                <TextView style="@style/HomeCardSubtitle"
+                    android:text="Subrayados, notas y meditaciones en un solo lugar" />
+            </LinearLayout>
+            <TextView style="@style/HomeCardChevron" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="22dp"
+            android:layout_marginTop="25dp"
+            android:letterSpacing="0.12"
+            android:text="ORACIÓN"
+            android:textColor="@color/wine"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:id="@+id/cardHours"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="22dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="22dp"
+            android:background="@drawable/bg_feature_card"
+            android:clickable="true"
+            android:elevation="2dp"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="18dp">
+
+            <TextView
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_icon_gold"
+                android:gravity="center"
+                android:text="☀"
+                android:textColor="@color/wine_dark"
+                android:textSize="25sp" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="15dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Liturgia de las Horas"
+                    android:textColor="#FFFFFF"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Oficio diario y seis tomos sin conexión"
+                    android:textColor="#E9DBD7"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="›"
+                android:textColor="@color/gold"
+                android:textSize="32sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/cardBilingualHours"
+            style="@style/HomeCard">
+
+            <TextView
+                style="@style/HomeCardIcon"
+                android:background="@drawable/bg_icon_outline"
+                android:text="LA"
+                android:textColor="@color/wine"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <LinearLayout style="@style/HomeCardBody">
+                <TextView style="@style/HomeCardTitle" android:text="Liturgia bilingüe" />
+                <TextView style="@style/HomeCardSubtitle" android:text="Español y latín coordinados por fecha y Hora" />
+            </LinearLayout>
+            <TextView style="@style/HomeCardChevron" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/cardMassReadings"
+            style="@style/HomeCard">
+
+            <TextView
+                style="@style/HomeCardIcon"
+                android:background="@drawable/bg_icon_wine"
+                android:text="✝"
+                android:textColor="#FFFFFF" />
+
+            <LinearLayout style="@style/HomeCardBody">
+                <TextView style="@style/HomeCardTitle" android:text="Lecturas del día" />
+                <TextView style="@style/HomeCardSubtitle" android:text="Leccionario por fecha para leer sin conexión" />
+            </LinearLayout>
+            <TextView style="@style/HomeCardChevron" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/cardMissal"
+            style="@style/HomeCard">
+
+            <TextView
+                style="@style/HomeCardIcon"
+                android:background="@drawable/bg_icon_outline"
+                android:text="M"
+                android:textColor="@color/wine"
+                android:textSize="19sp"
+                android:textStyle="bold" />
+
+            <LinearLayout style="@style/HomeCardBody">
+                <TextView style="@style/HomeCardTitle" android:text="Misal" />
+                <TextView style="@style/HomeCardSubtitle" android:text="Ordinario y propios en español y latín" />
+            </LinearLayout>
+            <TextView style="@style/HomeCardChevron" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/cardLiturgicalCalendar"
+            style="@style/HomeCard">
+
+            <TextView
+                style="@style/HomeCardIcon"
+                android:background="@drawable/bg_icon_gold"
+                android:text="31"
+                android:textColor="@color/wine_dark"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <LinearLayout style="@style/HomeCardBody">
+                <TextView style="@style/HomeCardTitle" android:text="Calendario litúrgico" />
+                <TextView style="@style/HomeCardSubtitle" android:text="Celebraciones de Ecuador 2026 por rango" />
+            </LinearLayout>
+            <TextView style="@style/HomeCardChevron" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/cardPrayers"
+            style="@style/HomeCard">
+
+            <TextView
+                style="@style/HomeCardIcon"
+                android:background="@drawable/bg_icon_wine"
+                android:text="☩"
+                android:textColor="#FFFFFF" />
+
+            <LinearLayout
+                style="@style/HomeCardBody">
+                <TextView style="@style/HomeCardTitle" android:text="Oraciones básicas" />
+                <TextView style="@style/HomeCardSubtitle" android:text="Rosario, Ángelus, Credos y oraciones comunes" />
+            </LinearLayout>
+            <TextView style="@style/HomeCardChevron" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/cardDevotional"
+            style="@style/HomeCard">
+
+            <TextView
+                style="@style/HomeCardIcon"
+                android:background="@drawable/bg_icon_outline"
+                android:text="✦"
+                android:textColor="@color/wine" />
+
+            <LinearLayout
+                style="@style/HomeCardBody">
+                <TextView style="@style/HomeCardTitle" android:text="Devocionario" />
+                <TextView style="@style/HomeCardSubtitle" android:text="Devociones y exámenes para adultos, jóvenes y niños" />
+            </LinearLayout>
+            <TextView style="@style/HomeCardChevron" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="22dp"
+            android:layout_marginTop="25dp"
+            android:letterSpacing="0.12"
+            android:text="MINISTERIO"
+            android:textColor="@color/wine"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:id="@+id/cardBlessings"
+            style="@style/HomeCard">
+
+            <TextView
+                style="@style/HomeCardIcon"
+                android:background="@drawable/bg_icon_wine"
+                android:text="✠"
+                android:textColor="#FFFFFF" />
+
+            <LinearLayout
+                style="@style/HomeCardBody">
+                <TextView style="@style/HomeCardTitle" android:text="Bendicional" />
+                <TextView style="@style/HomeCardSubtitle" android:text="Familias, enfermos, viajes y medios de transporte" />
+            </LinearLayout>
+            <TextView style="@style/HomeCardChevron" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/cardPastoral"
+            style="@style/HomeCard">
+
+            <TextView
+                style="@style/HomeCardIcon"
+                android:background="@drawable/bg_icon_outline"
+                android:text="✚"
+                android:textColor="@color/wine" />
+
+            <LinearLayout
+                style="@style/HomeCardBody">
+                <TextView style="@style/HomeCardTitle" android:text="Atención pastoral" />
+                <TextView style="@style/HomeCardSubtitle" android:text="Bautismo, enfermos, Viático y difuntos" />
+            </LinearLayout>
+            <TextView style="@style/HomeCardChevron" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/cardSettings"
+            style="@style/HomeCard">
+
+            <TextView
+                style="@style/HomeCardIcon"
+                android:background="@drawable/bg_icon_outline"
+                android:text="⚙"
+                android:textColor="@color/wine" />
+
+            <LinearLayout
+                style="@style/HomeCardBody">
+                <TextView style="@style/HomeCardTitle" android:text="Configuración" />
+                <TextView style="@style/HomeCardSubtitle" android:text="Tema y recordatorios por cada Hora" />
+            </LinearLayout>
+            <TextView style="@style/HomeCardChevron" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnFavorites"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginStart="22dp"
+            android:layout_marginTop="22dp"
+            android:layout_marginEnd="22dp"
+            android:background="@drawable/bg_button_secondary"
+            android:text="☆  Mis favoritos"
+            android:textAllCaps="false"
+            android:textColor="@color/wine"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="22dp"
+            android:layout_marginTop="18dp"
+            android:layout_marginEnd="22dp"
+            android:gravity="center"
+            android:text="Santa Teresa de Jesús: «Tratar de amistad… con quien sabemos nos ama». (Vida 8, 5)"
+            android:textColor="@color/muted"
+            android:textSize="13sp"
+            android:textStyle="italic" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:text="Sin anuncios · Sin cuentas · contenido principal sin conexión"
+            android:textColor="@color/muted"
+            android:textSize="12sp" />
+    </LinearLayout>
+</ScrollView>

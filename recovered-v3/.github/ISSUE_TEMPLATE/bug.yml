@@ -1,0 +1,34 @@
+name: Error
+description: Informar un fallo reproducible
+title: "[Error] "
+labels: ["type:bug"]
+body:
+  - type: dropdown
+    id: module
+    attributes:
+      label: Módulo
+      options: [General, Biblia, Liturgia, Misal, Leccionario, Derecho canónico, Estudio, Planes, Actualizaciones]
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Qué ocurrió
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Qué esperabas que ocurriera
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducirlo
+  - type: input
+    id: version
+    attributes:
+      label: Versión de Ministerium
+  - type: input
+    id: android
+    attributes:
+      label: Android y dispositivo

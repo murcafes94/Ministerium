@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/settingsScroll"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/cream"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingBottom="28dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/wine_dark"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="8dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="10dp">
+
+            <Button
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:backgroundTint="@android:color/transparent"
+                android:contentDescription="Volver"
+                android:text="‹"
+                android:textColor="#FFFFFF"
+                android:textSize="28sp" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Configuración"
+                    android:textColor="#FFFFFF"
+                    android:textSize="21sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Apariencia y oración diaria"
+                    android:textColor="#E9DBD7"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="22dp"
+            android:layout_marginTop="24dp"
+            android:letterSpacing="0.1"
+            android:text="APARIENCIA"
+            android:textColor="@color/wine"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="18dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="18dp"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="18dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tema de la aplicación"
+                android:textColor="@color/ink"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="La elección también se aplica a la Liturgia de las Horas y sus lectores."
+                android:textColor="@color/muted"
+                android:textSize="13sp" />
+
+            <RadioGroup
+                android:id="@+id/themeGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="vertical">
+
+                <RadioButton
+                    android:id="@+id/themeSystem"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:text="Seguir configuración del dispositivo"
+                    android:textColor="@color/ink"
+                    android:textSize="15sp" />
+
+                <RadioButton
+                    android:id="@+id/themeLight"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:text="Claro"
+                    android:textColor="@color/ink"
+                    android:textSize="15sp" />
+
+                <RadioButton
+                    android:id="@+id/themeDark"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:text="Oscuro"
+                    android:textColor="@color/ink"
+                    android:textSize="15sp" />
+
+                <RadioButton
+                    android:id="@+id/themeSepia"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:text="Sepia"
+                    android:textColor="@color/ink"
+                    android:textSize="15sp" />
+            </RadioGroup>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/cardReaderSettings"
+            style="@style/HomeCard">
+            <TextView
+                style="@style/HomeCardIcon"
+                android:background="@drawable/bg_icon_outline"
+                android:text="Aa"
+                android:textColor="@color/wine"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+            <LinearLayout style="@style/HomeCardBody">
+                <TextView style="@style/HomeCardTitle" android:text="Preferencias de lectura" />
+                <TextView style="@style/HomeCardSubtitle"
+                    android:text="Tamaño, tipografía, grosor e interlineado globales" />
+            </LinearLayout>
+            <TextView style="@style/HomeCardChevron" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="22dp"
+            android:layout_marginTop="22dp"
+            android:letterSpacing="0.1"
+            android:text="DATOS PERSONALES"
+            android:textColor="@color/wine"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <LinearLayout android:id="@+id/cardBackup" style="@style/HomeCard">
+            <TextView style="@style/HomeCardIcon" android:background="@drawable/bg_icon_outline"
+                android:text="↥" android:textColor="@color/wine" android:textSize="22sp" />
+            <LinearLayout style="@style/HomeCardBody">
+                <TextView style="@style/HomeCardTitle" android:text="Copia de seguridad" />
+                <TextView style="@style/HomeCardSubtitle"
+                    android:text="Crear, guardar en Drive opcional o restaurar" />
+            </LinearLayout>
+            <TextView style="@style/HomeCardChevron" />
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginStart="18dp" android:layout_marginTop="10dp"
+            android:layout_marginEnd="18dp" android:background="@drawable/bg_card"
+            android:orientation="vertical" android:padding="18dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Nombre para firma (opcional)" android:textColor="@color/ink"
+                android:textSize="17sp" android:textStyle="bold" />
+            <EditText android:id="@+id/inputSignatureName" android:layout_width="match_parent"
+                android:layout_height="50dp" android:layout_marginTop="6dp"
+                android:hint="Tu nombre" android:inputType="textPersonName|textCapWords"
+                android:maxLines="1" android:textColor="@color/ink"
+                android:textColorHint="@color/muted" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Solo se usa cuando decidas firmar una meditación o comentario."
+                android:textColor="@color/muted" android:textSize="12sp" />
+        </LinearLayout>
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginStart="22dp" android:layout_marginTop="22dp"
+            android:letterSpacing="0.1" android:text="ACTUALIZACIONES Y AYUDA"
+            android:textColor="@color/wine" android:textSize="12sp" android:textStyle="bold" />
+
+        <LinearLayout android:id="@+id/cardUpdates" style="@style/HomeCard">
+            <TextView style="@style/HomeCardIcon" android:background="@drawable/bg_icon_outline"
+                android:text="↻" android:textColor="@color/wine" android:textSize="22sp" />
+            <LinearLayout style="@style/HomeCardBody">
+                <TextView style="@style/HomeCardTitle" android:text="Actualizaciones" />
+                <TextView style="@style/HomeCardSubtitle"
+                    android:text="App, calendario, breviario, leccionario y rituales" />
+            </LinearLayout>
+            <TextView style="@style/HomeCardChevron" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/cardFeedback" style="@style/HomeCard">
+            <TextView style="@style/HomeCardIcon" android:background="@drawable/bg_icon_outline"
+                android:text="✎" android:textColor="@color/wine" android:textSize="21sp" />
+            <LinearLayout style="@style/HomeCardBody">
+                <TextView style="@style/HomeCardTitle" android:text="Enviar comentario" />
+                <TextView style="@style/HomeCardSubtitle"
+                    android:text="Error, opinión, calificación o sugerencia" />
+            </LinearLayout>
+            <TextView style="@style/HomeCardChevron" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="18dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="18dp"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="18dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Conclusiones litúrgicas" android:textColor="@color/ink"
+                android:textSize="18sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Ajusta la conclusión de Completas a quien preside la oración."
+                android:textColor="@color/muted" android:textSize="13sp" />
+            <RadioGroup android:id="@+id/ministryRoleGroup" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="8dp"
+                android:orientation="vertical">
+                <RadioButton android:id="@+id/roleLay" android:layout_width="match_parent"
+                    android:layout_height="44dp" android:text="Fiel laico"
+                    android:textColor="@color/ink" />
+                <RadioButton android:id="@+id/roleOrdained" android:layout_width="match_parent"
+                    android:layout_height="44dp" android:text="Ministro ordenado"
+                    android:textColor="@color/ink" />
+            </RadioGroup>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/reminderSectionTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="22dp"
+            android:layout_marginTop="24dp"
+            android:letterSpacing="0.1"
+            android:text="RECORDATORIO DE ORACIÓN"
+            android:textColor="@color/wine"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="18dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="18dp"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="18dp"
+                android:paddingTop="18dp"
+                android:paddingEnd="18dp"
+                android:paddingBottom="10dp"
+                android:text="Activa cada rezo por separado y toca su nombre para cambiar la hora."
+                android:textColor="@color/muted"
+                android:textSize="13sp" />
+
+            <include
+                android:id="@+id/rowReminderOffice"
+                layout="@layout/row_prayer_reminder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:layout_marginStart="18dp" android:layout_marginEnd="18dp"
+                android:background="@color/line" />
+
+            <include
+                android:id="@+id/rowReminderLauds"
+                layout="@layout/row_prayer_reminder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:layout_marginStart="18dp" android:layout_marginEnd="18dp"
+                android:background="@color/line" />
+
+            <include
+                android:id="@+id/rowReminderTerce"
+                layout="@layout/row_prayer_reminder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:layout_marginStart="18dp" android:layout_marginEnd="18dp"
+                android:background="@color/line" />
+
+            <include
+                android:id="@+id/rowReminderSext"
+                layout="@layout/row_prayer_reminder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:layout_marginStart="18dp" android:layout_marginEnd="18dp"
+                android:background="@color/line" />
+
+            <include
+                android:id="@+id/rowReminderNone"
+                layout="@layout/row_prayer_reminder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:layout_marginStart="18dp" android:layout_marginEnd="18dp"
+                android:background="@color/line" />
+
+            <include
+                android:id="@+id/rowReminderVespers"
+                layout="@layout/row_prayer_reminder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:layout_marginStart="18dp" android:layout_marginEnd="18dp"
+                android:background="@color/line" />
+
+            <include
+                android:id="@+id/rowReminderCompline"
+                layout="@layout/row_prayer_reminder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="18dp"
+                android:paddingTop="10dp"
+                android:paddingEnd="18dp"
+                android:paddingBottom="18dp"
+                android:text="Los cambios se guardan al instante y no necesitan conexión a Internet."
+                android:textColor="@color/muted"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="22dp"
+            android:layout_marginTop="24dp"
+            android:letterSpacing="0.1"
+            android:text="EVANGELIO DEL DÍA"
+            android:textColor="@color/wine"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="18dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="18dp"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical">
+
+            <include
+                android:id="@+id/rowDailyGospel"
+                layout="@layout/row_prayer_reminder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="18dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="18dp"
+                android:paddingBottom="18dp"
+                android:text="Si el mes está guardado, el aviso muestra una frase del Evangelio y abre las lecturas sin conexión."
+                android:textColor="@color/muted"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/cream"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/wine_dark"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="14dp"
+        android:paddingBottom="10dp">
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:backgroundTint="@android:color/transparent"
+            android:text="‹"
+            android:textColor="#FFFFFF"
+            android:textSize="28sp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Liturgia de las Horas"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Oficio diario"
+                android:textColor="#E9DBD7"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnCalendar"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:backgroundTint="@android:color/transparent"
+            android:contentDescription="Elegir fecha"
+            android:text="▣"
+            android:textColor="@color/gold"
+            android:textSize="22sp" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:id="@+id/dailyContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="26dp"
+                android:visibility="invisible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="12dp"
+                    android:paddingTop="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="4dp">
+
+                    <Button
+                        android:id="@+id/btnPreviousDay"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:backgroundTint="@android:color/transparent"
+                        android:contentDescription="Día anterior"
+                        android:text="‹"
+                        android:textColor="@color/wine"
+                        android:textSize="30sp" />
+
+                    <TextView
+                        android:id="@+id/txtDailyDate"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:textColor="@color/ink"
+                        android:textSize="17sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btnNextDay"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:backgroundTint="@android:color/transparent"
+                        android:contentDescription="Día siguiente"
+                        android:text="›"
+                        android:textColor="@color/wine"
+                        android:textSize="30sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:orientation="horizontal"
+                    android:paddingStart="22dp"
+                    android:paddingTop="12dp"
+                    android:paddingEnd="22dp"
+                    android:paddingBottom="4dp">
+
+                    <View
+                        android:id="@+id/liturgicalColorDot"
+                        android:layout_width="12dp"
+                        android:layout_height="12dp"
+                        android:layout_marginTop="7dp"
+                        android:background="@drawable/bg_liturgical_dot" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/txtDailyCelebration"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/ink"
+                            android:textSize="20sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/txtDailyDetails"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="5dp"
+                            android:textColor="@color/wine"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btnChooseOffice"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="22dp"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginEnd="22dp"
+                    android:background="@drawable/bg_button_secondary"
+                    android:text="Elegir celebración u oficio"
+                    android:textAllCaps="false"
+                    android:textColor="@color/wine"
+                    android:textStyle="bold" />
+
+                <Button
+                    android:id="@+id/btnCombineOfficeLauds"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="22dp"
+                    android:layout_marginTop="9dp"
+                    android:layout_marginEnd="22dp"
+                    android:background="@drawable/bg_button"
+                    android:text="Rezar Oficio + Laudes"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/cardProper"
+                    style="@style/HomeCard"
+                    android:visibility="gone">
+
+                    <TextView
+                        style="@style/HomeCardIcon"
+                        android:background="@drawable/bg_icon_gold"
+                        android:text="✦"
+                        android:textColor="@color/wine_dark" />
+
+                    <LinearLayout style="@style/HomeCardBody">
+                        <TextView
+                            android:id="@+id/txtProperTitle"
+                            style="@style/HomeCardTitle" />
+                        <TextView
+                            android:id="@+id/txtProperSubtitle"
+                            style="@style/HomeCardSubtitle" />
+                    </LinearLayout>
+                    <TextView style="@style/HomeCardChevron" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="22dp"
+                    android:layout_marginTop="22dp"
+                    android:letterSpacing="0.1"
+                    android:text="OFICIO DEL DÍA"
+                    android:textColor="@color/wine"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="22dp"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginEnd="22dp"
+                    android:text="Los horarios son orientativos y pueden adaptarse a la jornada."
+                    android:textColor="@color/muted"
+                    android:textSize="11sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingStart="11dp"
+                    android:paddingTop="5dp"
+                    android:paddingEnd="11dp">
+
+                    <LinearLayout android:id="@+id/cardInvitatory" style="@style/DailyHourCard">
+                        <TextView style="@style/DailyHourTitle" android:text="Invitatorio" />
+                        <TextView style="@style/DailyHourSubtitle" android:text="Comienzo de la oración" />
+                        <TextView style="@style/DailyHourTime" android:text="AL INICIO DEL PRIMER OFICIO" />
+                    </LinearLayout>
+                    <LinearLayout android:id="@+id/cardOfficeReadings" style="@style/DailyHourCard">
+                        <TextView style="@style/DailyHourTitle" android:text="Oficio" />
+                        <TextView style="@style/DailyHourSubtitle" android:text="Oficio de lecturas" />
+                        <TextView style="@style/DailyHourTime" android:text="CUALQUIER MOMENTO DEL DÍA" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingStart="11dp"
+                    android:paddingEnd="11dp">
+
+                    <LinearLayout android:id="@+id/cardLauds" style="@style/DailyHourCard">
+                        <TextView style="@style/DailyHourTitle" android:text="Laudes" />
+                        <TextView style="@style/DailyHourSubtitle" android:text="Oración de la mañana" />
+                        <TextView style="@style/DailyHourTime" android:text="HORA ORIENTATIVA · 6:00" />
+                    </LinearLayout>
+                    <LinearLayout android:id="@+id/cardTerce" style="@style/DailyHourCard">
+                        <TextView style="@style/DailyHourTitle" android:text="Tercia" />
+                        <TextView style="@style/DailyHourSubtitle" android:text="Media mañana" />
+                        <TextView style="@style/DailyHourTime" android:text="HORA ORIENTATIVA · 9:00" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingStart="11dp"
+                    android:paddingEnd="11dp">
+
+                    <LinearLayout android:id="@+id/cardSext" style="@style/DailyHourCard">
+                        <TextView style="@style/DailyHourTitle" android:text="Sexta" />
+                        <TextView style="@style/DailyHourSubtitle" android:text="Mediodía" />
+                        <TextView style="@style/DailyHourTime" android:text="HORA ORIENTATIVA · 12:00" />
+                    </LinearLayout>
+                    <LinearLayout android:id="@+id/cardNone" style="@style/DailyHourCard">
+                        <TextView style="@style/DailyHourTitle" android:text="Nona" />
+                        <TextView style="@style/DailyHourSubtitle" android:text="Media tarde" />
+                        <TextView style="@style/DailyHourTime" android:text="HORA ORIENTATIVA · 15:00" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingStart="11dp"
+                    android:paddingEnd="11dp">
+
+                    <LinearLayout android:id="@+id/cardVespers" style="@style/DailyHourCard">
+                        <TextView android:id="@+id/txtVespersTitle" style="@style/DailyHourTitle" android:text="Vísperas" />
+                        <TextView android:id="@+id/txtVespersSubtitle" style="@style/DailyHourSubtitle" android:text="Oración de la tarde" />
+                        <TextView style="@style/DailyHourTime" android:text="HORA ORIENTATIVA · 18:00" />
+                    </LinearLayout>
+                    <LinearLayout android:id="@+id/cardCompline" style="@style/DailyHourCard">
+                        <TextView style="@style/DailyHourTitle" android:text="Completas" />
+                        <TextView android:id="@+id/txtComplineSubtitle" style="@style/DailyHourSubtitle" android:text="Antes del descanso" />
+                        <TextView style="@style/DailyHourTime" android:text="ANTES DE DORMIR · ≈ 21:00" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="22dp"
+                    android:layout_marginTop="20dp"
+                    android:letterSpacing="0.1"
+                    android:text="MÁS OPCIONES"
+                    android:textColor="@color/wine"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout android:id="@+id/btnIntentions" style="@style/HomeCard">
+                    <TextView style="@style/HomeCardIcon" android:background="@drawable/bg_icon_wine" android:text="✎" android:textColor="#FFFFFF" />
+                    <LinearLayout style="@style/HomeCardBody">
+                        <TextView style="@style/HomeCardTitle" android:text="Intenciones de oración" />
+                        <TextView style="@style/HomeCardSubtitle" android:text="Aparecen en las preces de Laudes y Vísperas" />
+                    </LinearLayout>
+                    <TextView style="@style/HomeCardChevron" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/btnCommonOffices" style="@style/HomeCard">
+                    <TextView style="@style/HomeCardIcon" android:background="@drawable/bg_icon_outline" android:text="☩" android:textColor="@color/wine" />
+                    <LinearLayout style="@style/HomeCardBody">
+                        <TextView style="@style/HomeCardTitle" android:text="Oficios comunes" />
+                        <TextView style="@style/HomeCardSubtitle" android:text="Mártires, pastores, vírgenes y santos" />
+                    </LinearLayout>
+                    <TextView style="@style/HomeCardChevron" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/btnOfficeDead" style="@style/HomeCard">
+                    <TextView style="@style/HomeCardIcon" android:background="@drawable/bg_icon_outline" android:text="✠" android:textColor="@color/wine" />
+                    <LinearLayout style="@style/HomeCardBody">
+                        <TextView style="@style/HomeCardTitle" android:text="Oficio de difuntos" />
+                        <TextView style="@style/HomeCardSubtitle" android:text="Textos propios para la oración por los fieles difuntos" />
+                    </LinearLayout>
+                    <TextView style="@style/HomeCardChevron" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btnVolumes"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginStart="22dp"
+                    android:layout_marginTop="14dp"
+                    android:layout_marginEnd="22dp"
+                    android:background="@drawable/bg_button_secondary"
+                    android:text="Consultar los seis tomos"
+                    android:textAllCaps="false"
+                    android:textColor="@color/wine"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/txtDailySource"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="22dp"
+                    android:layout_marginTop="18dp"
+                    android:layout_marginEnd="22dp"
+                    android:gravity="center"
+                    android:textColor="@color/muted"
+                    android:textSize="11sp" />
+            </LinearLayout>
+        </ScrollView>
+
+        <ProgressBar
+            android:id="@+id/dailyProgress"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center" />
+    </FrameLayout>
+</LinearLayout>

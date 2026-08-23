@@ -1,0 +1,13 @@
+MINISTERIUM 3.0.0
+
+• Lector compacto con cabecera autoocultable, gestos, temas y preferencias globales.
+• Selección explícita: varios colores, notas, meditaciones, diccionario, traducción y voz.
+• Mi estudio y Mesa de estudio unifican subrayados, notas y meditaciones.
+• Búsqueda bíblica precisa y flexible, referencias de Biblia, Canon y Catecismo.
+• Liturgia del día revisada: Completas continuas, Horas intermedias y conclusiones legítimas.
+• Oficio de lecturas + Laudes y recorrido Misa + Laudes/Vísperas según OGLH.
+• Misal y Lecturas separados, con acceso cruzado y selección Español / Latín–Español.
+• Planes bíblicos con duración personalizada, progreso real y avisos directos.
+• Lectura en voz alta en español por bloques semánticos.
+• Copia de seguridad íntegra y restaurable; almacenamiento local o Drive opcional.
+• Centro modular de actualizaciones, verificación SHA-256 y canal de comentarios sin tokens.

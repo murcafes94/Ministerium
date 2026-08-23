@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/cream">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:paddingBottom="28dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:background="@color/wine_dark" android:gravity="center_vertical"
+            android:orientation="horizontal" android:padding="8dp">
+            <Button android:id="@+id/btnBack" android:layout_width="48dp"
+                android:layout_height="48dp" android:backgroundTint="@android:color/transparent"
+                android:text="‹" android:textColor="#FFFFFF" android:textSize="28sp" />
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:text="Preferencias de lectura"
+                android:textColor="#FFFFFF" android:textSize="21sp" android:textStyle="bold" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_margin="18dp" android:background="@drawable/bg_card"
+            android:orientation="vertical" android:padding="18dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Tipografía" android:textColor="@color/ink" android:textSize="18sp"
+                android:textStyle="bold" />
+            <RadioGroup android:id="@+id/readerFamilyGroup" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:orientation="vertical">
+                <RadioButton android:id="@+id/readerSerif" android:layout_width="match_parent"
+                    android:layout_height="44dp" android:text="Serif (editorial)" android:textColor="@color/ink" />
+                <RadioButton android:id="@+id/readerSans" android:layout_width="match_parent"
+                    android:layout_height="44dp" android:text="Sans serif" android:textColor="@color/ink" />
+                <RadioButton android:id="@+id/readerMono" android:layout_width="match_parent"
+                    android:layout_height="44dp" android:text="Monoespaciada" android:textColor="@color/ink" />
+            </RadioGroup>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="12dp" android:text="Tamaño" android:textColor="@color/ink" />
+            <SeekBar android:id="@+id/seekReaderSize" android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" android:text="Grosor" android:textColor="@color/ink" />
+            <SeekBar android:id="@+id/seekReaderWeight" android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" android:text="Interlineado" android:textColor="@color/ink" />
+            <SeekBar android:id="@+id/seekReaderLine" android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+            <TextView android:id="@+id/txtReaderValues" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:layout_marginTop="8dp"
+                android:textColor="@color/muted" android:textSize="12sp" />
+            <TextView android:id="@+id/txtReaderPreview" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="18dp"
+                android:background="@color/paper" android:padding="16dp"
+                android:text="En el principio creó Dios el cielo y la tierra. Esta muestra refleja tus ajustes globales."
+                android:textColor="@color/ink" />
+            <Button android:id="@+id/btnReaderReset" android:layout_width="match_parent"
+                android:layout_height="48dp" android:layout_marginTop="18dp"
+                android:background="@drawable/bg_button_secondary" android:text="Restablecer lectura"
+                android:textAllCaps="false" android:textColor="@color/wine" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

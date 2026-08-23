@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "channel": "stable",
+  "app": {
+    "versionName": "3.0.0",
+    "versionCode": 30,
+    "released": "2026-08-23",
+    "url": "",
+    "sha256": "",
+    "installation": "user-confirmed"
+  },
+  "packages": [
+    {
+      "id": "calendar-ec",
+      "title": "Calendario Ecuador",
+      "version": "2026.1",
+      "updated": "2026-01-01",
+      "asset": "calendar/gcatholic-2026-es-EC.ics",
+      "sha256": "d0036e5b93b6ebf5c83776ff79d30671bdc616ec09ce668dee9ae25fd15c6264"
+    },
+    {
+      "id": "breviary-es",
+      "title": "Breviario español",
+      "version": "3.0.0",
+      "updated": "2026-08-23",
+      "asset": "epubs/LH - 5. TIEMPO ORDINARIO.epub",
+      "sha256": "0ab18d080257e708a8bc809d426110a8fad770840e0b90e1c84a5e4b67ce8d14"
+    },
+    {
+      "id": "missal",
+      "title": "Misal LAT–ES",
+      "version": "3.0.0",
+      "updated": "2026-08-23",
+      "asset": "epubs/Misal-Diario-Romano.epub",
+      "sha256": "0bd7ff8b6bf786944d58e26a5c55071f1667639c099d58ee4d66a707e141434c"
+    }
+  ]
+}

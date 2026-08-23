@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/cream" android:orientation="vertical">
+    <LinearLayout android:id="@+id/readerHeader" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:background="@color/wine_dark"
+        android:gravity="center_vertical" android:orientation="horizontal" android:padding="6dp">
+        <Button android:id="@+id/btnBack" android:layout_width="44dp" android:layout_height="46dp"
+            android:backgroundTint="@android:color/transparent" android:text="‹"
+            android:textColor="#FFFFFF" android:textSize="27sp" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical">
+            <TextView android:id="@+id/txtReaderTitle" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1"
+                android:textColor="#FFFFFF" android:textSize="17sp" android:textStyle="bold" />
+            <TextView android:id="@+id/txtReaderSubtitle" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:maxLines="1"
+                android:textColor="#E9DBD7" android:textSize="10sp" />
+        </LinearLayout>
+        <Button android:id="@+id/btnReaderTheme" android:layout_width="42dp" android:layout_height="46dp"
+            android:backgroundTint="@android:color/transparent" android:contentDescription="Cambiar tema"
+            android:text="◐" android:textColor="@color/gold" android:textSize="20sp" />
+        <Button android:id="@+id/btnReaderMore" android:layout_width="42dp" android:layout_height="46dp"
+            android:backgroundTint="@android:color/transparent" android:contentDescription="Más opciones"
+            android:text="⋮" android:textColor="@color/gold" android:textSize="25sp" />
+        <Button android:id="@+id/btnGlobalMenu" android:layout_width="42dp" android:layout_height="46dp"
+            android:backgroundTint="@android:color/transparent" android:contentDescription="Menú global"
+            android:text="☰" android:textColor="#FFFFFF" android:textSize="19sp" />
+    </LinearLayout>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="44dp"
+        android:gravity="center" android:orientation="horizontal" android:paddingStart="8dp"
+        android:paddingEnd="8dp">
+        <Button android:id="@+id/btnBoth" android:layout_width="0dp" android:layout_height="40dp"
+            android:layout_weight="1" android:background="@drawable/bg_button" android:text="Bilingüe"
+            android:textAllCaps="false" android:textColor="#FFFFFF" />
+        <Button android:id="@+id/btnLatin" android:layout_width="0dp" android:layout_height="40dp"
+            android:layout_marginStart="5dp" android:layout_weight="1"
+            android:background="@drawable/bg_button_secondary" android:text="Latín"
+            android:textAllCaps="false" android:textColor="@color/wine" />
+    </LinearLayout>
+    <LinearLayout android:id="@+id/bilingualPanes" android:layout_width="match_parent"
+        android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
+        <WebView android:id="@+id/spanishWebView" android:layout_width="0dp"
+            android:layout_height="match_parent" android:layout_margin="5dp" android:layout_weight="1"
+            android:background="@drawable/bg_reading_surface" />
+        <WebView android:id="@+id/latinWebView" android:layout_width="0dp"
+            android:layout_height="match_parent" android:layout_margin="5dp" android:layout_weight="1"
+            android:background="@drawable/bg_reading_surface" />
+    </LinearLayout>
+</LinearLayout>

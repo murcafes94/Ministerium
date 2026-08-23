@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/cream" android:orientation="vertical">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:background="@color/wine_dark" android:gravity="center_vertical"
+        android:orientation="horizontal" android:padding="8dp">
+        <Button android:id="@+id/btnBack" android:layout_width="48dp" android:layout_height="48dp"
+            android:backgroundTint="@android:color/transparent" android:text="‹"
+            android:textColor="#FFFFFF" android:textSize="28sp" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Mis oraciones" android:textColor="#FFFFFF" android:textSize="20sp"
+                android:textStyle="bold" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Oraciones personales guardadas en este dispositivo"
+                android:textColor="#E9DBD7" android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+    <TextView android:id="@+id/txtIntro" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:background="@color/paper"
+        android:padding="16dp" android:textColor="@color/muted" android:textSize="14sp" />
+    <Button android:id="@+id/btnAddPrayer" android:layout_width="match_parent"
+        android:layout_height="50dp" android:layout_margin="12dp"
+        android:background="@drawable/bg_button" android:text="＋ Añadir oración"
+        android:textAllCaps="false" android:textColor="#FFFFFF" android:textSize="16sp" />
+    <ListView android:id="@+id/listItems" android:layout_width="match_parent"
+        android:layout_height="0dp" android:layout_weight="1" android:clipToPadding="false"
+        android:divider="@android:color/transparent" android:dividerHeight="8dp"
+        android:paddingStart="10dp" android:paddingEnd="10dp" android:paddingBottom="14dp" />
+</LinearLayout>
