@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'app/**'
+      - 'bootstrap/v3/**'
       - 'gradle/**'
       - 'gradlew'
       - 'gradlew.bat'
@@ -21,19 +22,56 @@ permissions:
 
 jobs:
   build:
-    name: Compile APK
+    name: Compile Ministerium APK
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Reconstruct full v3 project when bootstrap parts exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          if compgen -G 'bootstrap/v3/ministerium-v3.zip.part-*' > /dev/null; then
+            cat bootstrap/v3/ministerium-v3.zip.part-* > "$RUNNER_TEMP/ministerium-v3.zip"
+            if [ -f bootstrap/v3/ministerium-v3.zip.sha256 ]; then
+              EXPECTED=$(awk '{print $1}' bootstrap/v3/ministerium-v3.zip.sha256)
+              ACTUAL=$(sha256sum "$RUNNER_TEMP/ministerium-v3.zip" | awk '{print $1}')
+              test "$EXPECTED" = "$ACTUAL"
+            fi
+            rm -rf "$RUNNER_TEMP/ministerium-v3"
+            mkdir -p "$RUNNER_TEMP/ministerium-v3"
+            unzip -q "$RUNNER_TEMP/ministerium-v3.zip" -d "$RUNNER_TEMP/ministerium-v3"
+            rsync -a --exclude='.git/' "$RUNNER_TEMP/ministerium-v3/" ./
+          fi
+
+      - name: Set up JDK 17 for Android SDK tools
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools platforms;android-30 build-tools;30.0.3'
+
+      - name: Set up JDK 11 for Gradle 6.7.1 / AGP 4.2.1
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
           cache: gradle
+
+      - name: Validate Ministerium 3.0 project
+        shell: bash
+        run: |
+          test -f app/build.gradle
+          test -f app/src/main/AndroidManifest.xml
+          grep -q "versionName '3.0.0'" app/build.gradle
+          if [ -f tools/validate_project.mjs ]; then node tools/validate_project.mjs; fi
+          if [ -f tools/validate_content.mjs ]; then node tools/validate_content.mjs; fi
 
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
@@ -41,10 +79,16 @@ jobs:
       - name: Compile debug APK
         run: ./gradlew --no-daemon clean assembleDebug
 
+      - name: Calculate SHA-256
+        shell: bash
+        run: sha256sum app/build/outputs/apk/debug/*.apk | tee apk-sha256.txt
+
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: Ministerium-debug-${{ github.sha }}
-          path: app/build/outputs/apk/debug/*.apk
+          name: Ministerium-3.0.0-debug
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            apk-sha256.txt
           if-no-files-found: error
           retention-days: 14
