@@ -49,6 +49,45 @@ jobs:
           unzip -q "$OUT" -d "$RUNNER_TEMP/ministerium-v3"
           rsync -a --exclude='.git/' "$RUNNER_TEMP/ministerium-v3/" ./
 
+      - name: Apply Android SDK compatibility fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          universal = Path("app/src/main/java/com/fabri/ministerium/UniversalSelectionMenu.java")
+          text = universal.read_text()
+          text = text.replace(
+              "import java.util.UUID;",
+              "import java.lang.reflect.Method;\\nimport java.util.UUID;",
+              1,
+          )
+          text = text.replace(
+              "webView.setCustomSelectionActionModeCallback(new ActionMode.Callback() {",
+              "ActionMode.Callback callback = new ActionMode.Callback() {",
+              1,
+          )
+          closing = "        });\\n    }\\n\\n    private static void add"
+          replacement = "        };\\n        try {\\n            Method method = WebView.class.getMethod(\\n                    \\\"setCustomSelectionActionModeCallback\\\", ActionMode.Callback.class);\\n            method.invoke(webView, callback);\\n        } catch (Exception ignored) {\\n            // Compatibilidad con android.jar antiguos.\\n        }\\n    }\\n\\n    private static void add"
+          if closing not in text:
+              raise SystemExit("UniversalSelectionMenu callback block not found")
+          universal.write_text(text.replace(closing, replacement, 1))
+
+          continue_store = Path("app/src/main/java/com/fabri/ministerium/ContinueReadingStore.java")
+          text = continue_store.read_text()
+          text = text.replace(
+              "import org.json.JSONObject;",
+              "import org.json.JSONArray;\\nimport org.json.JSONObject;",
+              1,
+          )
+          old = "            String[] names = JSONObject.getNames(position.extras);\\n            if (names != null) for (String name : names) {"
+          new = "            JSONArray names = position.extras.names();\\n            if (names != null) for (int i = 0; i < names.length(); i++) {\\n                String name = names.optString(i, \\\"\\\");\\n                if (name.isEmpty()) continue;"
+          if old not in text:
+              raise SystemExit("ContinueReadingStore JSON names block not found")
+          continue_store.write_text(text.replace(old, new, 1))
+          PY
+
       - name: Set up JDK 17 for Android SDK tools
         uses: actions/setup-java@v4
         with:
