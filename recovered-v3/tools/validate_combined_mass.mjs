@@ -5,6 +5,8 @@ const activity = fs.readFileSync(
   'app/src/main/java/com/fabri/ministerium/CombinedMassActivity.java', 'utf8');
 const composer = fs.readFileSync(
   'app/src/main/java/com/fabri/ministerium/CombinedMassComposer.java', 'utf8');
+const polisher = fs.readFileSync(
+  'app/src/main/java/com/fabri/ministerium/CombinedMassPolisher.java', 'utf8');
 const layout = fs.readFileSync(
   'app/src/main/res/layout/activity_combined_mass.xml', 'utf8');
 
@@ -16,14 +18,14 @@ const forbidText = (source, text, label) => {
   if (source.includes(text)) failures.push(`No debe existir ${label}: ${text}`);
 };
 
-// Contrato principal: una sola pantalla, no menú de navegación entre módulos.
+// Una sola pantalla, no menú de navegación entre módulos.
 requireText(layout, 'combinedMassWebView', 'el WebView único de celebración');
 forbidText(layout, 'btnCombinedReadings', 'botón externo de Lecturas');
 forbidText(layout, 'btnCombinedCollect', 'botón externo de Colecta');
 forbidText(layout, 'btnCombinedPsalmody', 'botón externo de Salmodia');
 forbidText(layout, 'groupCombinedStart', 'selector antiguo de inicios separados');
 forbidText(activity, 'startActivity(', 'navegación a otra Activity desde la celebración combinada');
-requireText(activity, 'CombinedMassComposer.compose', 'compositor continuo');
+requireText(activity, 'CombinedMassPolisher.compose', 'compositor continuo con acabado final');
 requireText(activity, 'loadDataWithBaseURL', 'carga del documento continuo');
 
 // Orden/contenido mínimo acordado.
@@ -58,8 +60,11 @@ for (const required of [
   'ESP/LAT'
 ]) requireText(composer, required, `selector ${required}`);
 
-// La lectura diaria debe venir del repositorio del Leccionario y permanecer inline.
+// Leccionario inline y resolución real de la Liturgia de las Horas.
 requireText(composer, 'MassReadingsRepository.read', 'lecturas del Leccionario inline');
+requireText(polisher, 'OrdinaryReferenceResolver.resolve', 'resolución de antífonas/referencias semanales');
+requireText(polisher, 'fixPaterBlock', 'Padre nuestro completo dentro del selector ESP/LAT');
+requireText(polisher, 'El Señor esté con ustedes', 'fórmula latinoamericana breve');
 forbidText(composer, 'MassReadingsActivity.class', 'apertura externa del Leccionario');
 forbidText(composer, 'MissalActivity.class', 'apertura externa del Misal');
 forbidText(composer, 'HoursReaderActivity.class', 'apertura externa de la Liturgia de las Horas');
