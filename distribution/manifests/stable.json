@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "channel": "stable",
+  "generatedAt": null,
+  "app": {
+    "id": "ministerium-android",
+    "version": "2.3.2",
+    "publishedAt": null,
+    "minAppVersion": "2.3.2",
+    "downloadUrl": null,
+    "sha256": null,
+    "sizeBytes": null,
+    "notes": "Versión base previa a la migración a Ministerium 3.0."
+  },
+  "content": []
+}
