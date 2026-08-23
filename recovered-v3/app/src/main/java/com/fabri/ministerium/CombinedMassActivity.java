@@ -15,7 +15,7 @@ import java.util.Calendar;
  *
  * A diferencia de la primera implementación 3.0, esta Activity no funciona
  * como un menú que abre otras pantallas. El contenido completo se compone y
- * se presenta en un solo WebView desplazable.
+ * se presenta en un solo WebView desplazable, de principio a fin.
  */
 public class CombinedMassActivity extends ThemedActivity {
     public static final String EXTRA_YEAR = "combined_mass_year";
@@ -102,7 +102,7 @@ public class CombinedMassActivity extends ThemedActivity {
                 runOnUiThread(() -> {
                     ((TextView) findViewById(R.id.txtCombinedMassTitle)).setText(result.title);
                     celebrationView.setText(result.celebration);
-                    statusView.setText("Celebración completa · una sola lectura");
+                    statusView.setText("Celebración completa · una sola pantalla");
                     webView.setVisibility(WebView.VISIBLE);
                     webView.loadDataWithBaseURL("file:///android_asset/", result.html,
                             "text/html", "UTF-8", null);
