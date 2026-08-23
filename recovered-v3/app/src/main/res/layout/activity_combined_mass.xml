@@ -1,94 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="@color/cream" android:fillViewport="true">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:paddingBottom="28dp">
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:background="@color/wine_dark" android:gravity="center_vertical"
-            android:orientation="horizontal" android:padding="10dp">
-            <Button android:id="@+id/btnBack" android:layout_width="48dp"
-                android:layout_height="48dp" android:backgroundTint="@android:color/transparent"
-                android:text="‹" android:textColor="#FFFFFF" android:textSize="28sp" />
-            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
-                android:layout_weight="1" android:orientation="vertical">
-                <TextView android:id="@+id/txtCombinedMassTitle" android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" android:textColor="#FFFFFF"
-                    android:textSize="21sp" android:textStyle="bold" />
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="Celebración comunitaria · OGLH 93–97"
-                    android:textColor="#E9DBD7" android:textSize="12sp" />
-            </LinearLayout>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/cream">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/wine_dark"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="10dp">
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:backgroundTint="@android:color/transparent"
+            android:text="‹"
+            android:textColor="#FFFFFF"
+            android:textSize="28sp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/txtCombinedMassTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFF"
+                android:textSize="21sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Misal · Liturgia de las Horas · Leccionario"
+                android:textColor="#E9DBD7"
+                android:textSize="12sp" />
         </LinearLayout>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginStart="18dp" android:layout_marginTop="18dp"
-            android:layout_marginEnd="18dp" android:background="@drawable/bg_card"
-            android:orientation="vertical" android:padding="18dp">
-            <TextView android:id="@+id/txtCombinedMassCelebration"
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="Preparando celebración…" android:textColor="@color/wine"
-                android:textSize="17sp" android:textStyle="bold" />
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="7dp" android:textColor="@color/muted"
-                android:text="Elige un solo inicio. La app presenta los textos en el orden reglado y separa los bloques que requieren una elección legítima del celebrante. No duplica acto penitencial, colecta, Padre nuestro ni conclusión."
-                android:textSize="13sp" />
-            <RadioGroup android:id="@+id/groupCombinedStart" android:layout_width="match_parent"
-                android:layout_height="wrap_content" android:layout_marginTop="10dp">
-                <RadioButton android:id="@+id/startHourHymn" android:layout_width="match_parent"
-                    android:layout_height="44dp" android:checked="true"
-                    android:text="A · Versículo + himno de la Hora" android:textColor="@color/ink" />
-                <RadioButton android:id="@+id/startMassEntrance" android:layout_width="match_parent"
-                    android:layout_height="44dp" android:text="B · Entrada + procesión + saludo de la Misa"
-                    android:textColor="@color/ink" />
-            </RadioGroup>
-        </LinearLayout>
-        <Button android:id="@+id/btnCombinedStart"
-            android:layout_width="match_parent" android:layout_height="52dp"
-            android:layout_marginStart="22dp" android:layout_marginTop="16dp"
-            android:layout_marginEnd="22dp" android:background="@drawable/bg_button"
-            android:textAllCaps="false" android:textColor="#FFFFFF" />
-        <Button android:id="@+id/btnCombinedPsalmody" android:layout_width="match_parent"
-            android:layout_height="52dp" android:layout_marginStart="22dp"
-            android:layout_marginTop="8dp" android:layout_marginEnd="22dp"
-            android:background="@drawable/bg_button_secondary" android:text="2 · Salmodia de la Hora"
-            android:textAllCaps="false" android:textColor="@color/wine" />
-        <Button android:id="@+id/btnCombinedKyrie" android:layout_width="match_parent"
-            android:layout_height="52dp" android:layout_marginStart="22dp"
-            android:layout_marginTop="8dp" android:layout_marginEnd="22dp"
-            android:background="@drawable/bg_button_secondary" android:text="3 · Kyrie y Gloria cuando corresponde"
-            android:textAllCaps="false" android:textColor="@color/wine" />
-        <Button android:id="@+id/btnCombinedCollect" android:layout_width="match_parent"
-            android:layout_height="52dp" android:layout_marginStart="22dp"
-            android:layout_marginTop="8dp" android:layout_marginEnd="22dp"
-            android:background="@drawable/bg_button_secondary" android:text="4 · Colecta de la Misa"
-            android:textAllCaps="false" android:textColor="@color/wine" />
-        <Button android:id="@+id/btnCombinedReadings" android:layout_width="match_parent"
-            android:layout_height="52dp" android:layout_marginStart="22dp"
-            android:layout_marginTop="8dp" android:layout_marginEnd="22dp"
-            android:background="@drawable/bg_button_secondary" android:text="5 · Liturgia de la Palabra"
-            android:textAllCaps="false" android:textColor="@color/wine" />
-        <Button android:id="@+id/btnCombinedEucharist" android:layout_width="match_parent"
-            android:layout_height="52dp" android:layout_marginStart="22dp"
-            android:layout_marginTop="8dp" android:layout_marginEnd="22dp"
-            android:background="@drawable/bg_button_secondary"
-            android:text="6 · Oración universal y Liturgia eucarística" android:textAllCaps="false"
-            android:textColor="@color/wine" />
-        <Button android:id="@+id/btnCombinedCanticle" android:layout_width="match_parent"
-            android:layout_height="52dp" android:layout_marginStart="22dp"
-            android:layout_marginTop="8dp" android:layout_marginEnd="22dp"
-            android:background="@drawable/bg_button_secondary"
-            android:text="7 · Cántico evangélico después de la Comunión" android:textAllCaps="false"
-            android:textColor="@color/wine" />
-        <Button android:id="@+id/btnCombinedAfterCommunion" android:layout_width="match_parent"
-            android:layout_height="52dp" android:layout_marginStart="22dp"
-            android:layout_marginTop="8dp" android:layout_marginEnd="22dp"
-            android:background="@drawable/bg_button_secondary"
-            android:text="8 · Oración después de la Comunión" android:textAllCaps="false"
-            android:textColor="@color/wine" />
-        <Button android:id="@+id/btnCombinedConclusion" android:layout_width="match_parent"
-            android:layout_height="52dp" android:layout_marginStart="22dp"
-            android:layout_marginTop="8dp" android:layout_marginEnd="22dp"
-            android:background="@drawable/bg_button" android:text="9 · Conclusión de la Misa"
-            android:textAllCaps="false" android:textColor="#FFFFFF" />
     </LinearLayout>
-</ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="14dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="14dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/bg_card"
+        android:orientation="vertical"
+        android:padding="13dp">
+
+        <TextView
+            android:id="@+id/txtCombinedMassCelebration"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Preparando celebración…"
+            android:textColor="@color/wine"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txtCombinedMassStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Uniendo textos…"
+            android:textColor="@color/muted"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <WebView
+        android:id="@+id/combinedMassWebView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@color/cream" />
+
+</LinearLayout>
