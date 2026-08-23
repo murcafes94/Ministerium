@@ -33,15 +33,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if compgen -G 'bootstrap/v3/ministerium-v3.zip.part-*' > /dev/null; then
-            cat bootstrap/v3/ministerium-v3.zip.part-* > "$RUNNER_TEMP/ministerium-v3.zip"
-            echo "Reconstructed ZIP SHA-256: $(sha256sum "$RUNNER_TEMP/ministerium-v3.zip" | awk '{print $1}')"
-            unzip -tq "$RUNNER_TEMP/ministerium-v3.zip"
-            rm -rf "$RUNNER_TEMP/ministerium-v3"
-            mkdir -p "$RUNNER_TEMP/ministerium-v3"
-            unzip -q "$RUNNER_TEMP/ministerium-v3.zip" -d "$RUNNER_TEMP/ministerium-v3"
-            rsync -a --exclude='.git/' "$RUNNER_TEMP/ministerium-v3/" ./
-          fi
+          OUT="$RUNNER_TEMP/ministerium-v3.zip"
+          : > "$OUT"
+          cat "ministerium-v3.zip (1).part-00" >> "$OUT"
+          cat "ministerium-v3.zip (1).part-01" >> "$OUT"
+          cat "bootstrap/v3/ministerium-v3.zip (1).part-02" >> "$OUT"
+          cat bootstrap/v3/ministerium-v3.zip.part-03 >> "$OUT"
+          cat bootstrap/v3/ministerium-v3.zip.part-04 >> "$OUT"
+          cat bootstrap/v3/ministerium-v3.zip.part-05 >> "$OUT"
+          cat bootstrap/v3/ministerium-v3.zip.part-06 >> "$OUT"
+          echo "Reconstructed ZIP SHA-256: $(sha256sum "$OUT" | awk '{print $1}')"
+          unzip -tq "$OUT"
+          rm -rf "$RUNNER_TEMP/ministerium-v3"
+          mkdir -p "$RUNNER_TEMP/ministerium-v3"
+          unzip -q "$OUT" -d "$RUNNER_TEMP/ministerium-v3"
+          rsync -a --exclude='.git/' "$RUNNER_TEMP/ministerium-v3/" ./
 
       - name: Set up JDK 17 for Android SDK tools
         uses: actions/setup-java@v4
