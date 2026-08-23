@@ -17,6 +17,8 @@ on:
 
 permissions:
   contents: read
+  issues: write
+  pull-requests: write
 
 jobs:
   build:
@@ -74,7 +76,11 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Compile debug APK
-        run: ./gradlew --no-daemon --stacktrace clean assembleDebug
+        id: gradle_build
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon --stacktrace clean assembleDebug 2>&1 | tee gradle-build.log
 
       - name: Generate SHA-256
         shell: bash
@@ -94,3 +100,35 @@ jobs:
             recovered-v3/apk-sha256.txt
           if-no-files-found: error
           retention-days: 14
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ministerium-3.0-build-log
+          path: recovered-v3/gradle-build.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Comment diagnostic on recovery PR
+        if: failure()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo '### Diagnóstico automático de compilación'
+            echo
+            echo 'La compilación de `recovered-v3` falló. Últimas líneas del log:'
+            echo
+            echo '```text'
+            if [ -f gradle-build.log ]; then
+              tail -n 160 gradle-build.log
+            else
+              echo 'El fallo ocurrió antes de iniciar Gradle.'
+            fi
+            echo '```'
+            echo
+            echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          } > build-diagnostic.md
+          gh pr comment 3 --repo "$GITHUB_REPOSITORY" --body-file build-diagnostic.md
