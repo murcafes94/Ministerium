@@ -5,7 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'app/**'
-      - 'bootstrap/v3/**'
+      - 'bootstrap/v3/ministerium-v3.zip.part-*'
       - 'gradle/**'
       - 'gradlew'
       - 'gradlew.bat'
