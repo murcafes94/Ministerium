@@ -97,7 +97,7 @@ public class CombinedMassActivity extends ThemedActivity {
 
         new Thread(() -> {
             try {
-                CombinedMassComposer.Result result = CombinedMassComposer.compose(
+                CombinedMassComposer.Result result = CombinedMassPolisher.compose(
                         getApplicationContext(), date, hourKey, language);
                 runOnUiThread(() -> {
                     ((TextView) findViewById(R.id.txtCombinedMassTitle)).setText(result.title);
