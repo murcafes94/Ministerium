@@ -80,7 +80,8 @@ public final class CombinedMassComposer {
         String conclusion = rowsByAnchors(ordinary, "Conclusion", null);
 
         String prefaces = resolvePrefaces(proper, missalRoot);
-        String prayers = eucharisticPrayers(missalRoot);
+        boolean properPrefaceRequired = hasProperPreface(proper);
+        String prayers = eucharisticPrayers(missalRoot, properPrefaceRequired);
         String readings = readings(context, date);
         boolean showCreed = creedRequired(context, date);
 
@@ -99,10 +100,11 @@ public final class CombinedMassComposer {
         if (showCreed) {
             body.append("<section class=\"ministerium-section\" id=\"creedBlock\"><h2>Profesión de fe</h2>"
                     + "<div class=\"choicebar\"><button class=\"selected\" id=\"creedNiceneButton\" "
-                    + "onclick=\"setCreed('nicene')\">Niceno-constantinopolitano</button>"
-                    + "<button id=\"creedApostlesButton\" onclick=\"setCreed('apostles')\">Apostólico</button>"
+                    + "aria-pressed=\"true\" onclick=\"setCreed('nicene')\">Niceno-constantinopolitano</button>"
+                    + "<button id=\"creedApostlesButton\" aria-pressed=\"false\" "
+                    + "onclick=\"setCreed('apostles')\">Apostólico</button>"
                     + "<button class=\"language-button\" id=\"creedLanguageButton\" "
-                    + "onclick=\"cycleBlockLanguage('creedBlock','creedLanguageButton')\">ESP</button></div>"
+                    + "onclick=\"toggleBlockLanguage('creedBlock')\">ESP ⇄ LAT</button></div>"
                     + "<div id=\"creedNicene\" class=\"creed-choice\">" + table(clean(niceneCreed)) + "</div>"
                     + "<div id=\"creedApostles\" class=\"creed-choice hidden\">"
                     + table(clean(apostlesCreed)) + "</div></section>");
@@ -118,7 +120,7 @@ public final class CombinedMassComposer {
                 + table(clean(communionIntro))
                 + "<div class=\"inline-language\"><span>Padre nuestro</span>"
                 + "<button class=\"language-button\" id=\"paterLanguageButton\" "
-                + "onclick=\"cycleBlockLanguage('paterBlock','paterLanguageButton')\">ESP</button></div>"
+                + "onclick=\"toggleBlockLanguage('paterBlock')\">ESP ⇄ LAT</button></div>"
                 + "<div id=\"paterBlock\">" + table(clean(pater)) + "</div>"
                 + table(clean(communionAfterPater)) + clean(communionAntiphon)
                 + table(clean(communion)) + "</section>");
@@ -200,6 +202,17 @@ public final class CombinedMassComposer {
         return false;
     }
 
+    private static boolean hasProperPreface(String properHtml) {
+        if (properHtml == null || properHtml.trim().isEmpty()) return false;
+        Matcher matcher = LINK.matcher(properHtml);
+        while (matcher.find()) {
+            String label = normalizeText(matcher.group(2));
+            String href = normalizeText(matcher.group(1));
+            if (label.contains("prefacio") || href.contains("prefacio")) return true;
+        }
+        return false;
+    }
+
     private static String resolvePrefaces(String properHtml, File missalRoot) {
         if (properHtml == null || properHtml.isEmpty()) return "";
         Matcher matcher = LINK.matcher(properHtml);
@@ -224,7 +237,7 @@ public final class CombinedMassComposer {
         return "<p class=\"rubric\">Use el prefacio que corresponde a la celebración.</p>";
     }
 
-    private static String eucharisticPrayers(File missalRoot) {
+    private static String eucharisticPrayers(File missalRoot, boolean properPrefaceRequired) {
         try {
             String firstThree = readRequired(findFile(missalRoot, "plegarias eucaristicas.htm"));
             String fourth = readRequired(findFile(missalRoot, "PLEGARIA EUCARISTICA IV.htm"));
@@ -232,14 +245,21 @@ public final class CombinedMassComposer {
             String p2 = rowsByAnchors(firstThree, "plegaria2", "plegaria3");
             String p3 = rowsByAnchors(firstThree, "plegaria3", null);
             String p4 = rowsByAnchors(fourth, "plegaria4", null);
+            String fourthButton = properPrefaceRequired
+                    ? "<button id=\"prayerButton4\" disabled aria-disabled=\"true\" "
+                    + "title=\"No disponible cuando la celebración exige prefacio propio\">IV</button>"
+                    : "<button onclick=\"setPrayer(4)\" id=\"prayerButton4\" aria-pressed=\"false\">IV</button>";
+            String restriction = properPrefaceRequired
+                    ? "<p class=\"rubric small prayer-restriction\">Plegaria IV no disponible en esta celebración: "
+                    + "tiene prefacio propio e invariable y aquí se ha detectado un prefacio propio de la celebración.</p>"
+                    : "<p class=\"rubric small\">La Plegaria IV incluye prefacio propio e invariable; "
+                    + "al elegirla se usa su propio prefacio.</p>";
             return "<div class=\"eucharistic-prayers\"><h3>Plegaria eucarística</h3>"
                     + "<div class=\"choicebar prayer-choicebar\">"
-                    + "<button onclick=\"setPrayer(1)\" id=\"prayerButton1\">I</button>"
-                    + "<button onclick=\"setPrayer(2)\" id=\"prayerButton2\" class=\"selected\">II</button>"
-                    + "<button onclick=\"setPrayer(3)\" id=\"prayerButton3\">III</button>"
-                    + "<button onclick=\"setPrayer(4)\" id=\"prayerButton4\">IV</button></div>"
-                    + "<p class=\"rubric small\">La Plegaria IV incluye prefacio propio; "
-                    + "Ministerium la muestra como alternativa y debe respetarse la rúbrica de la celebración.</p>"
+                    + "<button onclick=\"setPrayer(1)\" id=\"prayerButton1\" aria-pressed=\"false\">I</button>"
+                    + "<button onclick=\"setPrayer(2)\" id=\"prayerButton2\" class=\"selected\" aria-pressed=\"true\">II</button>"
+                    + "<button onclick=\"setPrayer(3)\" id=\"prayerButton3\" aria-pressed=\"false\">III</button>"
+                    + fourthButton + "</div>" + restriction
                     + prayerSection(1, p1, true) + prayerSection(2, p2, false)
                     + prayerSection(3, p3, true) + prayerSection(4, p4, true) + "</div>";
         } catch (Exception error) {
@@ -266,13 +286,18 @@ public final class CombinedMassComposer {
     }
 
     private static String inlineGospelCanticle(String section, String hourKey) {
-        String canticle = "vespers".equals(hourKey) ? magnificat() : benedictus();
+        String source = section == null ? "" : section;
+        String normalized = normalizeText(Html.fromHtml(source).toString());
+        boolean vespers = "vespers".equals(hourKey);
+        if (vespers && normalized.contains("proclama mi alma la grandeza del señor")) return source;
+        if (!vespers && normalized.contains("bendito sea el señor dios de israel")) return source;
+        String canticle = vespers ? magnificat() : benedictus();
         Pattern link = Pattern.compile("(?is)<p\\b[^>]*>\\s*<a\\b[^>]*>\\s*"
-                + ("vespers".equals(hourKey) ? "Magnificat" : "Benedictus")
+                + (vespers ? "Magnificat" : "Benedictus")
                 + "\\s*</a>\\s*</p>");
-        Matcher matcher = link.matcher(section == null ? "" : section);
+        Matcher matcher = link.matcher(source);
         if (matcher.find()) return matcher.replaceFirst(Matcher.quoteReplacement(canticle));
-        return (section == null ? "" : section) + canticle;
+        return source + canticle;
     }
 
     private static String extractIntercessions(String html) {
@@ -474,8 +499,9 @@ public final class CombinedMassComposer {
         String startLanguage = "lat_es".equals(language) ? "both" : "es";
         return "<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\">"
                 + "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
-                + "<style>html,body{margin:0;background:" + background + ";color:" + ink + ";}"
-                + "body{font-family:serif;line-height:1.65;padding:20px 22px 72px;box-sizing:border-box;}"
+                + "<style>html{margin:0;background:" + background + ";color:" + ink + ";}"
+                + "body{font-family:serif;line-height:1.65;padding:20px 22px 72px;box-sizing:border-box;"
+                + "max-width:1040px;margin:0 auto;background:" + background + ";color:" + ink + ";}"
                 + "h2,h3,h4{color:" + wine + ";line-height:1.3}h2{font-size:1.25rem;margin-top:0;}"
                 + ".ministerium-section{margin:0 0 22px;padding:18px;border:1px solid " + border
                 + ";border-radius:12px;background:" + surface + ";overflow:hidden;}"
@@ -487,6 +513,8 @@ public final class CombinedMassComposer {
                 + ".choicebar button,.language-button{border:1px solid " + wine + ";background:transparent;color:"
                 + wine + ";border-radius:18px;padding:8px 12px;font-weight:bold;white-space:nowrap;}"
                 + ".choicebar button.selected{background:" + wine + ";color:" + background + ";}"
+                + ".choicebar button:disabled{opacity:.45;cursor:not-allowed;border-style:dashed;}"
+                + ".prayer-restriction{padding:10px 12px;border-left:3px solid " + wine + ";background:" + background + ";}"
                 + ".hidden{display:none!important}.inline-language{display:flex;align-items:center;justify-content:space-between;"
                 + "gap:12px;margin:12px 0 8px;font-weight:bold;color:" + wine + ";}"
                 + ".preface-options{margin:10px 0 18px;padding:10px 12px;border:1px solid " + border
@@ -509,21 +537,20 @@ public final class CombinedMassComposer {
                 + "</style></head><body data-global-lang=\"" + startLanguage + "\">" + body
                 + "<script>"
                 + "function setCreed(which){var n=document.getElementById('creedNicene'),a=document.getElementById('creedApostles');"
-                + "if(!n||!a)return;n.classList.toggle('hidden',which!=='nicene');a.classList.toggle('hidden',which!=='apostles');"
-                + "document.getElementById('creedNiceneButton').classList.toggle('selected',which==='nicene');"
-                + "document.getElementById('creedApostlesButton').classList.toggle('selected',which==='apostles');}"
-                + "function setPrayer(n){for(var i=1;i<=4;i++){var p=document.getElementById('prayer'+i),b=document.getElementById('prayerButton'+i);"
-                + "if(p)p.classList.toggle('hidden',i!==n);if(b)b.classList.toggle('selected',i===n);}"
+                + "if(!n||!a)return;var nicene=which==='nicene';n.classList.toggle('hidden',!nicene);a.classList.toggle('hidden',nicene);"
+                + "var nb=document.getElementById('creedNiceneButton'),ab=document.getElementById('creedApostlesButton');"
+                + "if(nb){nb.classList.toggle('selected',nicene);nb.setAttribute('aria-pressed',nicene?'true':'false');}"
+                + "if(ab){ab.classList.toggle('selected',!nicene);ab.setAttribute('aria-pressed',!nicene?'true':'false');}}"
+                + "function setPrayer(n){var requested=document.getElementById('prayerButton'+n);if(requested&&requested.disabled)return;"
+                + "for(var i=1;i<=4;i++){var p=document.getElementById('prayer'+i),b=document.getElementById('prayerButton'+i);"
+                + "var active=i===n;if(p)p.classList.toggle('hidden',!active);if(b){b.classList.toggle('selected',active);b.setAttribute('aria-pressed',active?'true':'false');}}"
                 + "var pref=document.getElementById('prefaceBlock');if(pref)pref.style.display=n===4?'none':'';}"
-                + "function cycleBlockLanguage(blockId,buttonId){var block=document.getElementById(blockId),button=document.getElementById(buttonId);if(!block)return;"
+                + "function toggleBlockLanguage(blockId){var block=document.getElementById(blockId);if(!block)return;"
                 + "var mode=block.getAttribute('data-lang')||document.body.getAttribute('data-global-lang')||'es';"
-                + "mode=mode==='es'?'lat':(mode==='lat'?'both':'es');block.setAttribute('data-lang',mode);"
-                + "if(button)button.textContent=mode==='es'?'ESP':(mode==='lat'?'LAT':'ESP/LAT');}"
+                + "block.setAttribute('data-lang',mode==='lat'?'es':'lat');}"
                 + "document.addEventListener('DOMContentLoaded',function(){var initial=document.body.getAttribute('data-global-lang')||'es';"
                 + "var creed=document.getElementById('creedBlock'),pater=document.getElementById('paterBlock');"
-                + "if(creed)creed.setAttribute('data-lang',initial);if(pater)pater.setAttribute('data-lang',initial);"
-                + "var cb=document.getElementById('creedLanguageButton'),pb=document.getElementById('paterLanguageButton');"
-                + "var label=initial==='both'?'ESP/LAT':(initial==='lat'?'LAT':'ESP');if(cb)cb.textContent=label;if(pb)pb.textContent=label;setPrayer(2);});"
+                + "if(creed)creed.setAttribute('data-lang',initial);if(pater)pater.setAttribute('data-lang',initial);setPrayer(2);});"
                 + "</script></body></html>";
     }
 
