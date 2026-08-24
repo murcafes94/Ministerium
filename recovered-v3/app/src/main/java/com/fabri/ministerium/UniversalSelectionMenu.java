@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.net.Uri;
+import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.webkit.WebView;
@@ -43,38 +44,52 @@ public final class UniversalSelectionMenu {
                 // Copiar/Compartir se conservan del ActionMode nativo de Android.
             }
 
-            @Override public boolean handle(MenuItem item) {
+            @Override public boolean handle(ActionMode mode, MenuItem item) {
                 int id = item.getItemId();
                 if (id == HIGHLIGHT) {
-                    capture(webView, selected ->
-                            chooseHighlight(activity, webView, context, selected));
+                    capture(webView, selected -> {
+                        mode.finish();
+                        chooseHighlight(activity, webView, context, selected);
+                    });
                     return true;
                 }
                 if (id == NOTE) {
-                    capture(webView, selected ->
-                            openEditor(activity, context, selected, StudyEntry.NOTE));
+                    capture(webView, selected -> {
+                        mode.finish();
+                        openEditor(activity, context, selected, StudyEntry.NOTE);
+                    });
                     return true;
                 }
                 if (id == MEDITATION) {
-                    capture(webView, selected ->
-                            openEditor(activity, context, selected, StudyEntry.MEDITATION));
+                    capture(webView, selected -> {
+                        mode.finish();
+                        openEditor(activity, context, selected, StudyEntry.MEDITATION);
+                    });
                     return true;
                 }
                 if (id == DICTIONARY) {
-                    capture(webView, selected -> openDictionary(activity, selected));
+                    capture(webView, selected -> {
+                        mode.finish();
+                        openDictionary(activity, selected);
+                    });
                     return true;
                 }
                 if (id == COMMENTARY) {
-                    openNearestBibleCommentary(activity, webView);
+                    openNearestBibleCommentary(activity, webView, mode);
                     return true;
                 }
                 if (id == TRANSLATE) {
-                    capture(webView, selected -> openTranslation(activity, selected));
+                    capture(webView, selected -> {
+                        mode.finish();
+                        openTranslation(activity, selected);
+                    });
                     return true;
                 }
                 if (id == READ_ALOUD) {
-                    capture(webView, selected ->
-                            ReaderTtsController.speakSelection(activity, selected));
+                    capture(webView, selected -> {
+                        mode.finish();
+                        ReaderTtsController.speakSelection(activity, selected);
+                    });
                     return true;
                 }
                 return false;
@@ -153,7 +168,8 @@ public final class UniversalSelectionMenu {
                 }).setNegativeButton("Cancelar", null).show();
     }
 
-    private static void openNearestBibleCommentary(Activity activity, WebView webView) {
+    private static void openNearestBibleCommentary(Activity activity, WebView webView,
+                                                    ActionMode mode) {
         String script = "(function(){var s=window.getSelection&&window.getSelection();"
                 + "if(!s||!s.rangeCount)return '';var r=s.getRangeAt(0);"
                 + "var n=r.startContainer.nodeType===1?r.startContainer:r.startContainer.parentNode;"
@@ -170,6 +186,7 @@ public final class UniversalSelectionMenu {
                         Toast.LENGTH_SHORT).show();
                 return;
             }
+            mode.finish();
             webView.loadUrl(href);
         });
     }
