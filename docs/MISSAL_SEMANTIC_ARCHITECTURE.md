@@ -6,7 +6,7 @@ Sustituir el uso runtime del antiguo EPUB `Misal-Diario-Romano.epub` por un mode
 
 Las fuentes editoriales se usan únicamente durante la preparación del contenido:
 
-- Español: Misal Romano, **VERSIÓN DE ESPAÑA**, publicado por Liturgia Papal.
+- Español: Misal Romano, **VERSIÓN DE MÉXICO**, publicado por Liturgia Papal. El `Ordinario de la Misa México.pdf` es la fuente canónica de control del Ordinario; los PDFs parciales del mismo artículo se usan solo para facilitar el preprocesado semántico.
 - Latín: *Missale Romanum* publicado por Liturgia Papal.
 
 Los PDFs/HTML fuente no se muestran dentro de Ministerium ni se incluyen como motor de resolución. El preprocesado elimina número de página, encabezados, pies y demás artefactos editoriales y conserva únicamente el texto litúrgico y las rúbricas necesarias.
@@ -317,6 +317,7 @@ staging/la/collect_0041 → mass.proper.x.collect [la]
 Antes de publicar un paquete bilingüe se valida:
 
 - que cada formulario español tenga las partes obligatorias;
+- que la edición española del paquete sea la **versión de México**, rechazando automáticamente fórmulas de la edición de España (`vosotros`, `Tomad`, `Podéis ir en paz`, etc.);
 - que cada texto latino esté emparejado con el mismo rol litúrgico;
 - que no queden encabezados/pies/números de página;
 - que no se hayan mezclado lecturas del Leccionario dentro del Misal;
@@ -342,7 +343,7 @@ Si durante la primera migración resulta más sencillo distribuir una sola base 
 
 `Misal-Diario-Romano.epub` solo se elimina del APK cuando:
 
-1. Ordinario de la Misa está disponible desde el paquete semántico.
+1. Ordinario de la Misa está disponible desde el paquete semántico de Liturgia Papal México.
 2. Propios necesarios están resueltos por `celebration_key`.
 3. Prefacios y Plegarias I–IV funcionan con restricciones.
 4. Misa simple funciona sin EPUB.
