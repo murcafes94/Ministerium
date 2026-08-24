@@ -1,12 +1,13 @@
-name: Bible 3.1 Migration Inspect
+name: Semantic Core 3.1 Inspect
 
 on:
   push:
     branches: [ feature/bible-semantic-v3.1 ]
     paths:
       - '.github/workflows/bible-v3.1-inspect.yml'
-      - 'migration/bible-v3.1/**'
-      - 'docs/BIBLE_ARCHITECTURE_3_1.md'
+      - 'app/**'
+      - 'migration/**'
+      - 'docs/**'
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -16,7 +17,7 @@ permissions:
 
 jobs:
   inspect:
-    name: Reconstruct and inspect Bible module safely
+    name: Reconstruct and inspect semantic core
     runs-on: ubuntu-latest
 
     steps:
@@ -27,15 +28,24 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat bootstrap/v3/ministerium-v3.zip.part-* > "$RUNNER_TEMP/ministerium-v3.zip"
-          if [ -f bootstrap/v3/ministerium-v3.zip.sha256 ]; then
-            EXPECTED=$(awk '{print $1}' bootstrap/v3/ministerium-v3.zip.sha256)
-            ACTUAL=$(sha256sum "$RUNNER_TEMP/ministerium-v3.zip" | awk '{print $1}')
-            test "$EXPECTED" = "$ACTUAL"
-          fi
+          OUT="$RUNNER_TEMP/ministerium-v3.zip"
+          : > "$OUT"
+          cat "ministerium-v3.zip (1).part-00" >> "$OUT"
+          cat "ministerium-v3.zip (1).part-01" >> "$OUT"
+          cat "bootstrap/v3/ministerium-v3.zip (1).part-02" >> "$OUT"
+          cat bootstrap/v3/ministerium-v3.zip.part-03 >> "$OUT"
+          cat bootstrap/v3/ministerium-v3.zip.part-04 >> "$OUT"
+          cat bootstrap/v3/ministerium-v3.zip.part-05 >> "$OUT"
+          cat bootstrap/v3/ministerium-v3.zip.part-06 >> "$OUT"
+          EXPECTED=$(awk '{print $1}' bootstrap/v3/ministerium-v3.zip.sha256)
+          ACTUAL=$(sha256sum "$OUT" | awk '{print $1}')
+          echo "Expected SHA-256: $EXPECTED"
+          echo "Actual SHA-256:   $ACTUAL"
+          test "$EXPECTED" = "$ACTUAL"
+          unzip -tq "$OUT"
           rm -rf "$RUNNER_TEMP/ministerium-v3"
           mkdir -p "$RUNNER_TEMP/ministerium-v3"
-          unzip -q "$RUNNER_TEMP/ministerium-v3.zip" -d "$RUNNER_TEMP/ministerium-v3"
+          unzip -q "$OUT" -d "$RUNNER_TEMP/ministerium-v3"
           rsync -a --exclude='.git/' "$RUNNER_TEMP/ministerium-v3/" ./
 
       - name: Print technical inventory only
@@ -45,38 +55,11 @@ jobs:
           echo '=== Android project ==='
           sed -n '1,220p' app/build.gradle || true
           echo '=== Manifest package/components ==='
-          grep -E 'package=|android:name=|<activity|<service|<provider' app/src/main/AndroidManifest.xml | head -120 || true
-          echo '=== Source files related to Bible/reader/content ==='
-          find app/src/main -type f \( -name '*.java' -o -name '*.kt' \) \
-            | grep -Ei 'bibl|reader|epub|lection|lectur|missal|content|note|highlight|bookmark' \
-            | sort | head -250 || true
+          grep -E 'package=|android:name=|<activity|<service|<provider' app/src/main/AndroidManifest.xml | head -140 || true
+          echo '=== Source files related to Bible/Missal/reader/content ==='
+          find app/src/main -type f \( -name '*.java' -o -name '*.kt' \) | grep -Ei 'bibl|reader|epub|lection|lectur|missal|misa|content|note|highlight|bookmark|calendar|liturg' | sort | head -350 || true
           echo '=== Source language counts ==='
           printf 'Java: '; find app/src/main -type f -name '*.java' | wc -l
           printf 'Kotlin: '; find app/src/main -type f -name '*.kt' | wc -l
-          echo '=== References to Bible/WebView/EPUB (paths only) ==='
-          grep -RIlE 'WebView|EPUB|epub|Biblia|Bible|bible' app/src/main --include='*.java' --include='*.kt' --include='*.xml' \
-            | sort | head -250 || true
-
-      - name: Set up JDK 17 for Android SDK tools
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v4
-        with:
-          packages: 'platform-tools platforms;android-30 build-tools;30.0.3'
-
-      - name: Set up JDK 11 for Gradle 6.7.1 / AGP 4.2.1
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '11'
-          cache: gradle
-
-      - name: Compile baseline
-        shell: bash
-        run: |
-          chmod +x ./gradlew
-          ./gradlew --no-daemon assembleDebug
+          echo '=== References to Bible/Missal/WebView/EPUB (paths only) ==='
+          grep -RIlE 'WebView|EPUB|epub|Biblia|Bible|bible|Missal|Misal|Misa' app/src/main --include='*.java' --include='*.kt' --include='*.xml' | sort | head -350 || true
