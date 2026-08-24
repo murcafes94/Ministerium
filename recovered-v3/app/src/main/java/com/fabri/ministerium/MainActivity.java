@@ -18,6 +18,10 @@ public class MainActivity extends ThemedActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Si Android cerró el proceso mientras Ministerium había activado No molestar,
+        // restaura el filtro previo antes de iniciar una nueva sesión.
+        PrayerFocusController.recoverStaleSession(this);
+
         findViewById(R.id.btnSearch).setOnClickListener(v ->
                 startActivity(new Intent(this, SearchActivity.class)));
         findViewById(R.id.btnFavorites).setOnClickListener(v ->
