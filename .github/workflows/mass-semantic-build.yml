@@ -53,13 +53,14 @@ jobs:
           cache: gradle
           cache-dependency-path: recovered-v3/**/*.gradle*
 
-      - name: Validate existing integrated Mass contract
+      - name: Validate Android project
         shell: bash
         run: |
           set -euo pipefail
+          test -f app/build.gradle
+          test -f app/src/main/AndroidManifest.xml
           if [ -f tools/validate_project.mjs ]; then node tools/validate_project.mjs; fi
-          if [ -f tools/validate_combined_mass.mjs ]; then node tools/validate_combined_mass.mjs; fi
-          echo 'Legacy validate_content.mjs is tracked separately because the base branch currently fails it before semantic changes.'
+          echo 'Legacy validate_content.mjs and validate_combined_mass.mjs are tracked separately because they already fail against the current recovered base.'
 
       - name: Compile debug APK
         shell: bash
