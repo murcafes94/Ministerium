@@ -23,28 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        year:
-          - 2020
-          - 2021
-          - 2022
-          - 2023
-          - 2024
-          - 2025
-          - 2026
-          - 2027
-          - 2028
-          - 2029
-          - 2030
-          - 2031
-          - 2032
-          - 2033
-          - 2034
-          - 2035
-          - 2036
-          - 2037
-          - 2038
-          - 2039
-          - 2040
+        year: [2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040]
 
     steps:
       - name: Checkout repository
@@ -53,10 +32,18 @@ jobs:
       - name: Compare General Roman temporal cycle
         shell: bash
         run: |
+          set +e
           python3 tools/calendar_validation/validate_litcal.py \
             --start ${{ matrix.year }} \
             --end ${{ matrix.year }} \
             --epiphany SUNDAY_JAN2_JAN8
+          code=$?
+          set -e
+          if [ "$code" -eq 75 ]; then
+            echo "::warning::LitCal is temporarily unavailable; external cross-check deferred for ${{ matrix.year }}."
+            exit 0
+          fi
+          exit "$code"
 
   note-ecuador-scope:
     name: Ecuador scope note
