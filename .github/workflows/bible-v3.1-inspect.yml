@@ -89,3 +89,26 @@ jobs:
             echo "===== $f ====="
             sed -n '1,360p' "$f" || true
           done
+
+      - name: Inspect remaining 3.1 repair targets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in \
+            app/src/main/java/com/fabri/ministerium/BackupActivity.java \
+            app/src/main/java/com/fabri/ministerium/UniversalSelectionMenu.java \
+            app/src/main/java/com/fabri/ministerium/BilingualHoursActivity.java \
+            app/src/main/java/com/fabri/ministerium/BilingualHoursReaderActivity.java \
+            app/src/main/java/com/fabri/ministerium/HoursReaderActivity.java \
+            app/src/main/java/com/fabri/ministerium/RitualCatalogActivity.java \
+            app/src/main/java/com/fabri/ministerium/RitualReaderActivity.java \
+            app/src/main/res/layout/activity_combined_mass.xml \
+            app/src/main/res/layout/activity_backup.xml \
+            app/src/main/res/layout/activity_bilingual_hours_reader.xml; do
+            echo "===== $f ====="
+            sed -n '1,520p' "$f" || true
+          done
+          echo '===== Drive/auth references ====='
+          grep -RInE 'GoogleSignIn|Drive|google.*auth|backup|restore' app/src/main/java app/build.gradle app/src/main/AndroidManifest.xml | head -300 || true
+          echo '===== bilingual spacing/scroll references ====='
+          grep -RInE 'scroll|space|padding|margin|bilingual|lat_es|latin' app/src/main/java/com/fabri/ministerium/BilingualHours* app/src/main/res/layout/activity_bilingual_hours_reader.xml | head -300 || true
