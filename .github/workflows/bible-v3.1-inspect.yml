@@ -1,48 +1,27 @@
 name: Semantic Core 3.1 Inspect
-
 on:
   push:
     branches: [ feature/bible-semantic-v3.1 ]
-    paths:
-      - '.github/workflows/bible-v3.1-inspect.yml'
-      - 'app/**'
-      - 'migration/**'
-      - 'docs/**'
-      - 'tools/bible_import/**'
-  pull_request:
-    branches: [ main ]
+    paths: ['.github/workflows/bible-v3.1-inspect.yml']
   workflow_dispatch:
-
 permissions:
   contents: read
-
 jobs:
   inspect:
-    name: Reconstruct and inspect semantic core
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Reconstruct Ministerium 3.0 project
+      - name: Reconstruct
         shell: bash
         run: |
-          set -euo pipefail
-          OUT="$RUNNER_TEMP/ministerium-v3.zip"; : > "$OUT"
-          cat "ministerium-v3.zip (1).part-00" >> "$OUT"
-          cat "ministerium-v3.zip (1).part-01" >> "$OUT"
-          cat "bootstrap/v3/ministerium-v3.zip (1).part-02" >> "$OUT"
-          cat bootstrap/v3/ministerium-v3.zip.part-03 >> "$OUT"
-          cat bootstrap/v3/ministerium-v3.zip.part-04 >> "$OUT"
-          cat bootstrap/v3/ministerium-v3.zip.part-05 >> "$OUT"
-          cat bootstrap/v3/ministerium-v3.zip.part-06 >> "$OUT"
-          test "$(awk '{print $1}' bootstrap/v3/ministerium-v3.zip.sha256)" = "$(sha256sum "$OUT" | awk '{print $1}')"
-          unzip -q "$OUT" -d "$RUNNER_TEMP/ministerium-v3"
-          rsync -a --exclude='.git/' "$RUNNER_TEMP/ministerium-v3/" ./
-      - name: Inspect exact combined extraction helpers
+          OUT="$RUNNER_TEMP/v3.zip"; : > "$OUT"
+          cat "ministerium-v3.zip (1).part-00" "ministerium-v3.zip (1).part-01" "bootstrap/v3/ministerium-v3.zip (1).part-02" bootstrap/v3/ministerium-v3.zip.part-03 bootstrap/v3/ministerium-v3.zip.part-04 bootstrap/v3/ministerium-v3.zip.part-05 bootstrap/v3/ministerium-v3.zip.part-06 >> "$OUT"
+          unzip -q "$OUT" -d "$RUNNER_TEMP/v3"
+          rsync -a --exclude='.git/' "$RUNNER_TEMP/v3/" ./
+      - name: Inspect composition contracts
         shell: bash
         run: |
-          echo '===== HoursReader combined filter ====='
-          grep -n -A300 -B30 'filterCombinedSegment' app/src/main/java/com/fabri/ministerium/HoursReaderActivity.java || true
-          echo '===== MassReadingsRepository ====='
-          sed -n '1,620p' app/src/main/java/com/fabri/ministerium/MassReadingsRepository.java || true
-          echo '===== EpubUtils read helpers ====='
-          grep -n -A120 -B20 'ensureExtracted\|findEntryIndex\|tableOfContents' app/src/main/java/com/fabri/ministerium/EpubUtils.java | head -420 || true
+          for f in app/src/main/java/com/fabri/ministerium/SaintOfficeRepository.java app/src/main/java/com/fabri/ministerium/MemoryOffice.java app/src/main/java/com/fabri/ministerium/HourEntry.java app/src/main/java/com/fabri/ministerium/LiturgicalDay.java app/src/main/java/com/fabri/ministerium/MissalActivity.java; do
+            echo =====$f=====
+            sed -n '1,520p' "$f" || true
+          done
