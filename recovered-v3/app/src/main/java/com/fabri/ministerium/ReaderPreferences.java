@@ -6,7 +6,7 @@ import android.webkit.WebView;
 
 import org.json.JSONObject;
 
-/** Preferencias persistentes de lectura. */
+/** Preferencias persistentes de lectura compartidas por TODOS los lectores. */
 public final class ReaderPreferences {
     private static final String PREFS = "reader_settings";
     private static final String SIZE = "global_text_zoom";
@@ -51,8 +51,8 @@ public final class ReaderPreferences {
 
     /**
      * Fuente elegida para un libro/documento concreto. Si no existe elección,
-     * hereda la familia global. Biblia y Misal se fuerzan a Palatino desde sus
-     * lectores, por decisión editorial, y no dependen de esta preferencia.
+     * hereda la familia global. Ningún módulo —incluida la Biblia— queda fuera
+     * del cambio global de tipografía.
      */
     public static String familyFor(Context context, String sourceKey) {
         if (sourceKey == null || sourceKey.trim().isEmpty()) return family(context);
@@ -113,31 +113,44 @@ public final class ReaderPreferences {
         return "'Palatino Linotype','Book Antiqua',Palatino,serif";
     }
 
+    private static String cssFamily(Context context) {
+        String selected = family(context);
+        return PALATINO.equals(selected) ? palatinoCssStack() : selected;
+    }
+
     public static void reset(Context context) {
         values(context).edit().remove(SIZE).remove(FAMILY).remove(WEIGHT)
                 .remove(LINE).remove(MARGIN).apply();
     }
 
+    /**
+     * Compatibilidad con lectores existentes. El antiguo parámetro que preservaba
+     * una fuente fija para Biblia ya no crea excepciones: la familia GLOBAL gana.
+     */
     public static void apply(Context context, WebView webView,
-                             boolean preserveBibleTypeface) {
+                             boolean ignoredLegacyPreserveTypeface) {
         if (webView == null) return;
         webView.getSettings().setTextZoom(textZoom(context));
-        String family = preserveBibleTypeface ? palatinoCssStack() : family(context);
-        applyInternal(context, webView, family);
+        applyInternal(context, webView, cssFamily(context));
     }
 
-    /** Aplica Palatino a Biblia/Misal manteniendo el resto de preferencias. */
+    /**
+     * Método heredado. Desde 3.1 también respeta la preferencia global; se mantiene
+     * para no romper llamadas antiguas mientras se termina la migración.
+     */
     public static void applyPalatino(Context context, WebView webView) {
         if (webView == null) return;
         webView.getSettings().setTextZoom(textZoom(context));
-        applyInternal(context, webView, palatinoCssStack());
+        applyInternal(context, webView, cssFamily(context));
     }
 
-    /** Aplica la fuente persistida de un libro concreto. */
+    /** Aplica la fuente persistida de un libro concreto o hereda la global. */
     public static void applyForSource(Context context, WebView webView, String sourceKey) {
         if (webView == null) return;
         webView.getSettings().setTextZoom(textZoom(context));
-        applyInternal(context, webView, familyFor(context, sourceKey));
+        String selected = familyFor(context, sourceKey);
+        applyInternal(context, webView,
+                PALATINO.equals(selected) ? palatinoCssStack() : selected);
     }
 
     private static void applyInternal(Context context, WebView webView, String family) {
@@ -150,6 +163,8 @@ public final class ReaderPreferences {
                 + "margin-left:auto!important;margin-right:auto!important;"
                 + "padding-left:" + horizontal + "px!important;padding-right:" + horizontal
                 + "px!important;box-sizing:border-box!important;}"
+                + "body,body p,body span,body div,body li,body td,body blockquote{font-family:"
+                + family + "!important;}"
                 + "@media(min-width:700px){body{padding-left:" + (horizontal + 12)
                 + "px!important;padding-right:" + (horizontal + 12) + "px!important;}}";
         String script = "(function(){var s=document.getElementById('ministerium-reader-prefs');"
