@@ -15,7 +15,7 @@ import android.webkit.WebView;
 public class MinisteriumWebView extends WebView {
     public interface SelectionActionHandler {
         void populate(Menu menu);
-        boolean handle(MenuItem item);
+        boolean handle(ActionMode mode, MenuItem item);
     }
 
     private SelectionActionHandler selectionActionHandler;
@@ -79,8 +79,7 @@ public class MinisteriumWebView extends WebView {
 
         @Override
         public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-            if (selectionActionHandler != null && selectionActionHandler.handle(item)) {
-                mode.finish();
+            if (selectionActionHandler != null && selectionActionHandler.handle(mode, item)) {
                 return true;
             }
             return original != null && original.onActionItemClicked(mode, item);
