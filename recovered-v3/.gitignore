@@ -25,8 +25,11 @@ captures/
 secrets.properties
 keystore.properties
 
-# Source PDFs used only by local preprocessing; never ship the PDF files in the APK.
+# Liturgia Papal preprocessing.
+# The source PDFs stay only in the local cache and the generated compact package
+# is produced locally/CI before compiling; neither is source code in the repo.
 tools/cache/missal-pdf/
+app/src/main/assets/missal/
 
 # OS / editor / temporary files
 .DS_Store
