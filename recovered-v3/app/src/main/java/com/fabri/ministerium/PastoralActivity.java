@@ -17,7 +17,7 @@ public class PastoralActivity extends ThemedActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_simple_list);
 
-        ((TextView) findViewById(R.id.txtTitle)).setText("Atención pastoral");
+        ((TextView) findViewById(R.id.txtTitle)).setText("Ritual");
         ((TextView) findViewById(R.id.txtSubtitle)).setText(
                 "Bautismo, enfermos, Viático y difuntos");
         ((TextView) findViewById(R.id.txtIntro)).setText(
