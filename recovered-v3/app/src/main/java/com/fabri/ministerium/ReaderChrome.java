@@ -9,7 +9,7 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.webkit.WebView;
 
-/** Gestos, cabecera autoocultable y herramientas comunes del lector. */
+/** Gestos, cabecera fija y herramientas comunes del lector. */
 public final class ReaderChrome {
     public interface Navigator {
         boolean canPrevious();
@@ -26,7 +26,13 @@ public final class ReaderChrome {
         UniversalSelectionMenu.attach(activity, webView, context);
         ReaderPreferences.apply(activity, webView, preserveBibleTypeface);
         attachGestures(activity, webView, navigator);
-        attachAutoHide(header, webView);
+        // La cabecera forma parte del layout superior y permanece fija. No se traslada ni
+        // se desvanece durante el scroll para evitar saltos visuales y mantener siempre
+        // accesibles Volver, búsqueda, tema y menú.
+        if (header != null) {
+            header.setTranslationY(0f);
+            header.setAlpha(1f);
+        }
     }
 
     public static void bindTheme(Activity activity, View button) {
@@ -110,21 +116,6 @@ public final class ReaderChrome {
             if (!scaleDetector.isInProgress()) gestures.onTouchEvent(event);
             return scaleDetector.isInProgress();
         });
-    }
-
-    private static void attachAutoHide(View header, WebView webView) {
-        if (header == null || webView == null) return;
-        webView.setOnScrollChangeListener((view, x, y, oldX, oldY) -> {
-            int difference = y - oldY;
-            if (difference > 12 && y > header.getHeight()) {
-                header.animate().translationY(-header.getHeight()).alpha(.15f)
-                        .setDuration(170).start();
-            } else if (difference < -8 || y < header.getHeight()) {
-                header.animate().translationY(0).alpha(1f).setDuration(150).start();
-            }
-        });
-        webView.setOnClickListener(v -> header.animate().translationY(0).alpha(1f)
-                .setDuration(120).start());
     }
 
     private static void share(Activity activity, ReaderContext context) {
