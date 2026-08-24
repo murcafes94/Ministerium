@@ -150,6 +150,34 @@ public final class UniversalSelectionMenu {
     private static void openDictionary(Activity activity, String selected) {
         String query = selected.replaceAll("[\\r\\n]+", " ").trim();
         if (query.length() > 80) query = query.substring(0, 80).trim();
+        String finalQuery = query;
+        if (!query.contains(" ")) {
+            new Thread(() -> {
+                try {
+                    List<BibleDictionaryRepository.QuickResult> results =
+                            BibleDictionaryRepository.quickLookup(activity, finalQuery);
+                    activity.runOnUiThread(() -> {
+                        if (results.isEmpty()) {
+                            openDictionaryChooser(activity, finalQuery);
+                            return;
+                        }
+                        StringBuilder html = new StringBuilder();
+                        for (BibleDictionaryRepository.QuickResult result : results) {
+                            html.append(result.html);
+                        }
+                        ReaderOverlayDialog.show(activity,
+                                "Diccionario · " + finalQuery, html.toString());
+                    });
+                } catch (Exception error) {
+                    activity.runOnUiThread(() -> openDictionaryChooser(activity, finalQuery));
+                }
+            }).start();
+            return;
+        }
+        openDictionaryChooser(activity, finalQuery);
+    }
+
+    private static void openDictionaryChooser(Activity activity, String query) {
         List<BibleDictionaryRepository.Source> sources = BibleDictionaryRepository.sources();
         if (sources.isEmpty()) {
             Toast.makeText(activity, "No hay diccionarios disponibles.",
@@ -158,13 +186,12 @@ public final class UniversalSelectionMenu {
         }
         String[] labels = new String[sources.size()];
         for (int i = 0; i < sources.size(); i++) labels[i] = sources.get(i).title;
-        String finalQuery = query;
         new AlertDialog.Builder(activity).setTitle("Buscar en diccionario")
                 .setItems(labels, (dialog, which) -> {
                     BibleDictionaryRepository.Source source = sources.get(which);
                     activity.startActivity(new Intent(activity, BibleDictionaryActivity.class)
                             .putExtra(BibleDictionaryActivity.EXTRA_SOURCE_ID, source.id)
-                            .putExtra(BibleDictionaryActivity.EXTRA_QUERY, finalQuery));
+                            .putExtra(BibleDictionaryActivity.EXTRA_QUERY, query));
                 }).setNegativeButton("Cancelar", null).show();
     }
 
