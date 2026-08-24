@@ -66,5 +66,18 @@ jobs:
           echo '=== Source language counts ==='
           printf 'Java: '; find app/src/main -type f -name '*.java' | wc -l
           printf 'Kotlin: '; find app/src/main -type f -name '*.kt' | wc -l
-          echo '=== References to Bible/Missal/WebView/EPUB (paths only) ==='
-          grep -RIlE 'WebView|EPUB|epub|Biblia|Bible|bible|Missal|Misal|Misa' app/src/main --include='*.java' --include='*.kt' --include='*.xml' | sort | head -350 || true
+
+      - name: Inspect legacy integration points
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in \
+            app/src/main/java/com/fabri/ministerium/BibleRepository.java \
+            app/src/main/java/com/fabri/ministerium/BibleChapterDocument.java \
+            app/src/main/java/com/fabri/ministerium/BibleReaderActivity.java \
+            app/src/main/java/com/fabri/ministerium/MissalProperRepository.java \
+            app/src/main/java/com/fabri/ministerium/LiturgicalResolver.java \
+            app/src/main/java/com/fabri/ministerium/CombinedMassActivity.java; do
+            echo "===== $f ====="
+            sed -n '1,360p' "$f" || true
+          done
