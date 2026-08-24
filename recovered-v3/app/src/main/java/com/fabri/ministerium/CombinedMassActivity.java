@@ -13,9 +13,9 @@ import java.util.Calendar;
 /**
  * Celebración continua de Misa + Laudes o Misa + Vísperas.
  *
- * A diferencia de la primera implementación 3.0, esta Activity no funciona
- * como un menú que abre otras pantallas. El contenido completo se compone y
- * se presenta en un solo WebView desplazable, de principio a fin.
+ * Ministerium 3.1 usa CombinedMassComposer31: Liturgia de las Horas local,
+ * Leccionario y Misal preprocesado desde Liturgia Papal México. El antiguo
+ * Misal EPUB no se abre ni se usa como fallback en esta pantalla.
  */
 public class CombinedMassActivity extends ThemedActivity {
     public static final String EXTRA_YEAR = "combined_mass_year";
@@ -71,7 +71,6 @@ public class CombinedMassActivity extends ThemedActivity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                // La celebración combinada debe permanecer en una sola pantalla.
                 return url != null && !url.startsWith("javascript:");
             }
 
@@ -88,31 +87,32 @@ public class CombinedMassActivity extends ThemedActivity {
                 ReaderPreferences.applyPalatino(CombinedMassActivity.this, webView);
                 UniversalSelectionMenu.restoreHighlights(CombinedMassActivity.this,
                         webView, readerContext().sourceKey);
-                statusView.setText("");
+                statusView.setText("Liturgia Papal México · Leccionario · OGLH 93–96");
             }
         });
     }
 
     private void buildCelebration() {
         celebrationView.setText("Preparando celebración…");
-        statusView.setText("Uniendo Liturgia de las Horas, Misal y Leccionario…");
+        statusView.setText("Uniendo Hora, Liturgia Papal México y Leccionario…");
         webView.setVisibility(WebView.INVISIBLE);
 
         new Thread(() -> {
             try {
-                CombinedMassComposer.Result result = CombinedMassPolisher.compose(
+                CombinedMassComposer.Result result = CombinedMassComposer31.compose(
                         getApplicationContext(), date, hourKey, language);
                 runOnUiThread(() -> {
                     ((TextView) findViewById(R.id.txtCombinedMassTitle)).setText(result.title);
                     celebrationView.setText(result.celebration);
-                    statusView.setText("Celebración completa · una sola pantalla");
                     webView.setVisibility(WebView.VISIBLE);
                     webView.loadDataWithBaseURL("file:///android_asset/", result.html,
                             "text/html", "UTF-8", null);
                 });
             } catch (Exception error) {
                 runOnUiThread(() -> {
-                    statusView.setText("No se pudo preparar la celebración completa.");
+                    statusView.setText(error.getMessage() == null
+                            ? "No se pudo preparar la celebración completa."
+                            : error.getMessage());
                     Toast.makeText(this,
                             "No se pudo unir la Misa con " + hourName() + ".",
                             Toast.LENGTH_LONG).show();
