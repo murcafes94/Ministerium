@@ -1,0 +1,67 @@
+name: Bible 3.1 Migration Inspect
+
+on:
+  push:
+    branches: [ feature/bible-semantic-v3.1 ]
+    paths:
+      - '.github/workflows/bible-v3.1-inspect.yml'
+      - 'migration/bible-v3.1/**'
+      - 'docs/BIBLE_ARCHITECTURE_3_1.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    name: Reconstruct and inspect Bible module safely
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Reconstruct Ministerium 3.0 project
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat bootstrap/v3/ministerium-v3.zip.part-* > "$RUNNER_TEMP/ministerium-v3.zip"
+          if [ -f bootstrap/v3/ministerium-v3.zip.sha256 ]; then
+            EXPECTED=$(awk '{print $1}' bootstrap/v3/ministerium-v3.zip.sha256)
+            ACTUAL=$(sha256sum "$RUNNER_TEMP/ministerium-v3.zip" | awk '{print $1}')
+            test "$EXPECTED" = "$ACTUAL"
+          fi
+          mkdir -p "$RUNNER_TEMP/ministerium-v3"
+          unzip -q "$RUNNER_TEMP/ministerium-v3.zip" -d "$RUNNER_TEMP/ministerium-v3"
+          rsync -a --exclude='.git/' "$RUNNER_TEMP/ministerium-v3/" ./
+
+      - name: Print technical inventory only
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== Android project ==='
+          sed -n '1,220p' app/build.gradle || true
+          echo '=== Manifest package/components ==='
+          grep -E 'package=|android:name=|<activity|<service|<provider' app/src/main/AndroidManifest.xml | head -120 || true
+          echo '=== Source files related to Bible/reader/content ==='
+          find app/src/main -type f \( -name '*.java' -o -name '*.kt' \) \
+            | grep -Ei 'bibl|reader|epub|lection|lectur|missal|content|note|highlight|bookmark' \
+            | sort | head -250 || true
+          echo '=== Source language counts ==='
+          printf 'Java: '; find app/src/main -type f -name '*.java' | wc -l
+          printf 'Kotlin: '; find app/src/main -type f -name '*.kt' | wc -l
+          echo '=== References to Bible/WebView/EPUB (paths only) ==='
+          grep -RIlE 'WebView|EPUB|epub|Biblia|Bible|bible' app/src/main --include='*.java' --include='*.kt' --include='*.xml' \
+            | sort | head -250 || true
+
+      - name: Baseline compile
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
+
+      - name: Compile baseline
+        shell: bash
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon assembleDebug
