@@ -18,6 +18,9 @@ public final class CombinedMassPolisher {
     private static final Pattern MASS_SECTION = Pattern.compile(
             "(?is)(<section\\s+class=\\\"ministerium-section\\\"[^>]*>\\s*"
                     + "<h2>\\s*Santa Misa\\s*</h2>)(.*?)(</section>)");
+    private static final Pattern OPENING_SECTION = Pattern.compile(
+            "(?is)(<section\\s+class=\\\"ministerium-section\\\"[^>]*>\\s*"
+                    + "<h2>\\s*Inicio de la celebración\\s*</h2>)(.*?)(</section>)");
 
     private CombinedMassPolisher() {}
 
@@ -34,9 +37,14 @@ public final class CombinedMassPolisher {
         // Mantiene correcto el fallback EPUB mientras dura la migración.
         html = applyGloriaRule(context, date, day, html);
 
-        // Cuando el paquete semántico existe, Liturgia Papal (México) tiene
-        // prioridad sobre el antiguo HTML del EPUB del Misal.
+        // Modo seminario: se usa siempre el segundo esquema descrito para la unión
+        // Misa + Laudes/Vísperas: canto/antífona de entrada, señal de la cruz,
+        // saludo del Misal y después salmodia. Liturgia Papal México es la fuente ES.
         html = applyLiturgiaPapalMissal(context, date, day, language, html);
+
+        // Al usar las preces de la Hora dentro de la Misa se omite su transición al
+        // Padre nuestro y la oración conclusiva propia de la Hora.
+        html = cleanSeminaryIntercessions(html, hourKey);
 
         if (!hasRequiredSaint(day)) {
             HourEntry hour = findHour(context, day, date, hourKey);
@@ -70,14 +78,16 @@ public final class CombinedMassPolisher {
                                                    LiturgicalDay day,
                                                    String language,
                                                    String html) {
-        // La primera etapa migra el modo español. El paralelo LAT–ES se conectará
-        // cuando el propio latino esté normalizado con los mismos identificadores.
-        if ("lat_es".equals(language)
-                || !LiturgiaPapalMissalRepository.isAvailable(context, "es")) {
-            return html;
-        }
+        if (!LiturgiaPapalMissalRepository.isAvailable(context, "es")) return html;
 
         String value = html;
+        String openingRite = seminaryOpeningRite(context);
+        if (!openingRite.isEmpty()) value = replaceOpeningRite(value, openingRite);
+
+        // Mientras termina el emparejamiento semántico ES-LA, el modo bilingüe
+        // conserva sus demás bloques actuales; el comienzo sí respeta ya el modo seminario.
+        if ("lat_es".equals(language)) return value;
+
         boolean gloria = gloriaRequired(context, date, day);
 
         try {
@@ -112,7 +122,7 @@ public final class CombinedMassPolisher {
 
         if (!entrance.isEmpty()) {
             value = replaceSection(value, "Inicio de la celebración",
-                    entrance + signOfCross());
+                    entrance + openingRite);
         }
         value = replaceSection(value, "Oración colecta", collect);
         value = replaceSection(value, "Oración después de la Comunión", postCommunion);
@@ -142,10 +152,92 @@ public final class CombinedMassPolisher {
         return value;
     }
 
-    private static String signOfCross() {
-        return "<div class=\"liturgia-papal\" data-missal-source=\"liturgia-papal-mexico\">"
+    /**
+     * Inicio usado por el seminario. El texto se obtiene del Ordinario mexicano
+     * generado desde Liturgia Papal; no se toma del EPUB histórico.
+     */
+    private static String seminaryOpeningRite(android.content.Context context) {
+        try {
+            String[] lines = LiturgiaPapalMissalRepository.component(context, "es", "initial")
+                    .split("\\r?\\n");
+            int signAt = findLine(lines, "en el nombre del padre", 0);
+            int amenAt = findLine(lines, "amen", signAt + 1);
+            int greetingAt = findLine(lines, "el senor este con ustedes", amenAt + 1);
+            int responseAt = findLine(lines, "y con tu espiritu", greetingAt + 1);
+            if (signAt >= 0 && amenAt > signAt && greetingAt > amenAt && responseAt > greetingAt) {
+                return "<div class=\"liturgia-papal seminary-opening\" "
+                        + "data-missal-source=\"liturgia-papal-mexico\" "
+                        + "data-combined-rule=\"seminary-second-case\">"
+                        + "<p class=\"rubric\">Terminado el canto de entrada, todos se santiguan.</p>"
+                        + "<p><b>" + escapeHtml(lines[signAt].trim()) + "</b></p>"
+                        + "<p><b>" + escapeHtml(lines[amenAt].trim()) + "</b></p>"
+                        + "<p><b>" + escapeHtml(lines[greetingAt].trim()) + "</b></p>"
+                        + "<p><b>" + escapeHtml(lines[responseAt].trim()) + "</b></p></div>";
+            }
+        } catch (Exception ignored) {}
+        return fallbackOpeningRite();
+    }
+
+    private static String fallbackOpeningRite() {
+        return "<div class=\"seminary-opening\" data-combined-rule=\"seminary-second-case\">"
+                + "<p class=\"rubric\">Terminado el canto de entrada, todos se santiguan.</p>"
                 + "<p><b>En el nombre del Padre, y del Hijo, y del Espíritu Santo.</b></p>"
-                + "<p><b>Amén.</b></p></div>";
+                + "<p><b>Amén.</b></p>"
+                + "<p><b>El Señor esté con ustedes.</b></p>"
+                + "<p><b>Y con tu espíritu.</b></p></div>";
+    }
+
+    /** Conserva la antífona/entrada ya resuelta y sustituye solo el rito inicial. */
+    private static String replaceOpeningRite(String document, String rite) {
+        Matcher matcher = OPENING_SECTION.matcher(document);
+        if (!matcher.find()) return document;
+        String content = matcher.group(2);
+        content = content.replaceAll(
+                "(?is)<table\\b[^>]*class=\\\"[^\\\"]*sign-cross[^\\\"]*\\\"[^>]*>.*?</table>", "");
+        content = content.replaceAll(
+                "(?is)<p\\b[^>]*class=\\\"[^\\\"]*rubric[^\\\"]*\\\"[^>]*>\\s*Se hace la señal de la cruz\\.?\\s*</p>", "");
+        content = content.replaceAll(
+                "(?is)<p\\b[^>]*>.*?En el nombre del Padre.*?</p>", "");
+        content = content.replaceAll(
+                "(?is)<p\\b[^>]*>\\s*<b>\\s*Am[eé]n\\.?\\s*</b>\\s*</p>", "");
+        String replacement = matcher.group(1) + content + rite + matcher.group(3);
+        return matcher.replaceFirst(Matcher.quoteReplacement(replacement));
+    }
+
+    private static int findLine(String[] lines, String marker, int from) {
+        if (lines == null || marker == null || from < 0) return -1;
+        String wanted = normalize(marker);
+        for (int i = Math.max(0, from); i < lines.length; i++) {
+            String value = normalize(lines[i]);
+            if (value.equals(wanted) || value.startsWith(wanted)) return i;
+        }
+        return -1;
+    }
+
+    private static String cleanSeminaryIntercessions(String document, String hourKey) {
+        String heading = "Preces de " + hourName(hourKey);
+        Pattern section = Pattern.compile(
+                "(?is)(<section\\s+class=\\\"ministerium-section\\\"[^>]*>\\s*<h2>\\s*"
+                        + Pattern.quote(heading) + "\\s*</h2>)(.*?)(</section>)");
+        Matcher matcher = section.matcher(document);
+        if (!matcher.find()) return document;
+        String content = matcher.group(2);
+        Pattern paragraph = Pattern.compile("(?is)<p\\b[^>]*>.*?</p>");
+        Matcher blocks = paragraph.matcher(content);
+        StringBuffer cleaned = new StringBuffer();
+        while (blocks.find()) {
+            String plain = blocks.group().replaceAll("<[^>]+>", " ")
+                    .replace("&nbsp;", " ").replace("&#160;", " ");
+            String normalized = normalize(plain);
+            boolean remove = normalized.startsWith("concluyamos nuestra oracion con la plegaria")
+                    || normalized.startsWith("la oracion conclusiva")
+                    || normalized.equals("padre nuestro");
+            blocks.appendReplacement(cleaned,
+                    Matcher.quoteReplacement(remove ? "" : blocks.group()));
+        }
+        blocks.appendTail(cleaned);
+        String replacement = matcher.group(1) + cleaned + matcher.group(3);
+        return matcher.replaceFirst(Matcher.quoteReplacement(replacement));
     }
 
     private static boolean isOrdinary(LiturgicalDay day) {
@@ -315,6 +407,11 @@ public final class CombinedMassPolisher {
 
     private static String hourName(String hourKey) {
         return "vespers".equals(hourKey) ? "Vísperas" : "Laudes";
+    }
+
+    private static String escapeHtml(String value) {
+        return value == null ? "" : value.replace("&", "&amp;").replace("<", "&lt;")
+                .replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;");
     }
 
     private static String normalize(String value) {
