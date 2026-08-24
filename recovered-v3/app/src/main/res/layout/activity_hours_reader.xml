@@ -30,7 +30,8 @@
             android:backgroundTint="@android:color/transparent" android:contentDescription="Menú global"
             android:text="☰" android:textColor="#FFFFFF" android:textSize="19sp" />
     </LinearLayout>
-    <WebView android:id="@+id/hoursWebView" android:layout_width="match_parent"
-        android:layout_height="0dp" android:layout_margin="8dp" android:layout_weight="1"
+    <com.fabri.ministerium.MinisteriumWebView android:id="@+id/hoursWebView"
+        android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_margin="8dp" android:layout_weight="1"
         android:background="@drawable/bg_reading_surface" />
 </LinearLayout>
