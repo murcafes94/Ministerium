@@ -1,6 +1,7 @@
 package com.fabri.ministerium;
 
 import java.io.File;
+import java.text.Normalizer;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
@@ -11,6 +12,8 @@ import java.util.regex.Pattern;
 public final class CombinedMassPolisher {
     private static final Pattern LINK = Pattern.compile(
             "(?is)<a\\s+[^>]*href=[\\\"'][^\\\"']*[\\\"'][^>]*>(.*?)</a>");
+    private static final Pattern CANTICLE_LINK = Pattern.compile(
+            "(?is)<p\\b[^>]*>\\s*<a\\b[^>]*>\\s*(?:Benedictus|Magnificat)\\s*</a>\\s*</p>");
 
     private CombinedMassPolisher() {}
 
@@ -108,10 +111,20 @@ public final class CombinedMassPolisher {
         return LINK.matcher(html).replaceAll("$1");
     }
 
+    /**
+     * Sustituye el enlace que ocupa el lugar del cántico en la fuente por su texto
+     * completo. De esta forma se conserva el orden Antífona → Cántico → Antífona,
+     * en vez de desplazar el cántico al final de la sección.
+     */
     private static String addCanticle(String html, String hourKey) {
         String value = html == null ? "" : html;
-        value = value.replaceAll("(?is)<p\\b[^>]*>\\s*<a\\b[^>]*>\\s*(?:Benedictus|Magnificat)\\s*</a>\\s*</p>", "");
-        return value + ("vespers".equals(hourKey) ? magnificat() : benedictus());
+        String canticle = "vespers".equals(hourKey) ? magnificat() : benedictus();
+        Matcher marker = CANTICLE_LINK.matcher(value);
+        if (marker.find()) {
+            return marker.replaceFirst(Matcher.quoteReplacement(canticle));
+        }
+        // Fallback para fuentes que no traigan el enlace esperado.
+        return value + canticle;
     }
 
     private static String benedictus() {
