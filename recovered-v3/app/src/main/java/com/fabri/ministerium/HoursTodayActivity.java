@@ -268,6 +268,18 @@ public class HoursTodayActivity extends ThemedActivity {
     }
 
     private void openHour(HourEntry entry) {
+        if ("compline".equals(entry.key)) {
+            Intent compline = new Intent(this, ComplineReaderActivity.class);
+            compline.putExtra(ComplineReaderActivity.EXTRA_YEAR,
+                    selectedDate.get(Calendar.YEAR));
+            compline.putExtra(ComplineReaderActivity.EXTRA_MONTH,
+                    selectedDate.get(Calendar.MONTH));
+            compline.putExtra(ComplineReaderActivity.EXTRA_DAY,
+                    selectedDate.get(Calendar.DAY_OF_MONTH));
+            startActivity(compline);
+            return;
+        }
+
         Intent intent = new Intent(this, HoursReaderActivity.class);
         intent.putExtra(HoursReaderActivity.EXTRA_VOLUME_ID, entry.volume.id);
         intent.putExtra(HoursReaderActivity.EXTRA_FILE_PATH, entry.filePath);
