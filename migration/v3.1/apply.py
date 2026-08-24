@@ -3,6 +3,7 @@
 
 from pathlib import Path
 import re
+import shutil
 
 
 def replace_once(path: Path, old: str, new: str, label: str) -> None:
@@ -68,6 +69,43 @@ def patch_bible_reader() -> None:
                 + (semanticEdition == null ? "" : " · " + semanticEdition);
 """
     replace_once(path, old_subtitle, new_subtitle, "semantic Bible edition subtitle")
+
+
+def patch_bible_visual_line() -> None:
+    path = Path("app/src/main/java/com/fabri/ministerium/BibleReaderActivity.java")
+    text = path.read_text(encoding="utf-8")
+    if "// Ministerium 3.1: preserve the Bible EPUB's own graphic line." in text:
+        return
+    replacement = r'''    private void applyStyle() {
+        // Ministerium 3.1: preserve the Bible EPUB's own graphic line.
+        // We only add safe reading margins, responsive media, dark-mode contrast
+        // and Ministerium highlights; typography and hierarchy remain the EPUB's.
+        boolean dark = ThemeUtils.isDark(this);
+        String bg = dark ? "#26211E" : "#FFFDF7";
+        String ink = dark ? "#F3EDE4" : "#2A2521";
+        String accent = dark ? "#E1C57A" : "#772233";
+        String css = "html,body{background:" + bg + "!important;}"
+                + "body{margin:0!important;padding:18px 20px!important;box-sizing:border-box;"
+                + "max-width:100%!important;overflow-wrap:break-word;}"
+                + "img,table{max-width:100%!important;height:auto!important;}"
+                + ".ministerium-highlight{background:#F6E58D!important;color:#231F1B!important;"
+                + "-webkit-text-fill-color:#231F1B!important;padding:1px 2px;border-radius:2px;}"
+                + (dark ? "body,body p,body li,body span,body div{color:" + ink
+                + "!important;-webkit-text-fill-color:" + ink + "!important;}"
+                + "a,a *{color:" + accent + "!important;-webkit-text-fill-color:"
+                + accent + "!important;}" : "")
+                + "@media(min-width:700px){body{padding-left:42px!important;padding-right:42px!important}}";
+        webView.evaluateJavascript("(function(){var s=document.getElementById('ministerium-style');"
+                + "if(!s){s=document.createElement('style');s.id='ministerium-style';document.head.appendChild(s);}"
+                + "s.innerHTML=" + org.json.JSONObject.quote(css) + ";})()", null);
+    }
+
+    private ReaderContext context()'''
+    pattern = re.compile(r"    private void applyStyle\(\) \{.*?\n    \}\n\n    private ReaderContext context\(\)", re.DOTALL)
+    patched, count = pattern.subn(replacement, text, count=1)
+    if count != 1:
+        raise SystemExit("Migration point not found: Bible applyStyle")
+    path.write_text(patched, encoding="utf-8")
 
 
 def patch_calendar_calculations() -> None:
@@ -138,9 +176,6 @@ def patch_drive_backup() -> None:
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("application/json");
         intent.putExtra(Intent.EXTRA_TITLE, "ministerium-backup-current.json");
-        // Ask Android for the official Drive document provider first. Drive
-        // itself owns account selection/sign-in; Ministerium never stores a
-        // Google password or OAuth secret inside the APK.
         intent.setPackage("com.google.android.apps.docs");
         try {
             startActivityForResult(intent, DRIVE_BACKUP);
@@ -240,6 +275,15 @@ def patch_bilingual_reader() -> None:
     path.write_text(text, encoding="utf-8")
 
 
+def patch_continuous_combined() -> None:
+    source = Path("migration/v3.1/overlays/com/fabri/ministerium/CombinedMassActivity.java")
+    target = Path("app/src/main/java/com/fabri/ministerium/CombinedMassActivity.java")
+    if not source.is_file():
+        raise SystemExit("Missing continuous combined celebration overlay")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, target)
+
+
 def patch_release_labels() -> None:
     update = Path("app/src/main/java/com/fabri/ministerium/UpdateCenterActivity.java")
     if update.exists():
@@ -260,10 +304,12 @@ def main() -> None:
     patch_version()
     patch_project_validator()
     patch_bible_reader()
+    patch_bible_visual_line()
     patch_calendar_calculations()
     patch_selection_menu()
     patch_drive_backup()
     patch_bilingual_reader()
+    patch_continuous_combined()
     patch_release_labels()
     print("Ministerium 3.1 migration overlay applied")
 
