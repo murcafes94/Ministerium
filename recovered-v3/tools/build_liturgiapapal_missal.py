@@ -4,6 +4,10 @@
 Objetivo:
     PDF fuente -> texto limpio -> bloques compactos en assets/missal/.
 
+Para español se usa deliberadamente la VERSIÓN DE MÉXICO publicada por
+Liturgia Papal. Esta es la base latinoamericana de Ministerium; no debe
+sustituirse por la edición de España mediante reemplazos mecánicos.
+
 NO conserva:
 - números de página;
 - encabezados/pies repetidos;
@@ -46,22 +50,23 @@ DEFAULT_OUTPUT = ROOT / "app" / "src" / "main" / "assets" / "missal"
 
 SOURCES = {
     "es": {
-        "initial": "https://liturgiapapal.org/attachments/article/1029/Iniciales.pdf",
-        "word": "https://liturgiapapal.org/attachments/article/1029/Palabra.pdf",
-        "eucharistic_liturgy": "https://liturgiapapal.org/attachments/article/1029/LiturgiaEucaristica.pdf",
-        "prefaces": "https://liturgiapapal.org/attachments/article/1029/Prefacios.pdf",
-        "eucharistic_prayer_1": "https://liturgiapapal.org/attachments/article/1029/PEI.pdf",
-        "eucharistic_prayer_2": "https://liturgiapapal.org/attachments/article/1029/PEII.pdf",
-        "eucharistic_prayer_3": "https://liturgiapapal.org/attachments/article/1029/PEIII.pdf",
-        "eucharistic_prayer_4": "https://liturgiapapal.org/attachments/article/1029/PEIV.pdf",
-        "communion": "https://liturgiapapal.org/attachments/article/1029/Comunion.pdf",
-        "conclusion": "https://liturgiapapal.org/attachments/article/1029/Conclusion.pdf",
-        "proper_advent": "https://liturgiapapal.org/attachments/article/1029/Adviento.pdf",
-        "proper_christmas": "https://liturgiapapal.org/attachments/article/1029/Navidad.pdf",
-        "proper_lent": "https://liturgiapapal.org/attachments/article/1029/Cuaresma.pdf",
-        "proper_triduum": "https://liturgiapapal.org/attachments/article/1029/Triduo.pdf",
-        "proper_easter": "https://liturgiapapal.org/attachments/article/1029/Pascua.pdf",
-        "proper_ordinary": "https://liturgiapapal.org/attachments/article/1029/Ordinario.pdf",
+        # Liturgia Papal: Misal Romano, VERSIÓN DE MÉXICO (article/1030).
+        "initial": "https://liturgiapapal.org/attachments/article/1030/Iniciales.pdf",
+        "word": "https://liturgiapapal.org/attachments/article/1030/Palabra.pdf",
+        "eucharistic_liturgy": "https://liturgiapapal.org/attachments/article/1030/LiturgiaEucaristica.pdf",
+        "prefaces": "https://liturgiapapal.org/attachments/article/1030/Prefacios.pdf",
+        "eucharistic_prayer_1": "https://liturgiapapal.org/attachments/article/1030/PEI.pdf",
+        "eucharistic_prayer_2": "https://liturgiapapal.org/attachments/article/1030/PEII.pdf",
+        "eucharistic_prayer_3": "https://liturgiapapal.org/attachments/article/1030/PEIII.pdf",
+        "eucharistic_prayer_4": "https://liturgiapapal.org/attachments/article/1030/PEIV.pdf",
+        "communion": "https://liturgiapapal.org/attachments/article/1030/Comunion.pdf",
+        "conclusion": "https://liturgiapapal.org/attachments/article/1030/Conclusion.pdf",
+        "proper_advent": "https://liturgiapapal.org/attachments/article/1030/Adviento.pdf",
+        "proper_christmas": "https://liturgiapapal.org/attachments/article/1030/Navidad.pdf",
+        "proper_lent": "https://liturgiapapal.org/attachments/article/1030/Cuaresma.pdf",
+        "proper_triduum": "https://liturgiapapal.org/attachments/article/1030/Triduo.pdf",
+        "proper_easter": "https://liturgiapapal.org/attachments/article/1030/Pascua.pdf",
+        "proper_ordinary": "https://liturgiapapal.org/attachments/article/1030/Ordinario.pdf",
     },
     "la": {
         "initial": "https://liturgiapapal.org/attachments/article/744/Ritus%20initiales.pdf",
@@ -217,8 +222,13 @@ def validate_cleaned(language: str, component: str, text: str) -> list[str]:
         errors.append("quedó el pie liturgiapapal.org")
     if re.search(rf"(?im)^(?:\d+\s+)?(?:{PAGE_LABEL_ALT})\s+\d+\s*$", text):
         errors.append("quedó un encabezado con número de página")
-    if language == "es" and component == "initial" and "En el nombre del Padre" not in text:
-        errors.append("no se encontró el comienzo del Ordinario español")
+    if language == "es" and component == "initial":
+        if "En el nombre del Padre" not in text:
+            errors.append("no se encontró el comienzo del Ordinario español")
+        if "El Señor esté con ustedes" not in text:
+            errors.append("la fuente española no parece ser la edición de México")
+        if "El Señor esté con vosotros" in text:
+            errors.append("se detectó la fórmula de la edición de España")
     if language == "la" and component == "initial" and "In nomine Patris" not in text:
         errors.append("no se encontró el comienzo del Ordo latino")
     return errors
@@ -227,9 +237,13 @@ def validate_cleaned(language: str, component: str, text: str) -> list[str]:
 def build(output: Path, languages: list[str], force: bool) -> None:
     output.mkdir(parents=True, exist_ok=True)
     manifest = {
-        "schema": 1,
+        "schema": 2,
         "provider": "Liturgia Papal",
-        "notes": "PDFs preprocesados: sin paginación, encabezados ni pies; solo contenido litúrgico útil.",
+        "editions": {
+            "es": "Misal Romano - versión de México",
+            "la": "Missale Romanum",
+        },
+        "notes": "PDFs preprocesados: sin paginación, encabezados ni pies; solo contenido litúrgico útil. Español basado en la versión de México.",
         "languages": {},
     }
 
