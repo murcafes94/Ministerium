@@ -75,7 +75,10 @@ public final class ReaderPreferences {
                 ? "background:#F0E2C7!important;color:#30261E!important;" : "";
         String css = "html,body{" + palette + "}body{font-family:" + family + "!important;font-weight:"
                 + weight(context) + "!important;line-height:"
-                + lineHeight(context) + "!important;}";
+                + lineHeight(context) + "!important;"
+                + "width:100%!important;max-width:1040px!important;"
+                + "margin-left:auto!important;margin-right:auto!important;"
+                + "box-sizing:border-box!important;}";
         String script = "(function(){var s=document.getElementById('ministerium-reader-prefs');"
                 + "if(!s){s=document.createElement('style');s.id='ministerium-reader-prefs';"
                 + "document.head.appendChild(s);}s.innerHTML=" + JSONObject.quote(css)
