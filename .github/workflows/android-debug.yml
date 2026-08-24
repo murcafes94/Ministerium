@@ -34,7 +34,7 @@ jobs:
       - name: Build Liturgia Papal Mexico missal package
         run: |
           python -m pip install --disable-pip-version-check pypdf
-          python tools/build_liturgiapapal_missal.py --language all
+          python tools/build_liturgiapapal_missal_31.py --language all
           test -f app/src/main/assets/missal/es/initial.txt
           test -f app/src/main/assets/missal/es/word.txt
           test -f app/src/main/assets/missal/es/proper_ordinary.txt
