@@ -5,6 +5,8 @@ on:
     branches: [ main, feature/bible-semantic-v3.1 ]
     paths:
       - 'app/**'
+      - 'migration/**'
+      - 'tools/bible_import/**'
       - 'bootstrap/v3/**'
       - 'ministerium-v3.zip (1).part-*'
       - 'gradle/**'
@@ -108,6 +110,14 @@ jobs:
               continue_store.write_text(text)
           PY
 
+      - name: Apply Ministerium 3.1 migration
+        shell: bash
+        run: python3 migration/v3.1/apply.py
+
+      - name: Test Bible semantic importers
+        shell: bash
+        run: python3 tools/bible_import/test_import.py
+
       - name: Set up JDK 17 for Android SDK tools
         uses: actions/setup-java@v4
         with:
@@ -126,11 +136,14 @@ jobs:
           java-version: '11'
           cache: gradle
 
-      - name: Validate Ministerium project
+      - name: Validate Ministerium 3.1 project
         shell: bash
         run: |
           test -f app/build.gradle
           test -f app/src/main/AndroidManifest.xml
+          grep -q "versionCode 31" app/build.gradle
+          grep -q "versionName '3.1.0'" app/build.gradle
+          grep -q "SemanticBibleCompat.chapterHtml" app/src/main/java/com/fabri/ministerium/BibleReaderActivity.java
           if [ -f tools/validate_project.mjs ]; then node tools/validate_project.mjs; fi
           if [ -f tools/validate_content.mjs ]; then node tools/validate_content.mjs; fi
 
@@ -147,7 +160,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: Ministerium-3.1-semantic-debug
+          name: Ministerium-3.1.0-semantic-debug
           path: |
             app/build/outputs/apk/debug/*.apk
             apk-sha256.txt
