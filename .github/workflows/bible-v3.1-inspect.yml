@@ -8,6 +8,7 @@ on:
       - 'app/**'
       - 'migration/**'
       - 'docs/**'
+      - 'tools/bible_import/**'
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -23,6 +24,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Test Bible semantic importers
+        shell: bash
+        run: python3 tools/bible_import/test_import.py
 
       - name: Reconstruct Ministerium 3.0 project
         shell: bash
