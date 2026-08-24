@@ -122,7 +122,7 @@ public final class ReaderPreferences {
                              boolean preserveBibleTypeface) {
         if (webView == null) return;
         webView.getSettings().setTextZoom(textZoom(context));
-        String family = preserveBibleTypeface ? "inherit" : family(context);
+        String family = preserveBibleTypeface ? palatinoCssStack() : family(context);
         applyInternal(context, webView, family);
     }
 
