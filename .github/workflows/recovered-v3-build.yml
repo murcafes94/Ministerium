@@ -44,6 +44,7 @@ jobs:
           set -euo pipefail
           python tools/build_liturgiapapal_missal.py --language es --force-download
           test -f app/src/main/assets/missal/manifest.json
+          test -f app/src/main/assets/missal/es/ordinary_full.txt
           test -f app/src/main/assets/missal/es/initial.txt
           test -f app/src/main/assets/missal/es/eucharistic_liturgy.txt
           test -f app/src/main/assets/missal/es/prefaces.txt
@@ -53,13 +54,22 @@ jobs:
           test -f app/src/main/assets/missal/es/eucharistic_prayer_2.txt
           test -f app/src/main/assets/missal/es/eucharistic_prayer_3.txt
           test -f app/src/main/assets/missal/es/eucharistic_prayer_4.txt
+          test -f app/src/main/assets/missal/es/proper_advent.txt
+          test -f app/src/main/assets/missal/es/proper_christmas.txt
+          test -f app/src/main/assets/missal/es/proper_lent.txt
+          test -f app/src/main/assets/missal/es/proper_triduum.txt
+          test -f app/src/main/assets/missal/es/proper_easter.txt
           test -f app/src/main/assets/missal/es/proper_ordinary.txt
-          grep -q 'El Señor esté con ustedes' app/src/main/assets/missal/es/initial.txt
-          grep -q 'XXI DOMINGO DEL TIEMPO ORDINARIO' app/src/main/assets/missal/es/proper_ordinary.txt
-          grep -q 'PREFACIO I PARA LOS DOMINGOS' app/src/main/assets/missal/es/prefaces.txt
-          grep -q 'La paz del Señor esté siempre con ustedes' app/src/main/assets/missal/es/communion.txt
-          if grep -q 'El Señor esté con vosotros' app/src/main/assets/missal/es/initial.txt; then
-            echo 'ERROR: se generó accidentalmente la edición de España.' >&2
+
+          grep -qi 'El Señor esté con ustedes' app/src/main/assets/missal/es/ordinary_full.txt
+          grep -qi 'El Señor esté con ustedes' app/src/main/assets/missal/es/initial.txt
+          grep -qi 'POR USTEDES' app/src/main/assets/missal/es/eucharistic_prayer_2.txt
+          grep -qi 'XXI DOMINGO DEL TIEMPO ORDINARIO' app/src/main/assets/missal/es/proper_ordinary.txt
+          grep -qi 'PREFACIO I PARA LOS DOMINGOS' app/src/main/assets/missal/es/prefaces.txt
+          grep -qi 'La paz del Señor esté siempre con ustedes' app/src/main/assets/missal/es/communion.txt
+
+          if grep -Eqi 'El Señor esté con vosotros|TOMAD Y COMED|TOMAD Y BEBED|entregado por vosotros|derramada por vosotros|Podéis ir en paz' app/src/main/assets/missal/es/ordinary_full.txt app/src/main/assets/missal/es/*.txt; then
+            echo 'ERROR: se detectó texto de la edición de España en el paquete ES.' >&2
             exit 1
           fi
           echo 'Liturgia Papal Mexico package generated and validated.'
