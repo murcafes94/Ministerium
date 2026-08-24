@@ -6,16 +6,24 @@ import android.webkit.WebView;
 
 import org.json.JSONObject;
 
-/** Preferencias únicas de lectura para todos los documentos salvo la fuente bíblica. */
+/** Preferencias persistentes de lectura. */
 public final class ReaderPreferences {
     private static final String PREFS = "reader_settings";
     private static final String SIZE = "global_text_zoom";
     private static final String FAMILY = "global_font_family";
     private static final String WEIGHT = "global_font_weight";
     private static final String LINE = "global_line_height";
+    private static final String MARGIN = "global_reader_margin";
+    private static final String BOOK_FAMILY_PREFIX = "book_font_family_";
+
     public static final String SERIF = "serif";
     public static final String SANS = "sans-serif";
     public static final String MONO = "monospace";
+    public static final String PALATINO = "Palatino";
+
+    public static final String MARGIN_WIDE = "wide";
+    public static final String MARGIN_STANDARD = "standard";
+    public static final String MARGIN_NARROW = "narrow";
 
     private ReaderPreferences() {}
 
@@ -34,13 +42,31 @@ public final class ReaderPreferences {
     }
 
     public static String family(Context context) {
-        String value = values(context).getString(FAMILY, SERIF);
-        return SANS.equals(value) || MONO.equals(value) ? value : SERIF;
+        return sanitizeFamily(values(context).getString(FAMILY, SERIF));
     }
 
     public static void setFamily(Context context, String value) {
-        values(context).edit().putString(FAMILY,
-                SANS.equals(value) || MONO.equals(value) ? value : SERIF).apply();
+        values(context).edit().putString(FAMILY, sanitizeFamily(value)).apply();
+    }
+
+    /**
+     * Fuente elegida para un libro/documento concreto. Si no existe elección,
+     * hereda la familia global. Biblia y Misal se fuerzan a Palatino desde sus
+     * lectores, por decisión editorial, y no dependen de esta preferencia.
+     */
+    public static String familyFor(Context context, String sourceKey) {
+        if (sourceKey == null || sourceKey.trim().isEmpty()) return family(context);
+        return sanitizeFamily(values(context).getString(
+                BOOK_FAMILY_PREFIX + safeKey(sourceKey), family(context)));
+    }
+
+    public static void setFamilyFor(Context context, String sourceKey, String value) {
+        if (sourceKey == null || sourceKey.trim().isEmpty()) {
+            setFamily(context, value);
+            return;
+        }
+        values(context).edit().putString(BOOK_FAMILY_PREFIX + safeKey(sourceKey),
+                sanitizeFamily(value)).apply();
     }
 
     public static int weight(Context context) {
@@ -61,9 +87,35 @@ public final class ReaderPreferences {
                 Math.max(1.25f, Math.min(2.1f, value))).apply();
     }
 
+    public static String margin(Context context) {
+        String value = values(context).getString(MARGIN, MARGIN_STANDARD);
+        if (MARGIN_WIDE.equals(value) || MARGIN_NARROW.equals(value)) return value;
+        return MARGIN_STANDARD;
+    }
+
+    public static void setMargin(Context context, String value) {
+        String safe = MARGIN_WIDE.equals(value) || MARGIN_NARROW.equals(value)
+                ? value : MARGIN_STANDARD;
+        values(context).edit().putString(MARGIN, safe).apply();
+    }
+
+    /** Padding lateral base CSS; en tablet se combina con max-width centrado. */
+    public static int horizontalPaddingPx(Context context) {
+        String value = margin(context);
+        if (MARGIN_WIDE.equals(value)) return 52;
+        if (MARGIN_NARROW.equals(value)) return 14;
+        return 28;
+    }
+
+    public static String palatinoCssStack() {
+        // No se distribuye ningún archivo de fuente: se usan fuentes instaladas
+        // por el sistema/WebView y, si no existen, un serif del dispositivo.
+        return "'Palatino Linotype','Book Antiqua',Palatino,serif";
+    }
+
     public static void reset(Context context) {
         values(context).edit().remove(SIZE).remove(FAMILY).remove(WEIGHT)
-                .remove(LINE).apply();
+                .remove(LINE).remove(MARGIN).apply();
     }
 
     public static void apply(Context context, WebView webView,
@@ -71,19 +123,50 @@ public final class ReaderPreferences {
         if (webView == null) return;
         webView.getSettings().setTextZoom(textZoom(context));
         String family = preserveBibleTypeface ? "inherit" : family(context);
+        applyInternal(context, webView, family);
+    }
+
+    /** Aplica Palatino a Biblia/Misal manteniendo el resto de preferencias. */
+    public static void applyPalatino(Context context, WebView webView) {
+        if (webView == null) return;
+        webView.getSettings().setTextZoom(textZoom(context));
+        applyInternal(context, webView, palatinoCssStack());
+    }
+
+    /** Aplica la fuente persistida de un libro concreto. */
+    public static void applyForSource(Context context, WebView webView, String sourceKey) {
+        if (webView == null) return;
+        webView.getSettings().setTextZoom(textZoom(context));
+        applyInternal(context, webView, familyFor(context, sourceKey));
+    }
+
+    private static void applyInternal(Context context, WebView webView, String family) {
         String palette = ThemeUtils.SEPIA.equals(ThemeUtils.getMode(context))
                 ? "background:#F0E2C7!important;color:#30261E!important;" : "";
-        String css = "html,body{" + palette + "}body{font-family:" + family + "!important;font-weight:"
-                + weight(context) + "!important;line-height:"
-                + lineHeight(context) + "!important;"
-                + "width:100%!important;max-width:1040px!important;"
+        int horizontal = horizontalPaddingPx(context);
+        String css = "html,body{" + palette + "}body{font-family:" + family
+                + "!important;font-weight:" + weight(context) + "!important;line-height:"
+                + lineHeight(context) + "!important;width:100%!important;max-width:1040px!important;"
                 + "margin-left:auto!important;margin-right:auto!important;"
-                + "box-sizing:border-box!important;}";
+                + "padding-left:" + horizontal + "px!important;padding-right:" + horizontal
+                + "px!important;box-sizing:border-box!important;}"
+                + "@media(min-width:700px){body{padding-left:" + (horizontal + 12)
+                + "px!important;padding-right:" + (horizontal + 12) + "px!important;}}";
         String script = "(function(){var s=document.getElementById('ministerium-reader-prefs');"
                 + "if(!s){s=document.createElement('style');s.id='ministerium-reader-prefs';"
                 + "document.head.appendChild(s);}s.innerHTML=" + JSONObject.quote(css)
                 + ";})()";
         webView.evaluateJavascript(script, null);
+    }
+
+    private static String sanitizeFamily(String value) {
+        if (SANS.equals(value) || MONO.equals(value) || PALATINO.equals(value)) return value;
+        return SERIF;
+    }
+
+    private static String safeKey(String value) {
+        return value.trim().toLowerCase(java.util.Locale.ROOT)
+                .replaceAll("[^a-z0-9._-]+", "_");
     }
 
     private static int migrateLegacySize(Context context) {
