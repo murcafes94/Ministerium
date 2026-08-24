@@ -16,6 +16,7 @@ public final class LiturgyConclusionEnhancer {
                 + "if(!h){h=document.createElement('h3');h.textContent='Conclusión';document.body.appendChild(h);}"
                 + "var old=h.nextElementSibling;if(old)old.style.display='none';"
                 + "var box=document.createElement('section');box.id='ministerium-conclusion-choice';box.className='ministerium-conclusion';"
+                + "var accent=getComputedStyle(h).color||'#6E1D2A';box.style.setProperty('--ministerium-accent',accent);"
                 + "var nav=document.createElement('div');nav.className='ministerium-conclusion-options';"
                 + "var out=document.createElement('p');out.className='ministerium-conclusion-text';"
                 + "var choices=["
@@ -26,11 +27,10 @@ public final class LiturgyConclusionEnhancer {
                 + "box.appendChild(nav);box.appendChild(out);h.parentNode.insertBefore(box,old||h.nextSibling);select(0);"
                 + "var existing=document.getElementById('ministerium-conclusion-style');if(existing)existing.remove();var s=document.createElement('style');s.id='ministerium-conclusion-style';"
                 + "s.textContent='"
-                + ".ministerium-conclusion{margin:10px 0 22px;padding:14px;border-left:4px solid currentColor;background:rgba(201,165,92,.12);border-radius:0 8px 8px 0;}"
+                + ".ministerium-conclusion{margin:10px 0 22px;padding:14px;border-left:4px solid var(--ministerium-accent);background:rgba(201,165,92,.12);border-radius:0 8px 8px 0;}"
                 + ".ministerium-conclusion-options{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}"
-                + ".ministerium-conclusion-options button{border:1px solid currentColor;border-radius:18px;padding:8px 12px;background:transparent;color:inherit;-webkit-text-fill-color:currentColor;line-height:1.2;}"
-                + ".ministerium-conclusion-options button.ministerium-conclusion-active{background:currentColor;}"
-                + ".ministerium-conclusion-options button.ministerium-conclusion-active::first-line{color:white;-webkit-text-fill-color:white;}"
+                + ".ministerium-conclusion-options button{border:1px solid var(--ministerium-accent);border-radius:18px;padding:8px 12px;background:transparent;color:var(--ministerium-accent)!important;-webkit-text-fill-color:var(--ministerium-accent)!important;line-height:1.2;}"
+                + ".ministerium-conclusion-options button.ministerium-conclusion-active{background:var(--ministerium-accent)!important;color:#FFF!important;-webkit-text-fill-color:#FFF!important;}"
                 + ".ministerium-conclusion-text{white-space:pre-line;line-height:1.65;margin:0;}';document.head.appendChild(s);})()";
         webView.evaluateJavascript(script, null);
     }
