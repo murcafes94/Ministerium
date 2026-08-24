@@ -47,6 +47,7 @@ public final class MissalProperRepository {
     private static final Pattern LINK = Pattern.compile(
             "<a\\s+[^>]*href=[\"']([^\"']+)[\"'][^>]*>(.*?)</a>",
             Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    private static final Pattern ROMAN = Pattern.compile("^[ivxlcdm]+$");
 
     private MissalProperRepository() {}
 
@@ -89,12 +90,29 @@ public final class MissalProperRepository {
 
     private static int score(String wanted, String candidate) {
         if (candidate.isEmpty()) return -1;
+        if (wanted.equals(candidate)) return 1000;
         if (wanted.contains(candidate) || candidate.contains(wanted)) return 100;
         int score = 0;
         for (String token : wanted.split(" ")) {
-            if (token.length() >= 4 && !common(token) && candidate.contains(token)) score++;
+            if (ROMAN.matcher(token).matches()) {
+                // La semana litúrgica (III, XXI, XXXIV...) es mucho más discriminante
+                // que palabras repetidas como domingo/tiempo/ordinario.
+                if (containsToken(candidate, token)) score += 25;
+                continue;
+            }
+            if (token.length() >= 4 && !common(token) && containsToken(candidate, token)) {
+                score++;
+            }
         }
         return score;
+    }
+
+    private static boolean containsToken(String value, String token) {
+        if (value == null || token == null || token.isEmpty()) return false;
+        for (String current : value.split(" ")) {
+            if (token.equals(current)) return true;
+        }
+        return false;
     }
 
     private static boolean common(String token) {
