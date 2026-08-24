@@ -16,6 +16,7 @@ import java.util.Locale;
 public class BackupActivity extends ThemedActivity {
     private static final int CREATE_BACKUP = 81;
     private static final int RESTORE_BACKUP = 82;
+    private static final String GOOGLE_DRIVE_PACKAGE = "com.google.android.apps.docs";
     private TextView status;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -26,16 +27,46 @@ public class BackupActivity extends ThemedActivity {
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         findViewById(R.id.btnCreateBackup).setOnClickListener(v -> createBackup());
         findViewById(R.id.btnRestoreBackup).setOnClickListener(v -> chooseRestore());
-        findViewById(R.id.btnDriveBackup).setOnClickListener(v -> createBackup());
+        findViewById(R.id.btnDriveBackup).setOnClickListener(v -> createDriveBackup());
         refreshStatus();
     }
 
-    private void createBackup() {
+    private Intent backupDocumentIntent() {
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("application/json");
-        intent.putExtra(Intent.EXTRA_TITLE, "ministerium-backup-current.json");
-        startActivityForResult(intent, CREATE_BACKUP);
+        intent.putExtra(Intent.EXTRA_TITLE, backupFileName());
+        return intent;
+    }
+
+    private String backupFileName() {
+        String stamp = new SimpleDateFormat("yyyy-MM-dd-HHmm", Locale.US).format(new Date());
+        return "ministerium-backup-" + stamp + ".json";
+    }
+
+    private void createBackup() {
+        startActivityForResult(backupDocumentIntent(), CREATE_BACKUP);
+    }
+
+    /**
+     * Abre directamente Google Drive cuando está instalado. Drive gestiona su
+     * propia cuenta/inicio de sesión; Ministerium no necesita ni almacena claves
+     * OAuth. Si Drive no expone la acción en ese dispositivo, se usa el selector
+     * seguro de documentos de Android, donde Drive puede elegirse como proveedor.
+     */
+    private void createDriveBackup() {
+        Intent drive = backupDocumentIntent();
+        drive.setPackage(GOOGLE_DRIVE_PACKAGE);
+        if (drive.resolveActivity(getPackageManager()) != null) {
+            try {
+                startActivityForResult(drive, CREATE_BACKUP);
+                return;
+            } catch (Exception ignored) {}
+        }
+        Toast.makeText(this,
+                "Abriendo el selector de archivos. Elige Google Drive como ubicación.",
+                Toast.LENGTH_LONG).show();
+        createBackup();
     }
 
     private void chooseRestore() {
