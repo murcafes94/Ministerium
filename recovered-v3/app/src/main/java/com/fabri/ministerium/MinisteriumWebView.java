@@ -56,7 +56,8 @@ public class MinisteriumWebView extends WebView {
 
     /**
      * Mantiene visibles las herramientas esenciales. Las secundarias quedan en
-     * «Más», de modo que el popup no se convierta en una fila interminable.
+     * el desbordamiento «Más», de modo que el popup no se convierta en una fila
+     * interminable. Los iconos se dejan al sistema para que respeten tema y escala.
      */
     private void promoteCoreActions(Menu menu) {
         if (menu == null) return;
@@ -64,9 +65,21 @@ public class MinisteriumWebView extends WebView {
             MenuItem item = menu.getItem(i);
             if (item == null || item.getTitle() == null) continue;
             String title = item.getTitle().toString();
-            if ("Subrayar".equals(title) || "Nota".equals(title)
-                    || "Diccionario".equals(title)) {
+            if ("Subrayar".equals(title)) {
+                item.setIcon(android.R.drawable.ic_menu_edit);
                 item.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+            } else if ("Nota".equals(title)) {
+                item.setIcon(android.R.drawable.ic_menu_save);
+                item.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+            } else if ("Diccionario".equals(title)) {
+                item.setIcon(android.R.drawable.ic_menu_search);
+                item.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+            } else if ("Reflexión".equals(title) || "Comentario".equals(title)) {
+                item.setIcon(android.R.drawable.ic_menu_info_details);
+                item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+            } else if ("Leer".equals(title)) {
+                item.setIcon(android.R.drawable.ic_lock_silent_mode_off);
+                item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
             } else {
                 item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
             }
