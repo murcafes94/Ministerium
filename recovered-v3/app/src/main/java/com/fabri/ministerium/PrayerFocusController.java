@@ -29,10 +29,15 @@ public final class PrayerFocusController {
                 .getBoolean(ENABLED, false);
     }
 
-    public static void setEnabled(Context context, boolean enabled) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                .putBoolean(ENABLED, enabled).apply();
-        if (!enabled) restoreIfPossible(context);
+    public static synchronized void setEnabled(Context context, boolean enabled) {
+        android.content.SharedPreferences prefs = context.getSharedPreferences(
+                PREFS, Context.MODE_PRIVATE);
+        prefs.edit().putBoolean(ENABLED, enabled).apply();
+        // Solo restauramos si existe una sesión que Ministerium abrió. Desactivar
+        // la preferencia nunca debe cambiar un No molestar puesto manualmente.
+        if (!enabled && (activeScreens > 0 || prefs.getBoolean(SESSION_ACTIVE, false))) {
+            restoreSession(context);
+        }
     }
 
     public static boolean hasPolicyAccess(Context context) {
@@ -58,13 +63,7 @@ public final class PrayerFocusController {
             prefs.edit().putBoolean(SESSION_ACTIVE, false).remove(PREVIOUS_FILTER).apply();
             return;
         }
-        int previous = prefs.getInt(PREVIOUS_FILTER,
-                NotificationManager.INTERRUPTION_FILTER_ALL);
-        NotificationManager manager = manager(context);
-        if (manager != null) {
-            try { manager.setInterruptionFilter(previous); } catch (Exception ignored) {}
-        }
-        prefs.edit().putBoolean(SESSION_ACTIVE, false).remove(PREVIOUS_FILTER).apply();
+        restoreSession(context);
     }
 
     public static synchronized void enter(Context context) {
@@ -92,12 +91,16 @@ public final class PrayerFocusController {
         if (activeScreens <= 0) return;
         activeScreens--;
         if (activeScreens > 0) return;
-        restoreIfPossible(context);
+        restoreSession(context);
     }
 
-    private static synchronized void restoreIfPossible(Context context) {
+    private static synchronized void restoreSession(Context context) {
         android.content.SharedPreferences prefs = context.getSharedPreferences(
                 PREFS, Context.MODE_PRIVATE);
+        if (processPreviousFilter == null && !prefs.getBoolean(SESSION_ACTIVE, false)) {
+            activeScreens = 0;
+            return;
+        }
         int previous = processPreviousFilter != null
                 ? processPreviousFilter
                 : prefs.getInt(PREVIOUS_FILTER, NotificationManager.INTERRUPTION_FILTER_ALL);
