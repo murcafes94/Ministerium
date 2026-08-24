@@ -14,6 +14,10 @@ public final class CombinedMassPolisher {
             "(?is)<a\\s+[^>]*href=[\\\"'][^\\\"']*[\\\"'][^>]*>(.*?)</a>");
     private static final Pattern CANTICLE_LINK = Pattern.compile(
             "(?is)<p\\b[^>]*>\\s*<a\\b[^>]*>\\s*(?:Benedictus|Magnificat)\\s*</a>\\s*</p>");
+    private static final Pattern ROW = Pattern.compile("(?is)<tr\\b[^>]*>.*?</tr>");
+    private static final Pattern MASS_SECTION = Pattern.compile(
+            "(?is)(<section\\s+class=\\\"ministerium-section\\\"[^>]*>\\s*"
+                    + "<h2>\\s*Santa Misa\\s*</h2>)(.*?)(</section>)");
 
     private CombinedMassPolisher() {}
 
@@ -26,6 +30,7 @@ public final class CombinedMassPolisher {
         String html = cleanMissalNavigation(base.html);
 
         LiturgicalDay day = LiturgicalResolver.resolve(context, date);
+        html = applyGloriaRule(context, date, day, html);
         if (!hasRequiredSaint(day)) {
             HourEntry hour = findHour(context, day, date, hourKey);
             int ordinaryWeek = LiturgicalResolver.ordinaryWeekNumber(date);
@@ -54,6 +59,52 @@ public final class CombinedMassPolisher {
             if (office != null && office.requiresProperOffice()) return true;
         }
         return false;
+    }
+
+    private static String applyGloriaRule(android.content.Context context, Calendar date,
+                                          LiturgicalDay day, String html) {
+        if (gloriaRequired(context, date, day)) return html;
+        Matcher section = MASS_SECTION.matcher(html);
+        if (!section.find()) return html;
+
+        String content = section.group(2);
+        Matcher rows = ROW.matcher(content);
+        int gloriaStart = -1;
+        int lastRowEnd = -1;
+        while (rows.find()) {
+            String text = normalize(rows.group().replaceAll("<[^>]+>", " ")
+                    .replace("&nbsp;", " ").replace("&#160;", " "));
+            if (gloriaStart < 0 && (text.equals("gloria")
+                    || text.startsWith("gloria a dios")
+                    || text.contains("gloria a dios en el cielo"))) {
+                gloriaStart = rows.start();
+            }
+            if (gloriaStart >= 0) lastRowEnd = rows.end();
+        }
+        if (gloriaStart < 0 || lastRowEnd < gloriaStart) return html;
+
+        String filtered = content.substring(0, gloriaStart) + content.substring(lastRowEnd);
+        String replacement = section.group(1) + filtered + section.group(3);
+        return section.replaceFirst(Matcher.quoteReplacement(replacement));
+    }
+
+    private static boolean gloriaRequired(android.content.Context context, Calendar date,
+                                           LiturgicalDay day) {
+        if (day != null && day.saintOffices != null) {
+            for (HoursLink office : day.saintOffices) {
+                if (office != null && office.isFeastOrSolemnity()) return true;
+            }
+        }
+        try {
+            for (LiturgicalEvent event : LiturgicalCalendarRepository.eventsFor(context, date)) {
+                if (event.isFeast() || event.isSolemnity()) return true;
+            }
+        } catch (Exception ignored) {}
+
+        if (date.get(Calendar.DAY_OF_WEEK) != Calendar.SUNDAY) return false;
+        String season = day == null || day.temporalOffice == null
+                || day.temporalOffice.volume == null ? "" : day.temporalOffice.volume.id;
+        return !"advent".equals(season) && !"lent".equals(season);
     }
 
     private static HourEntry findHour(android.content.Context context, LiturgicalDay day,
