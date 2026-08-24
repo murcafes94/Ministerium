@@ -30,6 +30,34 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Python for content preprocessing
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install missal preprocessing dependency
+        run: python -m pip install 'pypdf>=5,<6'
+
+      - name: Build Liturgia Papal missal package
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/build_liturgiapapal_missal.py --language all --force-download
+          test -f app/src/main/assets/missal/manifest.json
+          test -f app/src/main/assets/missal/es/initial.txt
+          test -f app/src/main/assets/missal/es/eucharistic_prayer_1.txt
+          test -f app/src/main/assets/missal/es/eucharistic_prayer_2.txt
+          test -f app/src/main/assets/missal/es/eucharistic_prayer_3.txt
+          test -f app/src/main/assets/missal/es/eucharistic_prayer_4.txt
+          test -f app/src/main/assets/missal/es/proper_ordinary.txt
+          grep -q 'El Señor esté con ustedes' app/src/main/assets/missal/es/initial.txt
+          if grep -q 'El Señor esté con vosotros' app/src/main/assets/missal/es/initial.txt; then
+            echo 'ERROR: se generó accidentalmente la edición de España.' >&2
+            exit 1
+          fi
+          echo 'Liturgia Papal package generated from Mexico + Latin sources.'
+
       - name: Set up JDK 11
         uses: actions/setup-java@v4
         with:
@@ -85,5 +113,6 @@ jobs:
           path: |
             recovered-v3/app/build/outputs/apk/debug/*.apk
             recovered-v3/apk-sha256.txt
+            recovered-v3/app/src/main/assets/missal/manifest.json
           if-no-files-found: error
           retention-days: 14
