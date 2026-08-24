@@ -1,0 +1,101 @@
+name: Bible Semantic 3.1 Build
+
+on:
+  push:
+    branches: [ feature/bible-semantic-v3.1-source ]
+  pull_request:
+    branches:
+      - fix/combined-mass-single-flow
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: recovered-v3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Test semantic Bible importer
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/ministerium-bible-test
+          cat > /tmp/ministerium-bible-test/JHN.usfm <<'EOF'
+          \id JHN
+          \c 1
+          \v 1 Texto de prueba uno.
+          \v 2 Texto de prueba dos.
+          EOF
+          python3 tools/bible_import/import_bible.py \
+            --format usfm \
+            --source /tmp/ministerium-bible-test/JHN.usfm \
+            --output /tmp/ministerium-bible-test/test.ministerium-bible.sqlite \
+            --edition-id test-es \
+            --name 'Edición de prueba' \
+            --language es \
+            --canon catholic-73 \
+            --license-id TEST-ONLY
+          python3 - <<'PY'
+          import sqlite3
+          path = '/tmp/ministerium-bible-test/test.ministerium-bible.sqlite'
+          db = sqlite3.connect(path)
+          assert db.execute('select count(*) from verses').fetchone()[0] == 2
+          assert db.execute("select book_key from books").fetchone()[0] == 'JHN'
+          assert db.execute("select value from metadata where key='edition_id'").fetchone()[0] == 'test-es'
+          db.close()
+          PY
+
+      - name: Set up JDK 17 for Android SDK tools
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools platforms;android-30 build-tools;30.0.3'
+
+      - name: Set up JDK 11 for Gradle 6.7.1 / AGP 4.2.1
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
+          cache: gradle
+          cache-dependency-path: recovered-v3/**/*.gradle*
+
+      - name: Validate Android project
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f app/build.gradle
+          test -f app/src/main/AndroidManifest.xml
+          if [ -f tools/validate_project.mjs ]; then node tools/validate_project.mjs; fi
+          echo 'Legacy validate_content.mjs and validate_combined_mass.mjs are tracked separately because they already fail against the current recovered base.'
+
+      - name: Compile debug APK
+        shell: bash
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon clean assembleDebug
+
+      - name: Calculate APK SHA-256
+        shell: bash
+        run: sha256sum app/build/outputs/apk/debug/*.apk | tee apk-sha256.txt
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ministerium-bible-semantic-3.1-debug
+          path: |
+            recovered-v3/app/build/outputs/apk/debug/*.apk
+            recovered-v3/apk-sha256.txt
+          if-no-files-found: error
+          retention-days: 7

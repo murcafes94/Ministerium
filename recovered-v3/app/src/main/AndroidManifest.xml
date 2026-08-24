@@ -22,6 +22,7 @@
         <activity android:name=".BibleActivity" android:exported="false" />
         <activity android:name=".BibleChaptersActivity" android:exported="false" />
         <activity android:name=".BibleReaderActivity" android:exported="false" />
+        <activity android:name=".SemanticBibleReaderActivity" android:exported="false" />
         <activity android:name=".BibleSearchActivity" android:exported="false" />
         <activity android:name=".MarkersActivity" android:exported="false" />
         <activity android:name=".BibleDictionaryActivity" android:exported="false" />
