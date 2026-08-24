@@ -8,11 +8,13 @@ an app build depend on repeatedly downloading very large PDFs.
 
 import json
 import time
+import unicodedata
 import urllib.request
 
 import build_liturgiapapal_missal as base
 
 _original_validate_mexico = base.validate_mexico_ordinary
+_original_validate_cleaned = base.validate_cleaned
 CANONICAL_ES = base.SOURCES["es"]["ordinary_full"]
 CANONICAL_LA = base.SOURCES["la"]["ordinary_full"]
 
@@ -23,6 +25,27 @@ def validate_mexico_31(component: str, text: str) -> list[str]:
     if component.startswith("proper_"):
         return []
     return _original_validate_mexico(component, text)
+
+
+def fold_diacritics(value: str) -> str:
+    return "".join(
+        ch for ch in unicodedata.normalize("NFD", value or "")
+        if unicodedata.category(ch) != "Mn"
+    )
+
+
+def validate_cleaned_31(language: str, component: str, text: str) -> list[str]:
+    problems = _original_validate_cleaned(language, component, text)
+    if language == "la" and component in {"ordinary_full", "initial"}:
+        # Liturgia Papal preserves Latin stress marks, e.g. «In nómine Patris».
+        # The base validator historically searched the unaccented spelling.
+        problems = [
+            problem for problem in problems
+            if problem != "no se encontró el comienzo del Ordo latino"
+        ]
+        if "in nomine patris" not in fold_diacritics(text).lower():
+            problems.append("no se encontró el comienzo del Ordo latino")
+    return problems
 
 
 def resilient_download(url, destination):
@@ -96,6 +119,7 @@ def build31(output, languages, force):
 
 
 base.validate_mexico_ordinary = validate_mexico_31
+base.validate_cleaned = validate_cleaned_31
 base.download = resilient_download
 base.build = build31
 
