@@ -9,8 +9,7 @@ import android.webkit.WebView;
 
 /**
  * WebView de lectura que conserva la selección nativa de Android y permite a
- * Ministerium añadir acciones propias al ActionMode sin usar APIs inexistentes
- * de WebView como setCustomSelectionActionModeCallback().
+ * Ministerium añadir acciones propias al ActionMode.
  */
 public class MinisteriumWebView extends WebView {
     public interface SelectionActionHandler {
@@ -51,6 +50,27 @@ public class MinisteriumWebView extends WebView {
         return new SelectionCallback(original);
     }
 
+    /**
+     * Android/WebView puede mandar todas las acciones personalizadas al menú de
+     * desbordamiento. Se promueven las cuatro herramientas esenciales para que
+     * el menú flotante realmente muestre Subrayar, Nota, Reflexión y Diccionario.
+     */
+    private void promoteCoreActions(Menu menu) {
+        if (menu == null) return;
+        for (int i = 0; i < menu.size(); i++) {
+            MenuItem item = menu.getItem(i);
+            if (item == null || item.getTitle() == null) continue;
+            String title = item.getTitle().toString();
+            if ("Subrayar".equals(title) || "Nota".equals(title)
+                    || "Reflexión".equals(title) || "Diccionario".equals(title)) {
+                item.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+            } else if ("Comentario".equals(title) || "Traducir".equals(title)
+                    || "Leer".equals(title)) {
+                item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+            }
+        }
+    }
+
     private final class SelectionCallback implements ActionMode.Callback {
         private final ActionMode.Callback original;
 
@@ -63,6 +83,7 @@ public class MinisteriumWebView extends WebView {
             boolean created = original == null || original.onCreateActionMode(mode, menu);
             if (created && selectionActionHandler != null) {
                 selectionActionHandler.populate(menu);
+                promoteCoreActions(menu);
             }
             return created;
         }
@@ -72,6 +93,7 @@ public class MinisteriumWebView extends WebView {
             boolean changed = original != null && original.onPrepareActionMode(mode, menu);
             if (selectionActionHandler != null) {
                 selectionActionHandler.populate(menu);
+                promoteCoreActions(menu);
                 changed = true;
             }
             return changed;
