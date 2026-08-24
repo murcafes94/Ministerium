@@ -19,10 +19,9 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.Locale;
 import java.util.UUID;
 
-/** Contrato 3.0 para lectores basados en TextView. */
+/** Contrato compartido para lectores basados en TextView. */
 public final class TextViewReaderChrome {
     private static final int HIGHLIGHT = 9401, NOTE = 9402, MEDITATION = 9403,
             DICTIONARY = 9404, TRANSLATE = 9405, READ = 9406;
@@ -70,7 +69,8 @@ public final class TextViewReaderChrome {
     private static void applyPreferences(Activity activity, TextView content) {
         content.setTextSize(17f * ReaderPreferences.textZoom(activity) / 110f);
         content.setTypeface(Typeface.create(ReaderPreferences.family(activity),
-                ReaderPreferences.weight(activity) >= 600 ? Typeface.BOLD : Typeface.NORMAL));
+                ReaderPreferences.weight(activity) >= 600
+                        ? Typeface.BOLD : Typeface.NORMAL));
         content.setLineSpacing(0, ReaderPreferences.lineHeight(activity));
     }
 
@@ -114,17 +114,31 @@ public final class TextViewReaderChrome {
 
     private static void attachSelection(Activity activity, TextView content,
                                         ReaderContext context) {
+        content.setTextIsSelectable(true);
         content.setCustomSelectionActionModeCallback(new ActionMode.Callback() {
             @Override public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-                menu.add(Menu.NONE, HIGHLIGHT, 90, "Resaltar");
-                menu.add(Menu.NONE, NOTE, 91, "Nota");
-                menu.add(Menu.NONE, MEDITATION, 92, "Meditación");
-                menu.add(Menu.NONE, DICTIONARY, 93, "Diccionario");
-                menu.add(Menu.NONE, TRANSLATE, 94, "Traducir");
-                menu.add(Menu.NONE, READ, 95, "Leer en voz alta");
+                // Android 6+ presenta este ActionMode como toolbar flotante junto
+                // al texto seleccionado, como los lectores de referencia.
+                addAction(menu, HIGHLIGHT, 90, "Subrayar",
+                        android.R.drawable.ic_menu_edit, MenuItem.SHOW_AS_ACTION_ALWAYS);
+                addAction(menu, NOTE, 91, "Nota",
+                        android.R.drawable.ic_menu_save, MenuItem.SHOW_AS_ACTION_ALWAYS);
+                addAction(menu, DICTIONARY, 92, "Diccionario",
+                        android.R.drawable.ic_menu_search, MenuItem.SHOW_AS_ACTION_ALWAYS);
+                addAction(menu, MEDITATION, 93, "Reflexión",
+                        android.R.drawable.ic_menu_info_details, MenuItem.SHOW_AS_ACTION_IF_ROOM);
+                addAction(menu, TRANSLATE, 94, "Traducir",
+                        android.R.drawable.ic_menu_set_as, MenuItem.SHOW_AS_ACTION_IF_ROOM);
+                addAction(menu, READ, 95, "Leer",
+                        android.R.drawable.ic_lock_silent_mode_off, MenuItem.SHOW_AS_ACTION_IF_ROOM);
+                // Copiar/Compartir siguen siendo las acciones nativas del sistema.
                 return true;
             }
-            @Override public boolean onPrepareActionMode(ActionMode mode, Menu menu) { return false; }
+
+            @Override public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+                return false;
+            }
+
             @Override public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
                 int id = item.getItemId();
                 if (id < HIGHLIGHT || id > READ) return false;
@@ -143,21 +157,34 @@ public final class TextViewReaderChrome {
                             .putExtra(StudyEditorActivity.EXTRA_SOURCE_KEY, context.sourceKey)
                             .putExtra(StudyEditorActivity.EXTRA_REFERENCE, context.reference)
                             .putExtra(StudyEditorActivity.EXTRA_QUOTE, selected));
-                } else if (id == DICTIONARY) DictionarySelectionHelper.showDictionary(activity, selected);
-                else if (id == TRANSLATE) DictionarySelectionHelper.showTranslator(activity, selected);
-                else ReaderTtsController.speakSelection(activity, selected);
+                } else if (id == DICTIONARY) {
+                    DictionarySelectionHelper.showDictionary(activity, selected);
+                } else if (id == TRANSLATE) {
+                    DictionarySelectionHelper.showTranslator(activity, selected);
+                } else {
+                    ReaderTtsController.speakSelection(activity, selected);
+                }
                 mode.finish();
                 return true;
             }
+
             @Override public void onDestroyActionMode(ActionMode mode) {}
         });
+    }
+
+    private static void addAction(Menu menu, int id, int order, String title,
+                                  int icon, int showAsAction) {
+        MenuItem item = menu.findItem(id);
+        if (item == null) item = menu.add(Menu.NONE, id, order, title);
+        item.setIcon(icon);
+        item.setShowAsAction(showAsAction);
     }
 
     private static void chooseHighlight(Activity activity, TextView content,
                                         ReaderContext context, String selected) {
         String[] names = {"Amarillo", "Verde", "Azul", "Rojo", "Gris"};
         String[] keys = {"yellow", "green", "blue", "red", "gray"};
-        new AlertDialog.Builder(activity).setTitle("Color del resaltado")
+        new AlertDialog.Builder(activity).setTitle("Color del subrayado")
                 .setItems(names, (dialog, which) -> {
                     StudyEntry entry = new StudyEntry();
                     entry.id = UUID.randomUUID().toString();
@@ -171,7 +198,7 @@ public final class TextViewReaderChrome {
                     entry.color = keys[which];
                     StudyStore.save(activity, entry);
                     applyHighlight(content, selected, color(keys[which]));
-                    Toast.makeText(activity, "Resaltado guardado en Mi estudio.",
+                    Toast.makeText(activity, "Subrayado guardado en Mi estudio.",
                             Toast.LENGTH_SHORT).show();
                 }).setNegativeButton("Cancelar", null).show();
     }
