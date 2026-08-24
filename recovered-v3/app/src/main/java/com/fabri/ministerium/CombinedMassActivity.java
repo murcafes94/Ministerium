@@ -57,6 +57,7 @@ public class CombinedMassActivity extends ThemedActivity {
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         configureWebView();
+        UniversalSelectionMenu.attach(this, webView, readerContext());
         buildCelebration();
     }
 
@@ -84,8 +85,9 @@ public class CombinedMassActivity extends ThemedActivity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
-                // Biblia y Misal usan la familia Palatino (con fallback serif del sistema).
                 ReaderPreferences.applyPalatino(CombinedMassActivity.this, webView);
+                UniversalSelectionMenu.restoreHighlights(CombinedMassActivity.this,
+                        webView, readerContext().sourceKey);
                 statusView.setText("");
             }
         });
@@ -117,6 +119,17 @@ public class CombinedMassActivity extends ThemedActivity {
                 });
             }
         }).start();
+    }
+
+    private ReaderContext readerContext() {
+        String sourceKey = "combined-mass:"
+                + date.get(Calendar.YEAR) + "-"
+                + (date.get(Calendar.MONTH) + 1) + "-"
+                + date.get(Calendar.DAY_OF_MONTH) + ":" + hourKey + ":" + language;
+        String title = "Misa + " + hourName();
+        String reference = celebrationView == null ? "" : celebrationView.getText().toString();
+        return new ReaderContext("Celebración unida", sourceKey, title,
+                reference, "Liturgia", true);
     }
 
     private String hourName() {
