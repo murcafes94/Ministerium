@@ -15,8 +15,7 @@ import json
 import sys
 import urllib.parse
 import urllib.request
-from dataclasses import dataclass
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, List
 
 API_BASE = "https://litcal.johnromanodorazio.com/api/v5/calendar/roman"
 
@@ -41,7 +40,7 @@ def easter_sunday(year: int) -> dt.date:
 
 def advent_start(year: int) -> dt.date:
     date = dt.date(year, 12, 3)
-    while date.weekday() != 6:  # Sunday
+    while date.weekday() != 6:
         date -= dt.timedelta(days=1)
     return date
 
@@ -73,9 +72,6 @@ def expected_temporal(year: int, transferred_epiphany: bool) -> Dict[str, dt.dat
         "BaptismLord": baptism,
     }
 
-    # First Sunday after the Baptism is Ordinary Sunday II. Some Ordinary
-    # Sundays disappear during Lent/Easter; after Pentecost the numbering
-    # resumes so that Christ the King is Sunday XXXIV.
     first_ord_sunday = baptism
     while first_ord_sunday.weekday() != 6:
         first_ord_sunday += dt.timedelta(days=1)
@@ -135,8 +131,6 @@ def compare_year(year: int, remote: Dict[str, dt.date], transferred_epiphany: bo
     for key, local_date in sorted(expected.items()):
         remote_date = remote.get(key)
         if remote_date is None:
-            # Missing Ordinary Sundays can legitimately be suppressed by a
-            # higher-ranking temporal celebration. Core anchors may not.
             if not key.startswith("OrdSunday"):
                 failures.append(f"{year} {key}: missing in LitCal response")
             continue
@@ -150,8 +144,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--start", type=int, default=2020)
     parser.add_argument("--end", type=int, default=2040)
     parser.add_argument("--locale", default="es_ES")
-    parser.add_argument("--epiphany", choices=["JAN6", "SUNDAY"], default="SUNDAY",
-                        help="SUNDAY matches Ministerium's current transferred-Epiphany profile")
+    parser.add_argument(
+        "--epiphany",
+        choices=["JAN6", "SUNDAY_JAN2_JAN8"],
+        default="SUNDAY_JAN2_JAN8",
+        help="SUNDAY_JAN2_JAN8 matches Ministerium's current transferred-Epiphany profile",
+    )
     parser.add_argument("--ascension", choices=["THURSDAY", "SUNDAY"], default="THURSDAY")
     parser.add_argument("--corpus", choices=["THURSDAY", "SUNDAY"], default="THURSDAY")
     return parser.parse_args()
@@ -165,7 +163,7 @@ def main() -> int:
     failures: List[str] = []
     for year in range(args.start, args.end + 1):
         remote = fetch_litcal(year, args.epiphany, args.ascension, args.corpus, args.locale)
-        failures.extend(compare_year(year, remote, args.epiphany == "SUNDAY"))
+        failures.extend(compare_year(year, remote, args.epiphany == "SUNDAY_JAN2_JAN8"))
         print(f"{year}: checked {len(remote)} LitCal events")
 
     if failures:
