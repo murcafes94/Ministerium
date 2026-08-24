@@ -13,13 +13,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Builds one local HTML document for Lauds/Vespers immediately joined to Mass.
- *
- * The source texts are not rewritten here: this class embeds the same local
- * Hours, Roman Missal and saved lectionary documents already used by the app,
- * then limits each embedded block to the portions required by OGLH 93-96.
- */
+/** Builds one continuous local document for Lauds/Vespers immediately joined to Mass. */
 public final class CombinedCelebrationDocument {
     private CombinedCelebrationDocument() {}
 
@@ -30,7 +24,7 @@ public final class CombinedCelebrationDocument {
         String cycle = LiturgicalResolver.lectionaryCycle(date);
         int readingsYear = date.get(Calendar.YEAR) % 2 == 0 ? 2 : 1;
 
-        String hourHtml = hourDocument(context, hour, ordinaryWeek, cycle, readingsYear);
+        String hourHtml = hourDocument(context, day, hour, ordinaryWeek, cycle, readingsYear);
         String startHtml = missalEntry(context, "Inicio");
         String eucharistHtml = missalEntry(context, "Credo");
         String conclusionHtml = missalEntry(context, "RitoConclusión", "Rito Conclusión", "Rito de conclusión");
@@ -46,8 +40,7 @@ public final class CombinedCelebrationDocument {
         StringBuilder out = new StringBuilder(32768);
         out.append("<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\">")
                 .append("<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">")
-                .append("<style>")
-                .append(baseCss("lat_es".equals(missalLanguage)))
+                .append("<style>").append(baseCss("lat_es".equals(missalLanguage), ThemeUtils.isDark(context)))
                 .append("</style></head><body>")
                 .append("<header class=\"union-header\"><div class=\"kicker\">OGLH 93–96 · celebración unida</div><h1>")
                 .append(escape(day.celebration)).append("</h1><p>")
@@ -55,11 +48,8 @@ public final class CombinedCelebrationDocument {
                 .append("vespers".equals(hour.key) ? "Vísperas" : "Laudes")
                 .append(" con Misa</p></header>");
 
-        if (massEntrance) {
-            section(out, "mass-greeting", "Ritos iniciales", body(startHtml));
-        }
-        section(out, "hour-before", massEntrance ? "Salmodia" : "Inicio y salmodia",
-                body(hourHtml));
+        if (massEntrance) section(out, "mass-greeting", "Ritos iniciales", body(startHtml));
+        section(out, "hour-before", massEntrance ? "Salmodia" : "Inicio y salmodia", body(hourHtml));
         section(out, "mass-kyrie", "Kyrie y Gloria", body(startHtml));
         section(out, "mass-collect", "Oración colecta", collectHtml);
         section(out, "mass-readings", "Liturgia de la Palabra", readingsHtml);
@@ -67,29 +57,44 @@ public final class CombinedCelebrationDocument {
         section(out, "hour-canticle", "Cántico evangélico", body(hourHtml));
         section(out, "mass-after-communion", "Oración después de la Comunión", afterCommunionHtml);
         section(out, "mass-conclusion", "Conclusión", body(conclusionHtml));
-
-        out.append("<script>").append(filterScript(massEntrance)).append("</script>")
-                .append("</body></html>");
+        out.append("<script>").append(filterScript(massEntrance)).append("</script></body></html>");
         return out.toString();
     }
 
-    private static String hourDocument(Context context, HourEntry hour, int ordinaryWeek,
-                                       String cycle, int readingsYear) throws Exception {
-        File root = EpubUtils.ensureExtracted(context, hour.volume);
-        String resolved = null;
-        if ("ordinary".equals(hour.volume.id) && ordinaryWeek > 0) {
-            resolved = OrdinaryReferenceResolver.resolve(root, hour.filePath,
-                    ordinaryWeek, cycle, readingsYear);
+    private static String hourDocument(Context context, LiturgicalDay day, HourEntry hour,
+                                       int ordinaryWeek, String cycle, int readingsYear)
+            throws Exception {
+        HoursLink saint = null;
+        CommonOfficeChoice common = null;
+        if (day != null) {
+            for (HoursLink candidate : day.saintOffices) {
+                if (!candidate.requiresProperOffice()) continue;
+                saint = candidate;
+                List<CommonOfficeChoice> choices = SaintOfficeRepository.commonChoices(context, candidate);
+                common = choices.isEmpty() ? null : choices.get(0);
+                break;
+            }
         }
-        if (resolved != null) return resolved;
+        if (saint != null) {
+            MemoryOffice memory = SaintOfficeRepository.compose(context, hour, saint, common,
+                    ordinaryWeek, cycle, readingsYear);
+            if (memory != null && memory.html != null && !memory.html.trim().isEmpty()) {
+                return memory.html;
+            }
+        }
+        File root = EpubUtils.ensureExtracted(context, hour.volume);
+        if ("ordinary".equals(hour.volume.id) && ordinaryWeek > 0) {
+            String resolved = OrdinaryReferenceResolver.resolve(root, hour.filePath,
+                    ordinaryWeek, cycle, readingsYear);
+            if (resolved != null) return resolved;
+        }
         return read(new File(root, hour.filePath));
     }
 
     private static String missalEntry(Context context, String... candidates) throws Exception {
         int index = EpubUtils.findEntryIndex(context, HoursRepository.ROMAN_MISSAL, candidates);
         if (index < 0) return "<p class=\"ministerium-missing\">No se encontró este bloque del Ordinario.</p>";
-        List<EpubTocEntry> entries = EpubUtils.tableOfContents(context, HoursRepository.ROMAN_MISSAL);
-        EpubTocEntry entry = entries.get(index);
+        EpubTocEntry entry = EpubUtils.tableOfContents(context, HoursRepository.ROMAN_MISSAL).get(index);
         File root = EpubUtils.ensureExtracted(context, HoursRepository.ROMAN_MISSAL);
         return read(new File(root, entry.filePath));
     }
@@ -97,12 +102,10 @@ public final class CombinedCelebrationDocument {
     private static String proper(Context context, Calendar date, String celebration,
                                  MissalProperRepository.Part part) {
         try {
-            MissalProperRepository.Target target = MissalProperRepository.resolve(
-                    context, date, celebration, part);
+            MissalProperRepository.Target target = MissalProperRepository.resolve(context, date, celebration, part);
             if (target == null) return missingProper(part);
             File root = EpubUtils.ensureExtracted(context, HoursRepository.ROMAN_MISSAL);
-            String html = read(new File(root, target.filePath));
-            return fragment(html, target.fragment);
+            return fragment(read(new File(root, target.filePath)), target.fragment);
         } catch (Exception error) {
             return missingProper(part);
         }
@@ -150,11 +153,20 @@ public final class CombinedCelebrationDocument {
         return body(html);
     }
 
-    private static String baseCss(boolean bilingualMissal) {
-        return "html,body{margin:0;background:#fffdf7;color:#2a2521}body{font-family:serif;line-height:1.62;padding:18px;box-sizing:border-box}"
-                + ".union-header{padding:8px 2px 20px;border-bottom:1px solid #d8c9b5}.union-header h1{margin:.25em 0;color:#6e1d2a;font-size:1.55rem}.union-header p{margin:0;color:#6f665e}.kicker,.section-label{font-family:sans-serif;text-transform:uppercase;letter-spacing:.06em;font-size:.74rem;font-weight:bold;color:#6e1d2a}"
-                + ".union-section{padding:22px 0;border-bottom:1px solid #e6dccf}.section-label{margin-bottom:10px}.source-body{max-width:100%;overflow-wrap:anywhere}.source-body img,.source-body table{max-width:100%;height:auto}.ministerium-missing{padding:14px;border-left:4px solid #6e1d2a;background:#f5eddf}.ministerium-missing a{color:#6e1d2a;font-weight:bold}"
-                + ".ministerium-canticle{margin:12px 0;padding:14px;border-left:4px solid #6e1d2a;background:#f5eddf}"
+    private static String baseCss(boolean bilingualMissal, boolean dark) {
+        String bg = dark ? "#26211e" : "#fffdf7";
+        String ink = dark ? "#f3ede4" : "#2a2521";
+        String muted = dark ? "#c8beb3" : "#6f665e";
+        String accent = dark ? "#e1c57a" : "#6e1d2a";
+        String line = dark ? "#53483f" : "#e6dccf";
+        String panel = dark ? "#352e29" : "#f5eddf";
+        return "html,body{margin:0;background:" + bg + ";color:" + ink + "}"
+                + "body{font-family:serif;line-height:1.62;padding:18px;box-sizing:border-box}"
+                + ".union-header{padding:8px 2px 20px;border-bottom:1px solid " + line + "}.union-header h1{margin:.25em 0;color:" + accent + ";font-size:1.55rem}.union-header p{margin:0;color:" + muted + "}"
+                + ".kicker,.section-label{font-family:sans-serif;text-transform:uppercase;letter-spacing:.06em;font-size:.74rem;font-weight:bold;color:" + accent + "}"
+                + ".union-section{padding:22px 0;border-bottom:1px solid " + line + "}.section-label{margin-bottom:10px}.source-body{max-width:100%;overflow-wrap:anywhere}.source-body img,.source-body table{max-width:100%;height:auto}"
+                + (dark ? ".source-body,.source-body p,.source-body span,.source-body div,.source-body td{color:" + ink + "!important;-webkit-text-fill-color:" + ink + "!important}" : "")
+                + ".ministerium-missing{padding:14px;border-left:4px solid " + accent + ";background:" + panel + "}.ministerium-missing a{color:" + accent + ";font-weight:bold}"
                 + (bilingualMissal ? "" : ".source-body .izq{display:none!important}.source-body .dcha{width:100%!important}")
                 + "@media(min-width:700px){body{padding-left:42px;padding-right:42px}}";
     }
@@ -164,17 +176,11 @@ public final class CombinedCelebrationDocument {
                 + "function n(v){return(v||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/\\s+/g,' ').trim().toUpperCase();}"
                 + "function kids(id){var r=document.querySelector('#'+id+' .source-body');return r?Array.prototype.slice.call(r.children):[];}"
                 + "function rows(id){var r=document.querySelector('#'+id+' .source-body');return r?Array.prototype.slice.call(r.querySelectorAll('tr')):[];}"
-                // Hour before Mass: full opening+hymn+psalmody, or psalmody only after Mass greeting.
-                + "var h=kids('hour-before'),cut=h.length,hy=-1,sa=-1;for(var i=0;i<h.length;i++){var t=n(h[i].textContent);if(t.indexOf('LECTURA BREVE')===0){cut=i;break;}if(t==='HIMNO')hy=i;if(t==='SALMODIA'&&sa<0)sa=i;}"
-                + "for(var i=cut;i<h.length;i++)h[i].style.display='none';"
+                + "var h=kids('hour-before'),cut=h.length,sa=-1;for(var i=0;i<h.length;i++){var t=n(h[i].textContent);if(t.indexOf('LECTURA BREVE')===0){cut=i;break;}if(t==='SALMODIA'&&sa<0)sa=i;}for(var i=cut;i<h.length;i++)h[i].style.display='none';"
                 + (massEntrance ? "if(sa>=0)for(var i=0;i<sa;i++)h[i].style.display='none';" : "")
-                // Mass greeting only, never penitential act.
                 + "var g=rows('mass-greeting'),ge=g.length;for(var i=0;i<g.length;i++){if(n(g[i].textContent)==='ACTO PENITENCIAL'){ge=i;break;}}for(var i=ge;i<g.length;i++)g[i].style.display='none';"
-                // Kyrie/Gloria block, omitting penitential act and ending before collect/Word.
                 + "var k=rows('mass-kyrie'),ks=-1,ke=k.length;for(var i=0;i<k.length;i++){var t=n(k[i].textContent);if(ks<0&&t==='KYRIE')ks=i;if(k[i].querySelector('#AntesColecta')||t==='LITURGIA DE LA PALABRA'){ke=i;break;}}if(ks<0)ks=0;for(var i=0;i<ks;i++)k[i].style.display='none';for(var i=ke;i<k.length;i++)k[i].style.display='none';"
-                // Eucharistic block begins at Creed and stops before after-Communion prayer.
                 + "var e=rows('mass-eucharist'),es=-1,ee=e.length;for(var i=0;i<e.length;i++){if(es<0&&n(e[i].textContent)==='CREDO')es=i;if(e[i].querySelector('#AntesDespuesComunion')){ee=i;break;}}if(es<0)es=0;for(var i=0;i<es;i++)e[i].style.display='none';for(var i=ee;i<e.length;i++)e[i].style.display='none';"
-                // Gospel canticle only: after Communion and before preces.
                 + "var c=kids('hour-canticle'),cs=-1,ce=c.length;for(var i=0;i<c.length;i++){var t=n(c[i].textContent);if(cs<0&&t==='CANTICO EVANGELICO')cs=i;else if(cs>=0&&t==='PRECES'){ce=i;break;}}if(cs>=0){for(var i=0;i<cs;i++)c[i].style.display='none';for(var i=ce;i<c.length;i++)c[i].style.display='none';}"
                 + "window.scrollTo(0,0);})();";
     }
@@ -182,8 +188,7 @@ public final class CombinedCelebrationDocument {
     private static String read(File file) throws Exception {
         try (InputStream input = new FileInputStream(file);
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[8192];
-            int count;
+            byte[] buffer = new byte[8192]; int count;
             while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
             return new String(output.toByteArray(), StandardCharsets.UTF_8);
         }
@@ -192,7 +197,6 @@ public final class CombinedCelebrationDocument {
     private static String escape(String value) {
         if (value == null) return "";
         return value.replace("&", "&amp;").replace("<", "&lt;")
-                .replace(">", "&gt;").replace("\"", "&quot;")
-                .replace("'", "&#39;");
+                .replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;");
     }
 }
