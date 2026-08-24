@@ -53,6 +53,14 @@ jobs:
           unzip -q "$OUT" -d "$RUNNER_TEMP/ministerium-v3"
           rsync -a --exclude='.git/' "$RUNNER_TEMP/ministerium-v3/" ./
 
+      - name: Inspect version validation contract
+        shell: bash
+        run: |
+          echo '=== validate_project version checks ==='
+          sed -n '150,215p' tools/validate_project.mjs || true
+          echo '=== files mentioning version 3.0.0 / versionCode 30 ==='
+          grep -RInE "3\.0\.0|versionCode 30|versionName '3\.0\.0'" tools distribution app/src/main --include='*.mjs' --include='*.json' --include='*.java' --include='*.xml' 2>/dev/null | head -120 || true
+
       - name: Print technical inventory only
         shell: bash
         run: |
