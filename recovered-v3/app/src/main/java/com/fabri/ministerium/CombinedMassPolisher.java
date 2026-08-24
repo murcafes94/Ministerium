@@ -30,7 +30,14 @@ public final class CombinedMassPolisher {
         String html = cleanMissalNavigation(base.html);
 
         LiturgicalDay day = LiturgicalResolver.resolve(context, date);
+
+        // Mantiene correcto el fallback EPUB mientras dura la migración.
         html = applyGloriaRule(context, date, day, html);
+
+        // Cuando el paquete semántico existe, Liturgia Papal (México) tiene
+        // prioridad sobre el antiguo HTML del EPUB del Misal.
+        html = applyLiturgiaPapalMissal(context, date, day, language, html);
+
         if (!hasRequiredSaint(day)) {
             HourEntry hour = findHour(context, day, date, hourKey);
             int ordinaryWeek = LiturgicalResolver.ordinaryWeekNumber(date);
@@ -51,6 +58,100 @@ public final class CombinedMassPolisher {
         }
 
         return new CombinedMassComposer.Result(base.title, base.celebration, html);
+    }
+
+    /**
+     * Sustituye, por unidades semánticas, los bloques del viejo EPUB que ya
+     * están cubiertos por el paquete de Liturgia Papal. Durante la migración
+     * cualquier bloque que no pueda resolverse conserva el fallback anterior.
+     */
+    private static String applyLiturgiaPapalMissal(android.content.Context context,
+                                                   Calendar date,
+                                                   LiturgicalDay day,
+                                                   String language,
+                                                   String html) {
+        // La primera etapa migra el modo español. El paralelo LAT–ES se conectará
+        // cuando el propio latino esté normalizado con los mismos identificadores.
+        if ("lat_es".equals(language)
+                || !LiturgiaPapalMissalRepository.isAvailable(context, "es")) {
+            return html;
+        }
+
+        String value = html;
+        boolean gloria = gloriaRequired(context, date, day);
+
+        try {
+            String massStart = LiturgiaPapalMissalRepository.initialMassHtml(context, gloria);
+            value = replaceSection(value, "Santa Misa", massStart);
+        } catch (Exception ignored) {}
+
+        try {
+            String conclusion = LiturgiaPapalMissalRepository.conclusionHtml(context, "es");
+            value = replaceSection(value, "Rito de conclusión", conclusion);
+        } catch (Exception ignored) {}
+
+        if (!isOrdinary(day)) return value;
+
+        String entrance = "";
+        String collect = "";
+        String offerings = "";
+        String communionAntiphon = "";
+        String postCommunion = "";
+        try {
+            entrance = LiturgiaPapalMissalRepository.ordinaryProperPartHtml(
+                    context, date, LiturgiaPapalMissalRepository.ENTRANCE);
+            collect = LiturgiaPapalMissalRepository.ordinaryProperPartHtml(
+                    context, date, LiturgiaPapalMissalRepository.COLLECT);
+            offerings = LiturgiaPapalMissalRepository.ordinaryProperPartHtml(
+                    context, date, LiturgiaPapalMissalRepository.OFFERINGS);
+            communionAntiphon = LiturgiaPapalMissalRepository.ordinaryProperPartHtml(
+                    context, date, LiturgiaPapalMissalRepository.COMMUNION_ANTIPHON);
+            postCommunion = LiturgiaPapalMissalRepository.ordinaryProperPartHtml(
+                    context, date, LiturgiaPapalMissalRepository.POST_COMMUNION);
+        } catch (Exception ignored) {}
+
+        if (!entrance.isEmpty()) {
+            value = replaceSection(value, "Inicio de la celebración",
+                    entrance + signOfCross());
+        }
+        value = replaceSection(value, "Oración colecta", collect);
+        value = replaceSection(value, "Oración después de la Comunión", postCommunion);
+
+        try {
+            String communion = LiturgiaPapalMissalRepository.communionHtml(
+                    context, "es", communionAntiphon);
+            value = replaceSection(value, "Rito de la Comunión", communion);
+        } catch (Exception ignored) {}
+
+        // Los diez prefacios dominicales del Tiempo Ordinario están disponibles
+        // solo en domingo. En ferias conservamos temporalmente el bloque anterior
+        // hasta migrar también los prefacios comunes.
+        if (date.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
+            try {
+                String preparation = LiturgiaPapalMissalRepository.preparationHtml(context, "es");
+                String dialogue = LiturgiaPapalMissalRepository.prefaceDialogueHtml(context, "es");
+                String prefaces = LiturgiaPapalMissalRepository.ordinarySundayPrefacesHtml(context);
+                String prayers = LiturgiaPapalMissalRepository.eucharisticPrayersHtml(context, false);
+                String eucharistic = preparation + offerings
+                        + "<div id=\"prefaceBlock\"><h3>Prefacio</h3>"
+                        + dialogue + prefaces + "</div>" + prayers;
+                value = replaceSection(value, "Liturgia eucarística", eucharistic);
+            } catch (Exception ignored) {}
+        }
+
+        return value;
+    }
+
+    private static String signOfCross() {
+        return "<div class=\"liturgia-papal\" data-missal-source=\"liturgia-papal-mexico\">"
+                + "<p><b>En el nombre del Padre, y del Hijo, y del Espíritu Santo.</b></p>"
+                + "<p><b>Amén.</b></p></div>";
+    }
+
+    private static boolean isOrdinary(LiturgicalDay day) {
+        return day != null && day.temporalOffice != null
+                && day.temporalOffice.volume != null
+                && "ordinary".equals(day.temporalOffice.volume.id);
     }
 
     private static boolean hasRequiredSaint(LiturgicalDay day) {
@@ -164,8 +265,7 @@ public final class CombinedMassPolisher {
 
     /**
      * Sustituye el enlace que ocupa el lugar del cántico en la fuente por su texto
-     * completo. De esta forma se conserva el orden Antífona → Cántico → Antífona,
-     * en vez de desplazar el cántico al final de la sección.
+     * completo. De esta forma se conserva el orden Antífona → Cántico → Antífona.
      */
     private static String addCanticle(String html, String hourKey) {
         String value = html == null ? "" : html;
@@ -174,7 +274,6 @@ public final class CombinedMassPolisher {
         if (marker.find()) {
             return marker.replaceFirst(Matcher.quoteReplacement(canticle));
         }
-        // Fallback para fuentes que no traigan el enlace esperado.
         return value + canticle;
     }
 
