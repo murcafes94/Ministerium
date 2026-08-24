@@ -3,7 +3,9 @@ package com.fabri.ministerium;
 import android.os.Bundle;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
+import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.Locale;
 
@@ -13,6 +15,8 @@ public class ReaderSettingsActivity extends ThemedActivity {
     private SeekBar weight;
     private SeekBar line;
     private TextView preview;
+    private Switch prayerFocus;
+    private TextView prayerFocusStatus;
 
     @Override protected void onCreate(Bundle state) {
         ThemeUtils.apply(this);
@@ -23,6 +27,8 @@ public class ReaderSettingsActivity extends ThemedActivity {
         weight = findViewById(R.id.seekReaderWeight);
         line = findViewById(R.id.seekReaderLine);
         preview = findViewById(R.id.txtReaderPreview);
+        prayerFocus = findViewById(R.id.switchPrayerFocus);
+        prayerFocusStatus = findViewById(R.id.txtPrayerFocusStatus);
 
         RadioGroup family = findViewById(R.id.readerFamilyGroup);
         String selected = ReaderPreferences.family(this);
@@ -75,7 +81,39 @@ public class ReaderSettingsActivity extends ThemedActivity {
             ReaderPreferences.reset(this);
             recreate();
         });
+
+        prayerFocus.setChecked(PrayerFocusController.isEnabled(this));
+        prayerFocus.setOnCheckedChangeListener((button, enabled) -> {
+            PrayerFocusController.setEnabled(this, enabled);
+            if (enabled && !PrayerFocusController.hasPolicyAccess(this)) {
+                Toast.makeText(this,
+                        "Autoriza a Ministerium para usar No molestar. Android abrirá la configuración del sistema.",
+                        Toast.LENGTH_LONG).show();
+                PrayerFocusController.requestPolicyAccess(this);
+            }
+            refreshPrayerFocus();
+        });
         refresh();
+        refreshPrayerFocus();
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        if (prayerFocus != null) {
+            prayerFocus.setChecked(PrayerFocusController.isEnabled(this));
+            refreshPrayerFocus();
+        }
+    }
+
+    private void refreshPrayerFocus() {
+        if (prayerFocusStatus == null) return;
+        boolean enabled = PrayerFocusController.isEnabled(this);
+        boolean access = PrayerFocusController.hasPolicyAccess(this);
+        prayerFocusStatus.setText(!enabled
+                ? "Desactivado. No se modifica el modo de sonido del dispositivo."
+                : access
+                ? "Activo. Se usa en Liturgia, Misa, Ritual y sesiones del plan bíblico; al salir se restaura el estado anterior."
+                : "Activado en Ministerium, pero falta autorizar el acceso a No molestar en Android. Toca el interruptor para abrir el permiso.");
     }
 
     private void refresh() {
