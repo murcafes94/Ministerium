@@ -5,6 +5,20 @@ from pathlib import Path
 import json
 
 
+def patch_bible_visual_line() -> None:
+    path = Path("app/src/main/java/com/fabri/ministerium/BibleReaderActivity.java")
+    text = path.read_text(encoding="utf-8")
+    marker = "// Ministerium 3.1: preserve the Bible EPUB's own graphic line."
+    if marker in text:
+        return
+    start = text.find("    private void applyStyle() {")
+    end = text.find("    private ReaderContext context()", start)
+    if start < 0 or end <= start:
+        raise SystemExit("Bible visual style boundaries not found")
+    method = '''    private void applyStyle() {\n        // Ministerium 3.1: preserve the Bible EPUB's own graphic line.\n        boolean dark = ThemeUtils.isDark(this);\n        String bg = dark ? "#26211E" : "#FFFDF7";\n        String ink = dark ? "#F3EDE4" : "#2A2521";\n        String accent = dark ? "#E1C57A" : "#772233";\n        String css = "html,body{background:" + bg + "!important;}"\n                + "body{margin:0!important;padding:18px 20px!important;box-sizing:border-box;max-width:100%!important;overflow-wrap:break-word;}"\n                + "img,table{max-width:100%!important;height:auto!important;}"\n                + ".ministerium-highlight{background:#F6E58D!important;color:#231F1B!important;-webkit-text-fill-color:#231F1B!important;padding:1px 2px;border-radius:2px;}"\n                + (dark ? "body,body p,body li,body span,body div{color:" + ink\n                + "!important;-webkit-text-fill-color:" + ink + "!important;}"\n                + "a,a *{color:" + accent + "!important;-webkit-text-fill-color:" + accent + "!important;}" : "")\n                + "@media(min-width:700px){body{padding-left:42px!important;padding-right:42px!important}}";\n        webView.evaluateJavascript("(function(){var s=document.getElementById('ministerium-style');"\n                + "if(!s){s=document.createElement('style');s.id='ministerium-style';document.head.appendChild(s);}"\n                + "s.innerHTML=" + org.json.JSONObject.quote(css) + ";})()", null);\n    }\n\n'''
+    path.write_text(text[:start] + method + text[end:], encoding="utf-8")
+
+
 def patch_ritual_scope() -> None:
     catalog = Path("app/src/main/java/com/fabri/ministerium/RitualCatalogActivity.java")
     text = catalog.read_text(encoding="utf-8")
@@ -50,8 +64,7 @@ def patch_distribution_templates() -> None:
         data["versionName"] = "3.1.0"
         if isinstance(data.get("apk"), dict):
             apk = data["apk"]
-            url = str(apk.get("url", ""))
-            apk["url"] = url.replace("3.0.0", "3.1.0")
+            apk["url"] = str(apk.get("url", "")).replace("3.0.0", "3.1.0")
         if "changelog" in data:
             data["changelog"] = "NOVEDADES-3.1.0.md"
         path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -73,6 +86,7 @@ def patch_distribution_templates() -> None:
 
 
 def main() -> None:
+    patch_bible_visual_line()
     patch_ritual_scope()
     patch_package_manifest()
     patch_distribution_templates()
