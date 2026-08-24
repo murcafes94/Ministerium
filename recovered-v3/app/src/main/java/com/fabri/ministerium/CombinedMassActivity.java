@@ -84,7 +84,8 @@ public class CombinedMassActivity extends ThemedActivity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
-                ReaderPreferences.apply(CombinedMassActivity.this, webView, false);
+                // Biblia y Misal usan la familia Palatino (con fallback serif del sistema).
+                ReaderPreferences.applyPalatino(CombinedMassActivity.this, webView);
                 statusView.setText("");
             }
         });
