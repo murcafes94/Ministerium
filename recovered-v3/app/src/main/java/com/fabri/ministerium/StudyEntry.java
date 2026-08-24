@@ -18,6 +18,11 @@ public final class StudyEntry {
     public String quote = "";
     public String body = "";
     public String color = "yellow";
+    /** Unidad semántica estable del documento, por ejemplo compline.psalmody. */
+    public String semanticUnitId = "";
+    /** Offset de caracteres dentro de semanticUnitId. -1 conserva compatibilidad antigua. */
+    public int startOffset = -1;
+    public int endOffset = -1;
     public long createdAt;
     public long updatedAt;
 
@@ -27,6 +32,8 @@ public final class StudyEntry {
                 .put("sourceKey", sourceKey).put("title", title)
                 .put("reference", reference).put("quote", quote)
                 .put("body", body).put("color", color)
+                .put("semanticUnitId", semanticUnitId)
+                .put("startOffset", startOffset).put("endOffset", endOffset)
                 .put("createdAt", createdAt).put("updatedAt", updatedAt);
     }
 
@@ -42,6 +49,9 @@ public final class StudyEntry {
         entry.quote = value.optString("quote");
         entry.body = value.optString("body");
         entry.color = value.optString("color", "yellow");
+        entry.semanticUnitId = value.optString("semanticUnitId");
+        entry.startOffset = value.optInt("startOffset", -1);
+        entry.endOffset = value.optInt("endOffset", -1);
         entry.createdAt = value.optLong("createdAt");
         entry.updatedAt = value.optLong("updatedAt", entry.createdAt);
         return entry;
