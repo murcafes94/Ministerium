@@ -17,6 +17,7 @@ import java.util.Map;
 
 public class BibleDictionaryActivity extends ThemedActivity {
     public static final String EXTRA_SOURCE_ID = "dictionary_source_id";
+    public static final String EXTRA_QUERY = "dictionary_query";
     private static final int MAXIMUM_RESULTS = 120;
     private final List<BibleDictionaryRepository.Entry> visible = new ArrayList<>();
     private List<BibleDictionaryRepository.Entry> entries = new ArrayList<>();
@@ -55,6 +56,7 @@ public class BibleDictionaryActivity extends ThemedActivity {
                     BibleDictionaryRepository.sources().get(position);
             Intent intent = new Intent(this, BibleDictionaryActivity.class);
             intent.putExtra(EXTRA_SOURCE_ID, selected.id);
+            intent.putExtra(EXTRA_QUERY, value(getIntent().getStringExtra(EXTRA_QUERY)));
             startActivity(intent);
         });
     }
@@ -89,7 +91,12 @@ public class BibleDictionaryActivity extends ThemedActivity {
             }
             @Override public void afterTextChanged(Editable s) {}
         });
-        showResults("");
+        String query = value(getIntent().getStringExtra(EXTRA_QUERY));
+        if (query.isEmpty()) showResults("");
+        else {
+            filter.setText(query);
+            filter.setSelection(filter.length());
+        }
     }
 
     private void showResults(String query) {
@@ -133,5 +140,9 @@ public class BibleDictionaryActivity extends ThemedActivity {
     private static String normalize(String value) {
         return Normalizer.normalize(value == null ? "" : value, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}+", "").toLowerCase(Locale.ROOT).trim();
+    }
+
+    private static String value(String value) {
+        return value == null ? "" : value;
     }
 }
