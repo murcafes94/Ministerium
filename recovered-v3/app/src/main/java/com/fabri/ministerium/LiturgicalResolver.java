@@ -2,7 +2,6 @@ package com.fabri.ministerium;
 
 import android.content.Context;
 
-import java.io.IOException;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -47,8 +46,7 @@ public final class LiturgicalResolver {
         return new LiturgicalDay(date.get(Calendar.YEAR), date.get(Calendar.MONTH),
                 date.get(Calendar.DAY_OF_MONTH),
                 LiturgicalCalendarRepository.dateLabel(date), celebration, source,
-                psalter, color,
-                temporal, saints);
+                psalter, color, temporal, saints);
     }
 
     public static int ordinaryWeekNumber(Calendar selected) {
@@ -58,7 +56,7 @@ public final class LiturgicalResolver {
         Calendar ashWednesday = addDays(easter, -46);
         Calendar pentecost = addDays(easter, 49);
         Calendar advent = adventStart(year);
-        Calendar baptism = addDays(epiphanySunday(year), 7);
+        Calendar baptism = baptismOfLord(year);
 
         if (date.after(baptism) && date.before(ashWednesday)) {
             Calendar firstMonday = addDays(baptism, 1);
@@ -159,8 +157,7 @@ public final class LiturgicalResolver {
         Calendar pentecost = addDays(easter, 49);
         Calendar advent = adventStart(year);
         Calendar christmas = day(year, Calendar.DECEMBER, 25);
-        Calendar epiphany = epiphanySunday(year);
-        Calendar baptism = addDays(epiphany, 7);
+        Calendar baptism = baptismOfLord(year);
         int weekDay = date.get(Calendar.DAY_OF_WEEK);
         String weekday = WEEKDAYS[weekDay];
 
@@ -325,6 +322,18 @@ public final class LiturgicalResolver {
         Calendar date = day(year, Calendar.JANUARY, 2);
         while (date.get(Calendar.DAY_OF_WEEK) != Calendar.SUNDAY) date.add(Calendar.DATE, 1);
         return date;
+    }
+
+    /**
+     * En los lugares donde Epifanía se traslada al domingo 2–8 de enero, si
+     * cae el 7 u 8 el Bautismo del Señor se celebra el lunes siguiente; en los
+     * demás casos, el domingo siguiente. Esta fecha también determina cuándo
+     * comienza el primer tramo del Tiempo Ordinario.
+     */
+    private static Calendar baptismOfLord(int year) {
+        Calendar epiphany = epiphanySunday(year);
+        int day = epiphany.get(Calendar.DAY_OF_MONTH);
+        return addDays(epiphany, day >= 7 ? 1 : 7);
     }
 
     private static Calendar day(int year, int month, int day) {
