@@ -25,6 +25,9 @@ captures/
 secrets.properties
 keystore.properties
 
+# Source PDFs used only by local preprocessing; never ship the PDF files in the APK.
+tools/cache/missal-pdf/
+
 # OS / editor / temporary files
 .DS_Store
 Thumbs.db
