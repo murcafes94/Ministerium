@@ -72,7 +72,9 @@ public final class DailyHoursRepository {
         add(result, "vespers", vespersTitle, vespersSubtitle,
                 vespersVolume, vespers, "", true);
 
-        Target compline = compline(context, selectedDate);
+        // Completas ya no se localiza dentro del EPUB. La tarjeta diaria funciona
+        // aunque los archivos Co1…Co7 no estén empaquetados: el lector semántico
+        // resuelve el formulario directamente por fecha.
         String complineSubtitle = "Oración antes del descanso";
         if (selectedDate != null
                 && selectedDate.get(Calendar.DAY_OF_WEEK) == Calendar.SATURDAY) {
@@ -81,8 +83,9 @@ public final class DailyHoursRepository {
                 && selectedDate.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
             complineSubtitle = "Después de las II Vísperas del domingo";
         }
-        add(result, "compline", "Completas", complineSubtitle,
-                HoursRepository.find("ordinary"), compline, "", false);
+        result.add(new HourEntry("compline", "Completas", complineSubtitle,
+                HoursRepository.find("ordinary"), "semantic/compline-es.json",
+                "", "", false));
         return result;
     }
 
@@ -96,58 +99,6 @@ public final class DailyHoursRepository {
         Map<String, Target> targets = links(day.filePath,
                 read(new File(root, day.filePath)));
         return targets.containsKey("1V") ? targets.get("1V") : targets.get("V");
-    }
-
-    private static Target compline(Context context, Calendar selectedDate)
-            throws Exception {
-        if (selectedDate == null) return null;
-        String title;
-        switch (selectedDate.get(Calendar.DAY_OF_WEEK)) {
-            case Calendar.SATURDAY:
-                title = "DOMINGO (I)";
-                break;
-            case Calendar.SUNDAY:
-                title = "DOMINGO (II)";
-                break;
-            case Calendar.MONDAY:
-                title = "LUNES";
-                break;
-            case Calendar.TUESDAY:
-                title = "MARTES";
-                break;
-            case Calendar.WEDNESDAY:
-                title = "MIÉRCOLES";
-                break;
-            case Calendar.THURSDAY:
-                title = "JUEVES";
-                break;
-            default:
-                title = "VIERNES";
-                break;
-        }
-        HoursVolume ordinary = HoursRepository.find("ordinary");
-        List<EpubTocEntry> entries = EpubUtils.tableOfContents(context, ordinary);
-        int index = exactComplineIndex(entries, title,
-                selectedDate.get(Calendar.DAY_OF_WEEK));
-        if (index < 0) return null;
-        EpubTocEntry entry = entries.get(index);
-        return new Target(entry.filePath, entry.fragment);
-    }
-
-    private static int exactComplineIndex(List<EpubTocEntry> entries, String title,
-                                          int dayOfWeek) {
-        String wanted = EpubUtils.normalizeTitle(title);
-        String requiredFile = dayOfWeek == Calendar.SATURDAY ? "Text/Co1.html"
-                : dayOfWeek == Calendar.SUNDAY ? "Text/Co2.html" : "";
-        for (int index = 0; index < entries.size(); index++) {
-            EpubTocEntry entry = entries.get(index);
-            if (!EpubUtils.normalizeTitle(entry.title).equals(wanted)) continue;
-            if (requiredFile.isEmpty()
-                    || entry.filePath.replace('\\', '/').endsWith(requiredFile)) {
-                return index;
-            }
-        }
-        return -1;
     }
 
     private static void add(List<HourEntry> result, String key, String title,
