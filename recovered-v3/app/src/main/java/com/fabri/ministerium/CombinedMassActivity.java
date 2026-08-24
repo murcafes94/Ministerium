@@ -127,7 +127,7 @@ public class CombinedMassActivity extends ThemedActivity {
                 + (date.get(Calendar.MONTH) + 1) + "-"
                 + date.get(Calendar.DAY_OF_MONTH) + ":" + hourKey + ":" + language;
         String title = "Misa + " + hourName();
-        String reference = celebrationView == null ? "" : celebrationView.getText().toString();
+        String reference = LiturgicalCalendarRepository.dateLabel(date) + " · " + title;
         return new ReaderContext("Celebración unida", sourceKey, title,
                 reference, "Liturgia", true);
     }
