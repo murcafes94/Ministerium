@@ -29,6 +29,22 @@ def patch_version() -> None:
     path.write_text(text, encoding="utf-8")
 
 
+def patch_project_validator() -> None:
+    path = Path("tools/validate_project.mjs")
+    if not path.exists():
+        return
+    text = path.read_text(encoding="utf-8")
+    old = 'if (!appBuild.includes("versionCode 30") || !appBuild.includes("versionName \'3.0.0\'")) {'
+    new = 'if (!appBuild.includes("versionCode 31") || !appBuild.includes("versionName \'3.1.0\'")) {'
+    if new not in text:
+        if old not in text:
+            raise SystemExit("Migration point not found: validate_project application version")
+        text = text.replace(old, new, 1)
+    text = text.replace("Proyecto 3.0.0 válido para Android Studio 4.2.1:",
+                        "Proyecto 3.1.0 válido para Android Studio 4.2.1:", 1)
+    path.write_text(text, encoding="utf-8")
+
+
 def patch_bible_reader() -> None:
     path = Path("app/src/main/java/com/fabri/ministerium/BibleReaderActivity.java")
     old = """        ReaderChrome.bindMore(this, findViewById(R.id.btnReaderMore), webView, context());
@@ -63,32 +79,61 @@ def patch_reader_subtitle() -> None:
     replace_once(path, old, new, "semantic Bible edition subtitle")
 
 
-def patch_ordinary_week_calculation() -> None:
+def patch_calendar_calculations() -> None:
     path = Path("app/src/main/java/com/fabri/ministerium/LiturgicalResolver.java")
     text = path.read_text(encoding="utf-8")
+
     replacement = """    public static int ordinaryWeekNumber(Calendar selected) {
         return RomanCalendarMath.ordinaryWeekNumber(selected);
     }
 
     public static String lectionaryCycle"""
-    if replacement in text:
-        return
-    pattern = re.compile(
-        r"    public static int ordinaryWeekNumber\(Calendar selected\) \{.*?\n    \}\n\n"
-        r"    public static String lectionaryCycle",
-        re.DOTALL,
+    if replacement not in text:
+        pattern = re.compile(
+            r"    public static int ordinaryWeekNumber\(Calendar selected\) \{.*?\n    \}\n\n"
+            r"    public static String lectionaryCycle",
+            re.DOTALL,
+        )
+        text, count = pattern.subn(replacement, text, count=1)
+        if count != 1:
+            raise SystemExit("Migration point not found: ordinaryWeekNumber in LiturgicalResolver")
+
+    # The same Baptism boundary is also used when resolving the temporal office.
+    text = text.replace(
+        "Calendar baptism = addDays(epiphany, 7);",
+        "Calendar baptism = RomanCalendarMath.baptismOfTheLord(year);",
+        1,
     )
-    patched, count = pattern.subn(replacement, text, count=1)
-    if count != 1:
-        raise SystemExit("Migration point not found: ordinaryWeekNumber in LiturgicalResolver")
-    path.write_text(patched, encoding="utf-8")
+
+    # When the psalter week is not supplied, derive it from the same tested
+    # Ordinary Time week source instead of repeating older arithmetic.
+    old_psalter = """            int ordinaryWeek;
+            if (date.before(ashWednesday)) {
+                ordinaryWeek = daysBetween(addDays(baptism, 1), date) / 7 + 1;
+            } else {
+                Calendar christKing = addDays(advent, -7);
+                int remaining = daysBetween(date, christKing);
+                ordinaryWeek = 34 - ((Math.max(0, remaining) + 6) / 7);
+            }
+            psalter = ((ordinaryWeek - 1) % 4 + 4) % 4 + 1;
+"""
+    new_psalter = """            int ordinaryWeek = RomanCalendarMath.ordinaryWeekNumber(date);
+            psalter = ((ordinaryWeek - 1) % 4 + 4) % 4 + 1;
+"""
+    if new_psalter not in text:
+        if old_psalter not in text:
+            raise SystemExit("Migration point not found: psalter Ordinary Time calculation")
+        text = text.replace(old_psalter, new_psalter, 1)
+
+    path.write_text(text, encoding="utf-8")
 
 
 def main() -> None:
     patch_version()
+    patch_project_validator()
     patch_bible_reader()
     patch_reader_subtitle()
-    patch_ordinary_week_calculation()
+    patch_calendar_calculations()
     print("Ministerium 3.1 migration overlay applied")
 
 
