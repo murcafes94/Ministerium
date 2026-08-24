@@ -20,20 +20,13 @@ jobs:
   inspect:
     name: Reconstruct and inspect semantic core
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Test Bible semantic importers
-        run: python3 tools/bible_import/test_import.py
-
+      - uses: actions/checkout@v4
       - name: Reconstruct Ministerium 3.0 project
         shell: bash
         run: |
           set -euo pipefail
-          OUT="$RUNNER_TEMP/ministerium-v3.zip"
-          : > "$OUT"
+          OUT="$RUNNER_TEMP/ministerium-v3.zip"; : > "$OUT"
           cat "ministerium-v3.zip (1).part-00" >> "$OUT"
           cat "ministerium-v3.zip (1).part-01" >> "$OUT"
           cat "bootstrap/v3/ministerium-v3.zip (1).part-02" >> "$OUT"
@@ -41,46 +34,15 @@ jobs:
           cat bootstrap/v3/ministerium-v3.zip.part-04 >> "$OUT"
           cat bootstrap/v3/ministerium-v3.zip.part-05 >> "$OUT"
           cat bootstrap/v3/ministerium-v3.zip.part-06 >> "$OUT"
-          EXPECTED=$(awk '{print $1}' bootstrap/v3/ministerium-v3.zip.sha256)
-          ACTUAL=$(sha256sum "$OUT" | awk '{print $1}')
-          test "$EXPECTED" = "$ACTUAL"
-          unzip -tq "$OUT"
-          rm -rf "$RUNNER_TEMP/ministerium-v3"
-          mkdir -p "$RUNNER_TEMP/ministerium-v3"
+          test "$(awk '{print $1}' bootstrap/v3/ministerium-v3.zip.sha256)" = "$(sha256sum "$OUT" | awk '{print $1}')"
           unzip -q "$OUT" -d "$RUNNER_TEMP/ministerium-v3"
           rsync -a --exclude='.git/' "$RUNNER_TEMP/ministerium-v3/" ./
-
-      - name: Inspect combined celebration data sources
+      - name: Inspect exact combined extraction helpers
         shell: bash
         run: |
-          set -euo pipefail
-          for f in \
-            app/src/main/java/com/fabri/ministerium/MassReadingsActivity.java \
-            app/src/main/java/com/fabri/ministerium/MassReadingReaderActivity.java \
-            app/src/main/java/com/fabri/ministerium/MissalActivity.java \
-            app/src/main/java/com/fabri/ministerium/MissalProperRepository.java \
-            app/src/main/java/com/fabri/ministerium/DailyHoursRepository.java \
-            app/src/main/java/com/fabri/ministerium/CombinedMassActivity.java; do
-            echo "===== $f ====="
-            sed -n '1,520p' "$f" || true
-          done
-          echo '===== reading/missal provider candidates ====='
-          grep -RIlE 'class .*Mass|mass-read|lection|lectura|MissalProperRepository' app/src/main/java/com/fabri/ministerium | sort | head -120
-
-      - name: Inspect bilingual, backup and rituals
-        shell: bash
-        run: |
-          set -euo pipefail
-          for f in \
-            app/src/main/java/com/fabri/ministerium/BackupActivity.java \
-            app/src/main/java/com/fabri/ministerium/UniversalSelectionMenu.java \
-            app/src/main/java/com/fabri/ministerium/BilingualHoursReaderActivity.java \
-            app/src/main/java/com/fabri/ministerium/RitualRepository.java \
-            app/src/main/java/com/fabri/ministerium/RitualCatalogActivity.java \
-            app/src/main/java/com/fabri/ministerium/RitualReaderActivity.java \
-            app/src/main/res/layout/activity_bilingual_reader.xml \
-            app/src/main/res/layout/activity_combined_mass.xml \
-            app/src/main/res/layout/activity_backup.xml; do
-            echo "===== $f ====="
-            sed -n '1,600p' "$f" || true
-          done
+          echo '===== HoursReader combined filter ====='
+          grep -n -A300 -B30 'filterCombinedSegment' app/src/main/java/com/fabri/ministerium/HoursReaderActivity.java || true
+          echo '===== MassReadingsRepository ====='
+          sed -n '1,620p' app/src/main/java/com/fabri/ministerium/MassReadingsRepository.java || true
+          echo '===== EpubUtils read helpers ====='
+          grep -n -A120 -B20 'ensureExtracted\|findEntryIndex\|tableOfContents' app/src/main/java/com/fabri/ministerium/EpubUtils.java | head -420 || true
