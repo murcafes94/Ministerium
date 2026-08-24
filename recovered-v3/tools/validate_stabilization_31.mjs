@@ -13,6 +13,10 @@ const build = read('app/build.gradle');
 const activity = read('app/src/main/java/com/fabri/ministerium/CombinedMassActivity.java');
 const composer = read('app/src/main/java/com/fabri/ministerium/CombinedMassComposer31.java');
 const papal = read('app/src/main/java/com/fabri/ministerium/LiturgiaPapalMissalRepository.java');
+const missalActivity = read('app/src/main/java/com/fabri/ministerium/MissalActivity.java');
+const missalDocument = read('app/src/main/java/com/fabri/ministerium/MissalDocument31.java');
+const manifest = read('app/src/main/AndroidManifest.xml');
+const ritualRepository = read('app/src/main/java/com/fabri/ministerium/RitualRepository.java');
 const backup = read('app/src/main/java/com/fabri/ministerium/BackupActivity.java');
 const bilingual = read('app/src/main/java/com/fabri/ministerium/BilingualHoursReaderActivity.java');
 const selection = read('app/src/main/java/com/fabri/ministerium/MinisteriumWebView.java');
@@ -41,6 +45,15 @@ for (const forbidden of [
   'CombinedMassPolisher'
 ]) forbidText(composer, forbidden, `fallback de Misal EPUB (${forbidden})`);
 
+for (const source of [missalActivity, missalDocument]) {
+  for (const forbidden of ['HoursRepository.ROMAN_MISSAL', 'Misal-Diario-Romano.epub', 'MissalProperRepository']) {
+    forbidText(source, forbidden, `Misal autónomo heredado (${forbidden})`);
+  }
+}
+requireText(missalActivity, 'MissalSectionReaderActivity.class', 'lector autónomo Liturgia Papal');
+requireText(missalDocument, 'LiturgiaPapalMissalRepository', 'fuente Liturgia Papal del Misal autónomo');
+requireText(manifest, '.MissalSectionReaderActivity', 'Activity del nuevo Misal');
+
 requireText(papal, 'liturgia-papal-mexico', 'trazabilidad Liturgia Papal México');
 for (const asset of [
   'app/src/main/assets/missal/es/initial.txt',
@@ -50,6 +63,22 @@ for (const asset of [
   'app/src/main/assets/missal/la/initial.txt'
 ]) {
   if (!fs.existsSync(asset) || fs.statSync(asset).size < 40) failures.push(`Falta paquete Liturgia Papal generado: ${asset}`);
+}
+
+forbidText(ritualRepository, 'argentina', 'fuente ritual argentina heredada');
+forbidText(ritualRepository, 'ritual_enfermos.txt', 'ritual de enfermos heredado');
+requireText(ritualRepository, 'rituals/liturgiapapal/', 'ruta de rituales Liturgia Papal');
+for (const asset of [
+  'app/src/main/assets/rituals/liturgiapapal/baptism_one_child.txt',
+  'app/src/main/assets/rituals/liturgiapapal/baptism_danger.txt',
+  'app/src/main/assets/rituals/liturgiapapal/unction.txt',
+  'app/src/main/assets/rituals/liturgiapapal/funeral_typical.txt',
+  'app/src/main/assets/rituals/liturgiapapal/funeral_ashes.txt',
+  'app/src/main/assets/rituals/liturgiapapal/blessing_house.txt',
+  'app/src/main/assets/rituals/liturgiapapal/blessing_water.txt',
+  'app/src/main/assets/rituals/liturgiapapal/blessing_rosaries.txt'
+]) {
+  if (!fs.existsSync(asset) || fs.statSync(asset).size < 100) failures.push(`Falta ritual Liturgia Papal generado: ${asset}`);
 }
 
 requireText(backup, 'createDriveBackup()', 'acción de Google Drive');
