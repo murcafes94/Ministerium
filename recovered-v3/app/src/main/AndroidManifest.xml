@@ -38,6 +38,7 @@
         <activity android:name=".BasicPrayersActivity" android:exported="false" />
         <activity android:name=".DocumentSectionReaderActivity" android:exported="false" />
         <activity android:name=".HoursReaderActivity" android:exported="false" />
+        <activity android:name=".ComplineReaderActivity" android:exported="false" />
         <activity android:name=".CombinedHoursActivity" android:exported="false" />
         <activity android:name=".PrayerIntentionsActivity" android:exported="false" />
         <activity android:name=".HoursTodayActivity" android:exported="false" />
