@@ -1,31 +1,25 @@
 #!/usr/bin/env python3
-"""Ministerium 3.1 wrapper for the Liturgia Papal missal builder.
+"""Ministerium 3.1 Liturgia Papal package builder.
 
-Runtime packages are built from the section PDFs. The very large full Ordinary
-PDFs are useful for manual auditing but redundant during every CI build, so they
-are removed from the daily source set. Strict Mexico-formula validation remains
-active on the relevant Ordinary/Eucharistic components.
-
-The source PDFs under proper_* are themselves from the Mexico collection. Some
-proper formularies reproduce exceptional rubrics or quotations (for example the
-Chrism Mass rubric in Cuaresma.pdf says «Podéis ir en paz»). Those occurrences
-must not be treated as proof that the whole PDF belongs to the Spain edition.
+The complete Ordinary PDFs remain recorded as canonical audit references, but
+CI builds runtime assets only from the smaller section PDFs. This avoids making
+an app build depend on repeatedly downloading very large PDFs.
 """
 
+import json
 import time
 import urllib.request
 
 import build_liturgiapapal_missal as base
 
 _original_validate_mexico = base.validate_mexico_ordinary
-
-# The full books are audit references, not runtime inputs. Avoid downloading
-# tens of MB on every commit when all required runtime sections are separate PDFs.
-for language in ("es", "la"):
-    base.SOURCES.get(language, {}).pop("ordinary_full", None)
+CANONICAL_ES = base.SOURCES["es"]["ordinary_full"]
+CANONICAL_LA = base.SOURCES["la"]["ordinary_full"]
 
 
 def validate_mexico_31(component: str, text: str) -> list[str]:
+    # Proper PDFs can legitimately quote exceptional formulas; provenance is
+    # pinned by URL. Dialect checks remain strict on Ordinary/PE components.
     if component.startswith("proper_"):
         return []
     return _original_validate_mexico(component, text)
@@ -55,8 +49,55 @@ def resilient_download(url, destination):
     raise last_error
 
 
+def build31(output, languages, force):
+    output.mkdir(parents=True, exist_ok=True)
+    manifest = {
+        "schema": 5,
+        "provider": "Liturgia Papal",
+        "editions": {
+            "es": "Misal Romano - versión de México",
+            "la": "Missale Romanum",
+        },
+        "canonical_es_ordinary": CANONICAL_ES,
+        "canonical_la_ordinary": CANONICAL_LA,
+        "notes": "PDF completos conservados como referencias de auditoría; assets runtime generados desde PDFs por secciones. Español: versión de México.",
+        "languages": {},
+    }
+
+    for language in languages:
+        lang_dir = output / language
+        lang_dir.mkdir(parents=True, exist_ok=True)
+        generated = []
+        for component, url in base.SOURCES[language].items():
+            if component == "ordinary_full":
+                continue
+            pdf = base.CACHE / language / f"{component}.pdf"
+            destination = lang_dir / f"{component}.txt"
+            if force and pdf.exists():
+                pdf.unlink()
+            print(f"[{language}] {component}")
+            resilient_download(url, pdf)
+            cleaned = base.clean_text(base.pdf_text(pdf))
+            problems = base.validate_cleaned(language, component, cleaned)
+            if problems:
+                raise RuntimeError(f"{language}/{component}: " + "; ".join(problems))
+            destination.write_text(cleaned, encoding="utf-8", newline="\n")
+            generated.append({
+                "id": component,
+                "asset": f"missal/{language}/{component}.txt",
+                "source": url,
+            })
+        manifest["languages"][language] = generated
+
+    (output / "manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8", newline="\n")
+    print(f"OK: {output}")
+
+
 base.validate_mexico_ordinary = validate_mexico_31
 base.download = resilient_download
+base.build = build31
 
 if __name__ == "__main__":
     raise SystemExit(base.main())
