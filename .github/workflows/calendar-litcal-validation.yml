@@ -56,7 +56,7 @@ jobs:
           python3 tools/calendar_validation/validate_litcal.py \
             --start ${{ matrix.year }} \
             --end ${{ matrix.year }} \
-            --epiphany SUNDAY
+            --epiphany SUNDAY_JAN2_JAN8
 
   note-ecuador-scope:
     name: Ecuador scope note
