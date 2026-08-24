@@ -19,7 +19,13 @@ const manifest = read('app/src/main/AndroidManifest.xml');
 const ritualRepository = read('app/src/main/java/com/fabri/ministerium/RitualRepository.java');
 const backup = read('app/src/main/java/com/fabri/ministerium/BackupActivity.java');
 const bilingual = read('app/src/main/java/com/fabri/ministerium/BilingualHoursReaderActivity.java');
-const selection = read('app/src/main/java/com/fabri/ministerium/MinisteriumWebView.java');
+const selectionChrome = read('app/src/main/java/com/fabri/ministerium/MinisteriumWebView.java');
+const selectionMenu = read('app/src/main/java/com/fabri/ministerium/UniversalSelectionMenu.java');
+const textSelection = read('app/src/main/java/com/fabri/ministerium/TextViewReaderChrome.java');
+const readerPrefs = read('app/src/main/java/com/fabri/ministerium/ReaderPreferences.java');
+const readerSettings = read('app/src/main/java/com/fabri/ministerium/ReaderSettingsActivity.java');
+const readerSettingsLayout = read('app/src/main/res/layout/activity_reader_settings.xml');
+const bible = read('app/src/main/java/com/fabri/ministerium/BibleReaderActivity.java');
 const layout = read('app/src/main/res/layout/activity_combined_mass.xml');
 
 requireText(build, 'versionCode 31', 'versionCode 3.1');
@@ -85,10 +91,23 @@ requireText(backup, 'createDriveBackup()', 'acción de Google Drive');
 requireText(backup, 'com.google.android.apps.docs', 'proveedor Google Drive');
 requireText(bilingual, 'sourceY / (float) sourceRange', 'scroll bilingüe proporcional');
 requireText(bilingual, 'progress * targetRange', 'scroll bilingüe proporcional destino');
-for (const action of ['Subrayar', 'Nota', 'Reflexión', 'Diccionario']) {
-  requireText(selection, `\"${action}\"`, `acción flotante ${action}`);
+
+for (const action of ['Subrayar', 'Nota', 'Reflexión', 'Diccionario', 'Traducir', 'Leer']) {
+  requireText(selectionMenu, `\"${action}\"`, `acción contextual ${action}`);
 }
-requireText(selection, 'SHOW_AS_ACTION_ALWAYS', 'acciones principales visibles');
+requireText(selectionChrome, 'ActionMode.TYPE_FLOATING', 'toolbar contextual flotante');
+for (const action of ['Subrayar', 'Nota', 'Diccionario']) {
+  requireText(selectionChrome, `\"${action}\"`, `acción prioritaria ${action}`);
+}
+requireText(selectionChrome, 'SHOW_AS_ACTION_ALWAYS', 'acciones principales visibles');
+requireText(textSelection, 'SHOW_AS_ACTION_ALWAYS', 'toolbar equivalente en lectores TextView');
+
+requireText(readerPrefs, 'public static String family(Context context)', 'preferencia global de tipografía');
+requireText(readerPrefs, 'PALATINO', 'opción Palatino global');
+forbidText(readerPrefs, 'Biblia y Misal se fuerzan a Palatino', 'excepción tipográfica antigua');
+requireText(readerSettingsLayout, 'readerPalatino', 'opción visual Palatino');
+requireText(readerSettings, 'ReaderPreferences.PALATINO', 'selección Palatino en ajustes');
+requireText(bible, 'ReaderPreferences.apply(BibleReaderActivity.this, webView, false)', 'tipografía global aplicada a Biblia');
 
 if (failures.length) {
   console.error('Ministerium 3.1 stabilization: FALLÓ');
