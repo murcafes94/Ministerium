@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "language": "es",
+  "source": "Liturgia de las Horas · formularios de Completas del tomo local",
+  "penitentialFormulas": [
+    {
+      "id": "penance.1",
+      "title": "1.ª Fórmula",
+      "text": "Yo confieso ante Dios todopoderoso y ante ustedes, hermanos, que he pecado mucho de pensamiento, palabra, obra y omisión.\nPor mi culpa, por mi culpa, por mi gran culpa.\nPor eso ruego a santa María, siempre Virgen, a los ángeles, a los santos y a ustedes, hermanos, que intercedan por mí ante Dios, nuestro Señor."
+    },
+    {
+      "id": "penance.2",
+      "title": "2.ª Fórmula",
+      "text": "℣. Señor, ten misericordia de nosotros.\n℟. Porque hemos pecado contra ti.\n\n℣. Muéstranos, Señor, tu misericordia.\n℟. Y danos tu salvación."
+    },
+    {
+      "id": "penance.3",
+      "title": "3.ª Fórmula",
+      "text": "℣. Tú que has sido enviado a sanar los corazones afligidos: Señor, ten piedad.\n℟. Señor, ten piedad.\n\n℣. Tú que has venido a llamar a los pecadores: Cristo, ten piedad.\n℟. Cristo, ten piedad.\n\n℣. Tú que estás sentado a la derecha del Padre para interceder por nosotros: Señor, ten piedad.\n℟. Señor, ten piedad."
+    }
+  ],
+  "hymns": [
+    {
+      "id": "compline.hymn.1",
+      "title": "Cuando el sol, Señor, se apaga",
+      "text": "Cuando el sol, Señor, se apaga,\ny las sombras todo llenan,\nilumina nuestras almas\ncon la luz de tu presencia.\n\nQue en las horas de la noche\nnos defiendas con tu brazo;\ny a la sombra de tus alas\nveles Tú nuestro descanso.\n\nGloria a ti, oh Padre bueno,\ny a tu Hijo Jesucristo,\ny al Espíritu divino\npor los siglos de los siglos. Amén."
+    },
+    {
+      "id": "compline.hymn.2",
+      "title": "Cuando la luz del sol es ya poniente",
+      "text": "Cuando la luz del sol es ya poniente,\ngracias, Señor, es nuestra melodía;\nrecibe, como ofrenda, amablemente,\nnuestro dolor, trabajo y alegría.\n\nSi poco fue el amor en nuestro empeño\nde darle vida al día que fenece,\nconvierta en realidad lo que fue un sueño\ntu gran amor que todo lo engrandece.\n\nTu cruz, Señor, redime nuestra suerte\nde pecadora en justa, e ilumina\nla senda de la vida y de la muerte\ndel hombre que en la fe lucha y camina.\n\nJesús, Hijo del Padre, cuando avanza\nla noche oscura sobre nuestro día,\nconcédenos la paz y la esperanza\nde esperar cada noche tu gran día. Amén."
+    },
+    {
+      "id": "compline.hymn.3",
+      "title": "Cristo, Señor de la noche",
+      "text": "Cristo, Señor de la noche,\nque disipas las tinieblas:\nmientras los cuerpos reposan,\nse tú nuestro centinela.\n\nDespués de tanta fatiga,\ndespués de tanta dureza,\nacógenos en tus brazos\ny danos noche serena.\n\nSi nuestros ojos se duermen,\nque el alma esté siempre en vela;\nen paz cierra nuestros párpados\npara que cesen las penas.\n\nY que al despuntar el alba,\notra vez con fuerzas nuevas,\nte demos gracias, oh Cristo,\npor la vida que comienza. Amén."
+    },
+    {
+      "id": "compline.hymn.4",
+      "title": "Se inclina ya mi frente",
+      "text": "Se inclina ya mi frente,\nsellado está el trabajo;\nSeñor, tu pecho sea\nla gracia del descanso.\n\nMis ojos se retiran,\nla voz deja su canto,\npero el amor enciende\nsu lámpara velando.\n\nLucero que te fuiste,\ncon gran amor amado,\nen tu gloria dormimos\ny en sueños te adoramos. Amén."
+    },
+    {
+      "id": "compline.hymn.5",
+      "title": "Cuando acabamos el día",
+      "text": "Cuando acabamos el día\nte suplicamos, Señor,\nnos hagas de centinela\ny otorgues tu protección.\n\nQue te sintamos: contigo\nsueñe nuestro corazón\npara cantar tus loores\nde nuevo al salir el sol.\n\nDanos vida saludable,\nalienta nuestro calor,\ntu claridad ilumine\nla oscuridad que llegó.\n\nDánoslo, Padre piadoso,\npor Jesucristo, el Señor,\nque reina con el Espíritu\nSanto vivificador. Amén."
+    }
+  ],
+  "marianAntiphons": [
+    {
+      "id": "marian.alma-redemptoris",
+      "title": "Madre del Redentor",
+      "text": "Madre del Redentor, virgen fecunda,\npuerta del cielo siempre abierta,\nestrella del mar,\nven a librar al pueblo que tropieza\ny se quiere levantar.\n\nAnte la admiración de cielo y tierra,\nengendraste a tu santo Creador,\ny permaneces siempre virgen.\n\nRecibe el saludo del ángel Gabriel,\ny ten piedad de nosotros, pecadores."
+    },
+    {
+      "id": "marian.ave-regina",
+      "title": "Salve, Reina de los cielos",
+      "text": "Salve, Reina de los cielos\ny Señora de los ángeles;\nsalve raíz, salve puerta,\nque dio paso a nuestra luz.\n\nAlégrate, virgen gloriosa,\nentre todas la más bella;\nsalve, agraciada doncella,\nruega a Cristo por nosotros."
+    },
+    {
+      "id": "marian.salve-regina",
+      "title": "Dios te salve, Reina",
+      "text": "Dios te salve, Reina y Madre de misericordia,\nvida, dulzura y esperanza nuestra, Dios te salve.\nA ti llamamos los desterrados hijos de Eva;\na ti suspiramos, gimiendo y llorando,\nen este valle de lágrimas.\n\nEa, pues, Señora, abogada nuestra,\nvuelve a nosotros tus ojos misericordiosos,\ny después de este destierro muéstranos a Jesús,\nfruto bendito de tu vientre.\n¡Oh clemente, oh piadosa, oh dulce Virgen María!"
+    },
+    {
+      "id": "marian.sub-tuum",
+      "title": "Bajo tu amparo",
+      "text": "Bajo tu amparo nos acogemos,\nsanta Madre de Dios;\nno desprecies las oraciones\nque te dirigimos en nuestras necesidades;\nantes bien, líbranos de todo peligro,\noh Virgen gloriosa y bendita."
+    }
+  ],
+  "easterMarianAntiphon": {
+    "id": "marian.regina-caeli",
+    "title": "Regina caeli",
+    "text": "Reina del cielo, alégrate, aleluya,\nporque el Señor, a quien mereciste llevar, aleluya,\nha resucitado según su palabra, aleluya.\nRuega al Señor por nosotros, aleluya."
+  },
+  "conclusion": "℣. El Señor todopoderoso nos conceda una noche tranquila y una santa muerte.\n℟. Amén.",
+  "penitentialConclusion": "Dios todopoderoso tenga misericordia de nosotros, perdone nuestros pecados y nos lleve a la vida eterna.\n℟. Amén."
+}
