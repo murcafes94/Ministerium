@@ -26,7 +26,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Test Bible semantic importers
-        shell: bash
         run: python3 tools/bible_import/test_import.py
 
       - name: Reconstruct Ministerium 3.0 project
@@ -44,8 +43,6 @@ jobs:
           cat bootstrap/v3/ministerium-v3.zip.part-06 >> "$OUT"
           EXPECTED=$(awk '{print $1}' bootstrap/v3/ministerium-v3.zip.sha256)
           ACTUAL=$(sha256sum "$OUT" | awk '{print $1}')
-          echo "Expected SHA-256: $EXPECTED"
-          echo "Actual SHA-256:   $ACTUAL"
           test "$EXPECTED" = "$ACTUAL"
           unzip -tq "$OUT"
           rm -rf "$RUNNER_TEMP/ministerium-v3"
@@ -53,62 +50,37 @@ jobs:
           unzip -q "$OUT" -d "$RUNNER_TEMP/ministerium-v3"
           rsync -a --exclude='.git/' "$RUNNER_TEMP/ministerium-v3/" ./
 
-      - name: Inspect version validation contract
-        shell: bash
-        run: |
-          echo '=== validate_project version checks ==='
-          sed -n '150,215p' tools/validate_project.mjs || true
-          echo '=== files mentioning version 3.0.0 / versionCode 30 ==='
-          grep -RInE "3\.0\.0|versionCode 30|versionName '3\.0\.0'" tools distribution app/src/main --include='*.mjs' --include='*.json' --include='*.java' --include='*.xml' 2>/dev/null | head -120 || true
-
-      - name: Print technical inventory only
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo '=== Android project ==='
-          sed -n '1,220p' app/build.gradle || true
-          echo '=== Manifest package/components ==='
-          grep -E 'package=|android:name=|<activity|<service|<provider' app/src/main/AndroidManifest.xml | head -140 || true
-          echo '=== Source files related to Bible/Missal/reader/content ==='
-          find app/src/main -type f \( -name '*.java' -o -name '*.kt' \) | grep -Ei 'bibl|reader|epub|lection|lectur|missal|misa|content|note|highlight|bookmark|calendar|liturg' | sort | head -350 || true
-          echo '=== Source language counts ==='
-          printf 'Java: '; find app/src/main -type f -name '*.java' | wc -l
-          printf 'Kotlin: '; find app/src/main -type f -name '*.kt' | wc -l
-
-      - name: Inspect legacy integration points
+      - name: Inspect combined celebration data sources
         shell: bash
         run: |
           set -euo pipefail
           for f in \
-            app/src/main/java/com/fabri/ministerium/BibleRepository.java \
-            app/src/main/java/com/fabri/ministerium/BibleChapterDocument.java \
-            app/src/main/java/com/fabri/ministerium/BibleReaderActivity.java \
+            app/src/main/java/com/fabri/ministerium/MassReadingsActivity.java \
+            app/src/main/java/com/fabri/ministerium/MassReadingReaderActivity.java \
+            app/src/main/java/com/fabri/ministerium/MissalActivity.java \
             app/src/main/java/com/fabri/ministerium/MissalProperRepository.java \
-            app/src/main/java/com/fabri/ministerium/LiturgicalResolver.java \
+            app/src/main/java/com/fabri/ministerium/DailyHoursRepository.java \
             app/src/main/java/com/fabri/ministerium/CombinedMassActivity.java; do
             echo "===== $f ====="
-            sed -n '1,360p' "$f" || true
+            sed -n '1,520p' "$f" || true
           done
+          echo '===== reading/missal provider candidates ====='
+          grep -RIlE 'class .*Mass|mass-read|lection|lectura|MissalProperRepository' app/src/main/java/com/fabri/ministerium | sort | head -120
 
-      - name: Inspect remaining 3.1 repair targets
+      - name: Inspect bilingual, backup and rituals
         shell: bash
         run: |
           set -euo pipefail
           for f in \
             app/src/main/java/com/fabri/ministerium/BackupActivity.java \
             app/src/main/java/com/fabri/ministerium/UniversalSelectionMenu.java \
-            app/src/main/java/com/fabri/ministerium/BilingualHoursActivity.java \
             app/src/main/java/com/fabri/ministerium/BilingualHoursReaderActivity.java \
-            app/src/main/java/com/fabri/ministerium/HoursReaderActivity.java \
+            app/src/main/java/com/fabri/ministerium/RitualRepository.java \
             app/src/main/java/com/fabri/ministerium/RitualCatalogActivity.java \
             app/src/main/java/com/fabri/ministerium/RitualReaderActivity.java \
+            app/src/main/res/layout/activity_bilingual_reader.xml \
             app/src/main/res/layout/activity_combined_mass.xml \
-            app/src/main/res/layout/activity_backup.xml \
-            app/src/main/res/layout/activity_bilingual_hours_reader.xml; do
+            app/src/main/res/layout/activity_backup.xml; do
             echo "===== $f ====="
-            sed -n '1,520p' "$f" || true
+            sed -n '1,600p' "$f" || true
           done
-          echo '===== Drive/auth references ====='
-          grep -RInE 'GoogleSignIn|Drive|google.*auth|backup|restore' app/src/main/java app/build.gradle app/src/main/AndroidManifest.xml | head -300 || true
-          echo '===== bilingual spacing/scroll references ====='
-          grep -RInE 'scroll|space|padding|margin|bilingual|lat_es|latin' app/src/main/java/com/fabri/ministerium/BilingualHours* app/src/main/res/layout/activity_bilingual_hours_reader.xml | head -300 || true
