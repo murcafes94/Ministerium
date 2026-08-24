@@ -3,6 +3,7 @@ package com.fabri.ministerium;
 import android.content.Context;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
@@ -14,10 +15,18 @@ import java.util.Locale;
 
 /** Ritual catalog sourced from Liturgia Papal build packages. */
 public final class RitualRepository {
+    public static final String BAPTISM_ID = "baptism";
+    public static final String COMMON_BLESSINGS_ID = "blessings";
+
     private static final String SOURCE = "Liturgia Papal · libros litúrgicos";
     private static final String BASE = "rituals/liturgiapapal/";
 
     private RitualRepository() {}
+
+    /** Complete catalog. Kept as the stable API used by search/catalog screens. */
+    public static List<RitualDocument> all() {
+        return documents();
+    }
 
     public static List<RitualDocument> documents() {
         return Arrays.asList(
@@ -42,6 +51,20 @@ public final class RitualRepository {
         );
     }
 
+    /** Main sacramental/pastoral group displayed by PastoralActivity. */
+    public static List<RitualDocument> pastoral() {
+        return Arrays.asList(
+                baptismOneChild(),
+                baptismDanger(),
+                baptismAlreadyBaptized(),
+                sickPastoral(),
+                funeralPreces(),
+                funeralTypical(),
+                funeralSimplified(),
+                funeralAshes()
+        );
+    }
+
     public static RitualDocument find(String id) {
         if (id == null) return null;
         for (RitualDocument document : documents()) {
@@ -50,28 +73,66 @@ public final class RitualRepository {
         return null;
     }
 
+    /** Compatibility overload used by RitualReaderActivity. */
+    public static String readSection(Context context, RitualDocument document, int position)
+            throws IOException {
+        if (document == null || position < 0 || position >= document.entries.size()) return "";
+        return readSection(context, document, document.entries.get(position));
+    }
+
     public static String readSection(Context context, RitualDocument document,
-                                     RitualEntry entry) throws Exception {
+                                     RitualEntry entry) throws IOException {
         String source = readAsset(context, document.assetPath);
         int start = findOccurrence(source, entry.sourceTitle, entry.sourceOccurrence, 0);
         if (start < 0) return source.trim();
+
         int end = source.length();
         int position = document.entries.indexOf(entry);
         if (position >= 0 && position + 1 < document.entries.size()) {
             RitualEntry next = document.entries.get(position + 1);
-            int candidate = findOccurrence(source, next.sourceTitle,
-                    next.sourceOccurrence == 0 ? 0 : next.sourceOccurrence, start + 1);
+            // Important: once we are already past the current chapter, the first
+            // next marker is the real next chapter; do not repeat its TOC occurrence count.
+            int candidate = findOccurrence(source, next.sourceTitle, 0,
+                    Math.min(source.length(), start + Math.max(1, entry.sourceTitle.length())));
             if (candidate > start) end = candidate;
         }
         return source.substring(start, end).trim();
     }
 
-    public static String readAll(Context context, RitualDocument document) throws Exception {
+    /** TextViewReaderChrome expects CharSequence; source styling is handled by the reader theme. */
+    public static CharSequence readSectionStyled(Context context, RitualDocument document,
+                                                  int position) throws IOException {
+        return readSection(context, document, position);
+    }
+
+    public static String readAll(Context context, RitualDocument document) throws IOException {
         return readAsset(context, document.assetPath).trim();
     }
 
+    /** Restores global search compatibility after the source migration. */
+    public static List<SearchResult> search(Context context, String query, int maximum)
+            throws IOException {
+        if (maximum <= 0) return Collections.emptyList();
+        String wanted = normalize(query == null ? "" : query.trim());
+        if (wanted.length() < 2) return Collections.emptyList();
+        List<SearchResult> results = new ArrayList<>();
+        for (RitualDocument document : documents()) {
+            for (int i = 0; i < document.entries.size(); i++) {
+                RitualEntry entry = document.entries.get(i);
+                String content = readSection(context, document, i);
+                if (normalize(entry.title + " " + entry.category + " " + content)
+                        .contains(wanted)) {
+                    results.add(new SearchResult(document, entry, i,
+                            entry.category + " · " + document.sourceName));
+                    if (results.size() >= maximum) return results;
+                }
+            }
+        }
+        return results;
+    }
+
     private static RitualDocument baptismOneChild() {
-        return one("baptism", "Bautismo de un solo niño",
+        return one(BAPTISM_ID, "Bautismo de un solo niño",
                 "Rito completo ordinario del Bautismo de un niño",
                 "baptism_one_child.txt", "BAUTISMO DE UN SOLO NIÑO", "Bautismo");
     }
@@ -89,6 +150,9 @@ public final class RitualRepository {
     }
 
     private static RitualDocument sickPastoral() {
+        // These headings occur once in the table of contents and once in the body.
+        // sourceOccurrence=1 selects the body. Boundaries always search the first
+        // next occurrence after the current start, so chapters do not bleed together.
         List<RitualEntry> entries = Arrays.asList(
                 new RitualEntry("Praenotanda", "PRAENOTANDA", "Enfermos", 1),
                 new RitualEntry("Visita y comunión de los enfermos", "CAPÍTULO I.", "Enfermos", 1),
@@ -187,7 +251,7 @@ public final class RitualRepository {
                 Collections.singletonList(new RitualEntry(title, marker, category)));
     }
 
-    private static String readAsset(Context context, String path) throws Exception {
+    private static String readAsset(Context context, String path) throws IOException {
         try (InputStream input = context.getAssets().open(path);
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[8192];
@@ -197,22 +261,24 @@ public final class RitualRepository {
         }
     }
 
+    /**
+     * Finds an accent-insensitive occurrence only inside source[from..]. This
+     * avoids comparing raw UTF-16 offsets with indexes from a normalized copy.
+     */
     private static int findOccurrence(String source, String needle, int occurrence, int from) {
         if (source == null || needle == null || needle.isEmpty()) return -1;
-        String haystack = normalize(source);
+        int rawFrom = Math.max(0, Math.min(from, source.length()));
+        String suffix = source.substring(rawFrom);
+        String normalizedSuffix = normalize(suffix);
         String target = normalize(needle);
-        int normalizedFrom = Math.max(0, Math.min(from, source.length()));
         int search = 0;
         int found = -1;
-        int count = 0;
-        while ((found = haystack.indexOf(target, search)) >= 0) {
-            if (found >= normalizedFrom) {
-                if (count == occurrence) return mapNormalizedIndex(source, target, found);
-                count++;
-            }
+        for (int count = 0; count <= occurrence; count++) {
+            found = normalizedSuffix.indexOf(target, search);
+            if (found < 0) return -1;
             search = found + Math.max(1, target.length());
         }
-        return -1;
+        return rawFrom + mapNormalizedIndex(suffix, found);
     }
 
     private static String normalize(String value) {
@@ -221,17 +287,13 @@ public final class RitualRepository {
                 .toLowerCase(Locale.ROOT);
     }
 
-    /**
-     * Normalization only removes combining marks, so a direct scan can map the
-     * normalized index back to the original UTF-16 offset closely enough for section slicing.
-     */
-    private static int mapNormalizedIndex(String original, String normalizedNeedle, int normalizedIndex) {
+    private static int mapNormalizedIndex(String original, int normalizedIndex) {
         if (normalizedIndex <= 0) return 0;
-        int seen = 0;
+        int normalizedCount = 0;
         for (int i = 0; i < original.length(); i++) {
-            String one = normalize(String.valueOf(original.charAt(i)));
-            seen += one.length();
-            if (seen > normalizedIndex) return i;
+            String normalizedChar = normalize(String.valueOf(original.charAt(i)));
+            if (normalizedCount >= normalizedIndex) return i;
+            normalizedCount += normalizedChar.length();
         }
         return original.length();
     }
