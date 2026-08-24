@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - fix/combined-mass-single-flow
+      - feature/ministerium-3.1-stabilization
   pull_request:
     branches:
       - main
@@ -25,6 +26,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build Liturgia Papal Mexico missal package
+        run: |
+          python -m pip install --disable-pip-version-check pypdf
+          python tools/build_liturgiapapal_missal.py --language all
+          test -f app/src/main/assets/missal/es/initial.txt
+          test -f app/src/main/assets/missal/es/proper_ordinary.txt
+          test -f app/src/main/assets/missal/la/initial.txt
+
       - name: Set up JDK 11
         uses: actions/setup-java@v4
         with:
@@ -35,13 +49,23 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
+      - name: Validate project
+        run: |
+          if [ -f tools/validate_project.mjs ]; then node tools/validate_project.mjs; fi
+          if [ -f tools/validate_combined_mass.mjs ]; then node tools/validate_combined_mass.mjs; fi
+
       - name: Build debug APK
         run: ./gradlew --no-daemon assembleDebug
+
+      - name: Compute APK SHA-256
+        run: sha256sum app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/app-debug.apk.sha256
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: Ministerium-debug
-          path: recovered-v3/app/build/outputs/apk/debug/app-debug.apk
+          name: Ministerium-3.1-stabilization-debug
+          path: |
+            recovered-v3/app/build/outputs/apk/debug/app-debug.apk
+            recovered-v3/app/build/outputs/apk/debug/app-debug.apk.sha256
           if-no-files-found: error
           retention-days: 14
