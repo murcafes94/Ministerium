@@ -15,7 +15,7 @@ def patch_bible_visual_line() -> None:
     end = text.find("    private ReaderContext context()", start)
     if start < 0 or end <= start:
         raise SystemExit("Bible visual style boundaries not found")
-    method = '''    private void applyStyle() {\n        // Ministerium 3.1: preserve the Bible EPUB's own graphic line.\n        boolean dark = ThemeUtils.isDark(this);\n        String bg = dark ? "#26211E" : "#FFFDF7";\n        String ink = dark ? "#F3EDE4" : "#2A2521";\n        String accent = dark ? "#E1C57A" : "#772233";\n        String css = "html,body{background:" + bg + "!important;}"\n                + "body{margin:0!important;padding:18px 20px!important;box-sizing:border-box;max-width:100%!important;overflow-wrap:break-word;}"\n                + "img,table{max-width:100%!important;height:auto!important;}"\n                + ".ministerium-highlight{background:#F6E58D!important;color:#231F1B!important;-webkit-text-fill-color:#231F1B!important;padding:1px 2px;border-radius:2px;}"\n                + (dark ? "body,body p,body li,body span,body div{color:" + ink\n                + "!important;-webkit-text-fill-color:" + ink + "!important;}"\n                + "a,a *{color:" + accent + "!important;-webkit-text-fill-color:" + accent + "!important;}" : "")\n                + "@media(min-width:700px){body{padding-left:42px!important;padding-right:42px!important}}";\n        webView.evaluateJavascript("(function(){var s=document.getElementById('ministerium-style');"\n                + "if(!s){s=document.createElement('style');s.id='ministerium-style';document.head.appendChild(s);}"\n                + "s.innerHTML=" + org.json.JSONObject.quote(css) + ";})()", null);\n    }\n\n'''
+    method = '''    private void applyStyle() {\n        // Ministerium 3.1: preserve the Bible EPUB's own graphic line.\n        boolean dark = ThemeUtils.isDark(this);\n        String bg = dark ? "#26211E" : "#FFFDF7";\n        String ink = dark ? "#F3EDE4" : "#2A2521";\n        String accent = dark ? "#E1C57A" : "#772233";\n        String css = "html,body{background:" + bg + "!important;}"\n                + "body{margin:0!important;padding:18px 20px!important;box-sizing:border-box;max-width:100%!important;overflow-wrap:break-word;}"\n                + "img,table{max-width:100%!important;height:auto!important;}"\n                + ".ministerium-highlight{background:#F6E58D!important;color:#231F1B!important;-webkit-text-fill-color:#231F1B!important;padding:1px 2px;border-radius:2px;}"\n                + (dark ? "body,body p,body li,body span,body div{color:" + ink\n                + "!important;-webkit-text-fill-color:" + ink + "!important;}"\n                + "a,a *{color:" + accent + "!important;-webkit-text-fill-color:" + accent + "!important;}" : "")\n                + "@media(min-width:700px){body{padding-left:48px!important;padding-right:48px!important}}"\n                + "@media(min-width:1100px){body{padding-left:64px!important;padding-right:64px!important}}";\n        webView.evaluateJavascript("(function(){var s=document.getElementById('ministerium-style');"\n                + "if(!s){s=document.createElement('style');s.id='ministerium-style';document.head.appendChild(s);}"\n                + "s.innerHTML=" + org.json.JSONObject.quote(css) + ";})()", null);\n    }\n\n'''
     path.write_text(text[:start] + method + text[end:], encoding="utf-8")
 
 
@@ -42,6 +42,30 @@ def patch_ritual_scope() -> None:
             raise SystemExit("Ritual reader source label point not found")
         text = text.replace(old, new, 1)
     reader.write_text(text, encoding="utf-8")
+
+
+def patch_changelog() -> None:
+    changelog = """Ministerium 3.1.0
+
+• Laudes/Vísperas + Misa: recorrido continuo en una sola pantalla, usando los textos locales de la Hora, Misal y Leccionario y las uniones previstas por OGLH 93–96.
+• Calendario: cálculo unificado del Tiempo Ordinario; 24 de agosto de 2026 queda cubierto por prueba automática como semana XXI. Corregidos también los años en que el Bautismo del Señor pasa al lunes tras Epifanía del 7 u 8 de enero.
+• Biblia: se conserva la línea gráfica del EPUB y se añade compatibilidad progresiva con paquetes semánticos SQLite, con retorno automático al EPUB.
+• Selección: vuelven a mostrarse las acciones de resaltar, nota, meditación, diccionario, traducción y lectura en voz alta.
+• LAT–ES: desplazamiento sincronizado proporcional y reducción de espacios artificiales excesivos.
+• Copias de seguridad: Guardar en Google Drive abre el proveedor oficial de Drive; Drive gestiona la cuenta y el inicio de sesión. Si no está disponible, se usa el selector seguro de Android.
+• Rituales: se muestra el ámbito de las fuentes regionales y pastorales para evitar presentarlas como si fueran automáticamente la edición aplicable a Ecuador.
+• Núcleo semántico: nueva base para Biblia y Misal, preparada para actualizaciones de contenido independientes del APK.
+"""
+    assets = Path("app/src/main/assets")
+    assets.mkdir(parents=True, exist_ok=True)
+    (assets / "changelog-3.1.0.txt").write_text(changelog, encoding="utf-8")
+
+    update = Path("app/src/main/java/com/fabri/ministerium/UpdateCenterActivity.java")
+    if update.exists():
+        text = update.read_text(encoding="utf-8")
+        text = text.replace('setTitle("Ministerium 3.0.0")', 'setTitle("Ministerium 3.1.0")', 1)
+        text = text.replace('readAsset("changelog-3.0.0.txt")', 'readAsset("changelog-3.1.0.txt")', 1)
+        update.write_text(text, encoding="utf-8")
 
 
 def patch_package_manifest() -> None:
@@ -88,6 +112,7 @@ def patch_distribution_templates() -> None:
 def main() -> None:
     patch_bible_visual_line()
     patch_ritual_scope()
+    patch_changelog()
     patch_package_manifest()
     patch_distribution_templates()
     print("Ministerium 3.1 post-apply normalization complete")
