@@ -7,7 +7,7 @@ import android.widget.TextView;
 
 import java.util.Locale;
 
-/** Ajustes globales y persistentes de todos los lectores. */
+/** Ajustes persistentes de la experiencia de lectura. */
 public class ReaderSettingsActivity extends ThemedActivity {
     private SeekBar size;
     private SeekBar weight;
@@ -23,6 +23,7 @@ public class ReaderSettingsActivity extends ThemedActivity {
         weight = findViewById(R.id.seekReaderWeight);
         line = findViewById(R.id.seekReaderLine);
         preview = findViewById(R.id.txtReaderPreview);
+
         RadioGroup family = findViewById(R.id.readerFamilyGroup);
         String selected = ReaderPreferences.family(this);
         family.check(ReaderPreferences.SANS.equals(selected) ? R.id.readerSans
@@ -34,6 +35,19 @@ public class ReaderSettingsActivity extends ThemedActivity {
                     ? ReaderPreferences.MONO : ReaderPreferences.SERIF);
             refresh();
         });
+
+        RadioGroup margins = findViewById(R.id.readerMarginGroup);
+        String margin = ReaderPreferences.margin(this);
+        margins.check(ReaderPreferences.MARGIN_WIDE.equals(margin) ? R.id.readerMarginWide
+                : ReaderPreferences.MARGIN_NARROW.equals(margin) ? R.id.readerMarginNarrow
+                : R.id.readerMarginStandard);
+        margins.setOnCheckedChangeListener((group, id) -> {
+            ReaderPreferences.setMargin(this, id == R.id.readerMarginWide
+                    ? ReaderPreferences.MARGIN_WIDE : id == R.id.readerMarginNarrow
+                    ? ReaderPreferences.MARGIN_NARROW : ReaderPreferences.MARGIN_STANDARD);
+            refresh();
+        });
+
         size.setMax(100);
         size.setProgress(ReaderPreferences.textZoom(this) - 80);
         weight.setMax(4);
@@ -70,9 +84,17 @@ public class ReaderSettingsActivity extends ThemedActivity {
                 ReaderPreferences.family(this), ReaderPreferences.weight(this) >= 600
                         ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL));
         preview.setLineSpacing(0, ReaderPreferences.lineHeight(this));
+        int horizontal = Math.round(ReaderPreferences.horizontalPaddingPx(this)
+                * getResources().getDisplayMetrics().density / 2f);
+        int vertical = Math.round(16 * getResources().getDisplayMetrics().density);
+        preview.setPadding(horizontal, vertical, horizontal, vertical);
+        String margin = ReaderPreferences.margin(this);
+        String marginLabel = ReaderPreferences.MARGIN_WIDE.equals(margin) ? "margen amplio"
+                : ReaderPreferences.MARGIN_NARROW.equals(margin) ? "margen estrecho"
+                : "margen estándar";
         ((TextView) findViewById(R.id.txtReaderValues)).setText(String.format(Locale.US,
-                "%d%% · grosor %d · interlineado %.2f",
+                "%d%% · grosor %d · interlineado %.2f · %s",
                 ReaderPreferences.textZoom(this), ReaderPreferences.weight(this),
-                ReaderPreferences.lineHeight(this)));
+                ReaderPreferences.lineHeight(this), marginLabel));
     }
 }
