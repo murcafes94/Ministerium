@@ -5,6 +5,8 @@ import android.webkit.WebView;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.Calendar;
+
 /** Presenta Completas como un flujo continuo usando datos semánticos externos al código. */
 public final class ComplineEnhancer {
     private ComplineEnhancer() {}
@@ -12,10 +14,14 @@ public final class ComplineEnhancer {
     public static void inject(WebView webView, boolean ordained, boolean easterSeason) {
         try {
             JSONObject data = ComplineContentRepository.load(webView.getContext());
+            Calendar today = Calendar.getInstance();
+            JSONObject form = ComplineContentRepository.formForDay(
+                    data, today.get(Calendar.DAY_OF_WEEK));
             JSONArray penance = ComplineContentRepository.penitentialFormulas(data);
-            JSONArray hymns = ComplineContentRepository.hymns(data);
+            JSONArray hymns = ComplineContentRepository.hymnsForSeason(
+                    data, easterSeason ? "easter" : "ordinary");
             JSONArray marian = ComplineContentRepository.marianAntiphons(data, easterSeason);
-            String conclusion = ComplineContentRepository.conclusion(data);
+            String conclusion = conclusionText(form);
             String penitentialConclusion = ComplineContentRepository.penitentialConclusion(data);
 
             // La conclusión de Completas es propia de la Hora. ordained se conserva en
@@ -57,5 +63,19 @@ public final class ComplineEnhancer {
                     + "," + JSONObject.quote(conclusion) + "," + JSONObject.quote(penitentialConclusion) + ")";
             webView.evaluateJavascript(script, null);
         } catch (Exception ignored) {}
+    }
+
+    private static String conclusionText(JSONObject form) {
+        if (form == null) return "";
+        JSONArray lines = form.optJSONArray("conclusion");
+        if (lines == null || lines.length() == 0) return "";
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < lines.length(); i++) {
+            String line = lines.optString(i, "");
+            if (line.isEmpty()) continue;
+            if (out.length() > 0) out.append('\n');
+            out.append(line);
+        }
+        return out.toString();
     }
 }
