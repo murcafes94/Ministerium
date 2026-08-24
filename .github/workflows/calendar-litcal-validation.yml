@@ -6,6 +6,11 @@ on:
     paths:
       - 'tools/calendar_validation/**'
       - '.github/workflows/calendar-litcal-validation.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'tools/calendar_validation/**'
+      - '.github/workflows/calendar-litcal-validation.yml'
   workflow_dispatch:
 
 permissions:
