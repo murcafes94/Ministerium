@@ -34,11 +34,13 @@ public class ReaderSettingsActivity extends ThemedActivity {
         String selected = ReaderPreferences.family(this);
         family.check(ReaderPreferences.SANS.equals(selected) ? R.id.readerSans
                 : ReaderPreferences.MONO.equals(selected) ? R.id.readerMono
+                : ReaderPreferences.PALATINO.equals(selected) ? R.id.readerPalatino
                 : R.id.readerSerif);
         family.setOnCheckedChangeListener((group, id) -> {
             ReaderPreferences.setFamily(this, id == R.id.readerSans
                     ? ReaderPreferences.SANS : id == R.id.readerMono
-                    ? ReaderPreferences.MONO : ReaderPreferences.SERIF);
+                    ? ReaderPreferences.MONO : id == R.id.readerPalatino
+                    ? ReaderPreferences.PALATINO : ReaderPreferences.SERIF);
             refresh();
         });
 
@@ -118,8 +120,10 @@ public class ReaderSettingsActivity extends ThemedActivity {
 
     private void refresh() {
         preview.setTextSize(16f * ReaderPreferences.textZoom(this) / 110f);
+        String family = ReaderPreferences.family(this);
+        if (ReaderPreferences.PALATINO.equals(family)) family = "serif";
         preview.setTypeface(android.graphics.Typeface.create(
-                ReaderPreferences.family(this), ReaderPreferences.weight(this) >= 600
+                family, ReaderPreferences.weight(this) >= 600
                         ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL));
         preview.setLineSpacing(0, ReaderPreferences.lineHeight(this));
         int horizontal = Math.round(ReaderPreferences.horizontalPaddingPx(this)
@@ -130,9 +134,13 @@ public class ReaderSettingsActivity extends ThemedActivity {
         String marginLabel = ReaderPreferences.MARGIN_WIDE.equals(margin) ? "margen amplio"
                 : ReaderPreferences.MARGIN_NARROW.equals(margin) ? "margen estrecho"
                 : "margen estándar";
+        String familyLabel = ReaderPreferences.PALATINO.equals(ReaderPreferences.family(this))
+                ? "Palatino" : ReaderPreferences.SANS.equals(ReaderPreferences.family(this))
+                ? "Sans" : ReaderPreferences.MONO.equals(ReaderPreferences.family(this))
+                ? "Monoespaciada" : "Serif";
         ((TextView) findViewById(R.id.txtReaderValues)).setText(String.format(Locale.US,
-                "%d%% · grosor %d · interlineado %.2f · %s",
-                ReaderPreferences.textZoom(this), ReaderPreferences.weight(this),
+                "%s · %d%% · grosor %d · interlineado %.2f · %s",
+                familyLabel, ReaderPreferences.textZoom(this), ReaderPreferences.weight(this),
                 ReaderPreferences.lineHeight(this), marginLabel));
     }
 }
