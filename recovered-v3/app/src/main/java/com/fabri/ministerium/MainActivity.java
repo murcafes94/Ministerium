@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.TextView;
 
 import java.util.Calendar;
@@ -21,6 +22,7 @@ public class MainActivity extends ThemedActivity {
         // Si Android cerró el proceso mientras Ministerium había activado No molestar,
         // restaura el filtro previo antes de iniciar una nueva sesión.
         PrayerFocusController.recoverStaleSession(this);
+        replaceText(findViewById(R.id.cardPastoral), "Atención pastoral", "Ritual");
 
         findViewById(R.id.btnSearch).setOnClickListener(v ->
                 startActivity(new Intent(this, SearchActivity.class)));
@@ -123,5 +125,20 @@ public class MainActivity extends ThemedActivity {
         section.setOnClickListener(v -> {
             if (!ContinueReadingStore.open(this, entry)) section.setVisibility(View.GONE);
         });
+    }
+
+    private static void replaceText(View root, String from, String to) {
+        if (root == null) return;
+        if (root instanceof TextView) {
+            TextView text = (TextView) root;
+            if (from.contentEquals(text.getText())) text.setText(to);
+            return;
+        }
+        if (root instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) root;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                replaceText(group.getChildAt(i), from, to);
+            }
+        }
     }
 }
