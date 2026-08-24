@@ -7,6 +7,7 @@ is normalized as regular repository files.
 """
 
 from pathlib import Path
+import re
 
 
 def replace_once(path: Path, old: str, new: str, label: str) -> None:
@@ -62,10 +63,32 @@ def patch_reader_subtitle() -> None:
     replace_once(path, old, new, "semantic Bible edition subtitle")
 
 
+def patch_ordinary_week_calculation() -> None:
+    path = Path("app/src/main/java/com/fabri/ministerium/LiturgicalResolver.java")
+    text = path.read_text(encoding="utf-8")
+    replacement = """    public static int ordinaryWeekNumber(Calendar selected) {
+        return RomanCalendarMath.ordinaryWeekNumber(selected);
+    }
+
+    public static String lectionaryCycle"""
+    if replacement in text:
+        return
+    pattern = re.compile(
+        r"    public static int ordinaryWeekNumber\(Calendar selected\) \{.*?\n    \}\n\n"
+        r"    public static String lectionaryCycle",
+        re.DOTALL,
+    )
+    patched, count = pattern.subn(replacement, text, count=1)
+    if count != 1:
+        raise SystemExit("Migration point not found: ordinaryWeekNumber in LiturgicalResolver")
+    path.write_text(patched, encoding="utf-8")
+
+
 def main() -> None:
     patch_version()
     patch_bible_reader()
     patch_reader_subtitle()
+    patch_ordinary_week_calculation()
     print("Ministerium 3.1 migration overlay applied")
 
 
