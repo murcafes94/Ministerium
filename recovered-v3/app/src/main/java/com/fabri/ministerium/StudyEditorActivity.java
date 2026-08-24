@@ -19,6 +19,9 @@ public class StudyEditorActivity extends ThemedActivity {
     public static final String EXTRA_SOURCE_KEY = "study_source_key";
     public static final String EXTRA_REFERENCE = "study_reference";
     public static final String EXTRA_QUOTE = "study_quote";
+    public static final String EXTRA_SEMANTIC_UNIT_ID = "study_semantic_unit_id";
+    public static final String EXTRA_START_OFFSET = "study_start_offset";
+    public static final String EXTRA_END_OFFSET = "study_end_offset";
     private static final String DRAFTS = "study_editor_drafts";
     private EditText title;
     private EditText body;
@@ -39,6 +42,9 @@ public class StudyEditorActivity extends ThemedActivity {
         entry.sourceKey = value(getIntent().getStringExtra(EXTRA_SOURCE_KEY), "");
         entry.reference = value(getIntent().getStringExtra(EXTRA_REFERENCE), "");
         entry.quote = value(getIntent().getStringExtra(EXTRA_QUOTE), "");
+        entry.semanticUnitId = value(getIntent().getStringExtra(EXTRA_SEMANTIC_UNIT_ID), "");
+        entry.startOffset = getIntent().getIntExtra(EXTRA_START_OFFSET, -1);
+        entry.endOffset = getIntent().getIntExtra(EXTRA_END_OFFSET, -1);
         draftKey = entry.type + ":" + entry.sourceKey;
 
         ((TextView) findViewById(R.id.txtStudyEditorTitle)).setText(
