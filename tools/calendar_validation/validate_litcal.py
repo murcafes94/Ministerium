@@ -17,7 +17,10 @@ import urllib.parse
 import urllib.request
 from typing import Dict, List
 
-API_BASE = "https://litcal.johnromanodorazio.com/api/v5/calendar/roman"
+# The production v5 endpoint currently exposes the General Roman Calendar at
+# /calendar/{year}. Keep this validator aligned with the public API rather than
+# development-only route variants.
+API_BASE = "https://litcal.johnromanodorazio.com:443/api/v5/calendar"
 
 
 def easter_sunday(year: int) -> dt.date:
