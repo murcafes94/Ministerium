@@ -1,6 +1,7 @@
 package com.fabri.ministerium;
 
 import android.content.Context;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.view.ActionMode;
 import android.view.Menu;
@@ -8,8 +9,8 @@ import android.view.MenuItem;
 import android.webkit.WebView;
 
 /**
- * WebView de lectura que conserva la selección nativa de Android y permite a
- * Ministerium añadir acciones propias al ActionMode.
+ * WebView de lectura que conserva los tiradores nativos de selección y añade
+ * las acciones de Ministerium al toolbar flotante de Android.
  */
 public class MinisteriumWebView extends WebView {
     public interface SelectionActionHandler {
@@ -19,14 +20,8 @@ public class MinisteriumWebView extends WebView {
 
     private SelectionActionHandler selectionActionHandler;
 
-    public MinisteriumWebView(Context context) {
-        super(context);
-    }
-
-    public MinisteriumWebView(Context context, AttributeSet attrs) {
-        super(context, attrs);
-    }
-
+    public MinisteriumWebView(Context context) { super(context); }
+    public MinisteriumWebView(Context context, AttributeSet attrs) { super(context, attrs); }
     public MinisteriumWebView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
@@ -37,12 +32,21 @@ public class MinisteriumWebView extends WebView {
 
     @Override
     public ActionMode startActionMode(ActionMode.Callback callback) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            // Fuerza el mismo patrón visual de los lectores modernos: menú
+            // contextual junto a la selección, no una barra fija arriba.
+            return super.startActionMode(wrap(callback), ActionMode.TYPE_FLOATING);
+        }
         return super.startActionMode(wrap(callback));
     }
 
     @Override
     public ActionMode startActionMode(ActionMode.Callback callback, int type) {
-        return super.startActionMode(wrap(callback), type);
+        int resolvedType = type;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            resolvedType = ActionMode.TYPE_FLOATING;
+        }
+        return super.startActionMode(wrap(callback), resolvedType);
     }
 
     private ActionMode.Callback wrap(ActionMode.Callback original) {
@@ -51,9 +55,8 @@ public class MinisteriumWebView extends WebView {
     }
 
     /**
-     * Android/WebView puede mandar todas las acciones personalizadas al menú de
-     * desbordamiento. Se promueven las cuatro herramientas esenciales para que
-     * el menú flotante realmente muestre Subrayar, Nota, Reflexión y Diccionario.
+     * Mantiene visibles las herramientas esenciales. Las secundarias quedan en
+     * «Más», de modo que el popup no se convierta en una fila interminable.
      */
     private void promoteCoreActions(Menu menu) {
         if (menu == null) return;
@@ -62,10 +65,9 @@ public class MinisteriumWebView extends WebView {
             if (item == null || item.getTitle() == null) continue;
             String title = item.getTitle().toString();
             if ("Subrayar".equals(title) || "Nota".equals(title)
-                    || "Reflexión".equals(title) || "Diccionario".equals(title)) {
+                    || "Diccionario".equals(title)) {
                 item.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-            } else if ("Comentario".equals(title) || "Traducir".equals(title)
-                    || "Leer".equals(title)) {
+            } else {
                 item.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
             }
         }
@@ -74,9 +76,7 @@ public class MinisteriumWebView extends WebView {
     private final class SelectionCallback implements ActionMode.Callback {
         private final ActionMode.Callback original;
 
-        SelectionCallback(ActionMode.Callback original) {
-            this.original = original;
-        }
+        SelectionCallback(ActionMode.Callback original) { this.original = original; }
 
         @Override
         public boolean onCreateActionMode(ActionMode mode, Menu menu) {
