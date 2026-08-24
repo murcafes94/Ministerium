@@ -3,6 +3,8 @@ on:
   push:
     branches: [ feature/bible-semantic-v3.1 ]
     paths: ['.github/workflows/bible-v3.1-inspect.yml']
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 permissions:
   contents: read
