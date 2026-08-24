@@ -58,8 +58,15 @@ public final class ContinueReadingStore {
         try {
             Class<?> activity = Class.forName(position.activity);
             Intent intent = new Intent(context, activity);
-            String[] names = JSONObject.getNames(position.extras);
-            if (names != null) for (String name : names) {
+
+            java.util.Iterator<String> iterator = position.extras.keys();
+            java.util.List<String> nameList = new java.util.ArrayList<>();
+            while (iterator.hasNext()) {
+                nameList.add(iterator.next());
+            }
+            String[] names = nameList.toArray(new String[0]);
+
+            for (String name : names) {
                 Object value = position.extras.get(name);
                 if (value instanceof Integer) intent.putExtra(name, (Integer) value);
                 else if (value instanceof Boolean) intent.putExtra(name, (Boolean) value);
