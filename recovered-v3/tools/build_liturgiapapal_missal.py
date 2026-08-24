@@ -8,9 +8,9 @@ Para español se usa deliberadamente la VERSIÓN DE MÉXICO publicada por
 Liturgia Papal. Esta es la base latinoamericana de Ministerium; no debe
 sustituirse por la edición de España mediante reemplazos mecánicos.
 
-El Ordinario completo de México se descarga también como fuente canónica de
-control. Los archivos parciales del mismo artículo se usan para producir bloques
-más pequeños, pero deben concordar con ese Ordinario completo.
+Los Ordinarios completos de México y del Missale Romanum se descargan también
+como fuentes canónicas de control. Los archivos parciales se usan para producir
+bloques más pequeños, pero deben concordar con esos Ordinarios completos.
 
 NO conserva:
 - números de página;
@@ -77,6 +77,8 @@ SOURCES = {
         "proper_ordinary": "https://liturgiapapal.org/attachments/article/1030/Ordinario.pdf",
     },
     "la": {
+        # Fuente canónica del Ordinario latino completo facilitada por el usuario.
+        "ordinary_full": "https://liturgiapapal.org/attachments/article/744/ORDE%20MISS%C3%86.pdf",
         "initial": "https://liturgiapapal.org/attachments/article/744/Ritus%20initiales.pdf",
         "word": "https://liturgiapapal.org/attachments/article/744/Liturgia%20verbi.pdf",
         "eucharistic_liturgy": "https://liturgiapapal.org/attachments/article/744/Liturgia%20eucharistica.pdf",
@@ -250,7 +252,7 @@ def validate_cleaned(language: str, component: str, text: str) -> list[str]:
         errors.extend(validate_mexico_ordinary(component, text))
         if component == "initial" and "En el nombre del Padre" not in text:
             errors.append("no se encontró el comienzo del Ordinario español")
-    if language == "la" and component == "initial" and "In nomine Patris" not in text:
+    if language == "la" and component in {"ordinary_full", "initial"} and "In nomine Patris" not in text:
         errors.append("no se encontró el comienzo del Ordo latino")
     return errors
 
@@ -258,14 +260,15 @@ def validate_cleaned(language: str, component: str, text: str) -> list[str]:
 def build(output: Path, languages: list[str], force: bool) -> None:
     output.mkdir(parents=True, exist_ok=True)
     manifest = {
-        "schema": 3,
+        "schema": 4,
         "provider": "Liturgia Papal",
         "editions": {
             "es": "Misal Romano - versión de México",
             "la": "Missale Romanum",
         },
         "canonical_es_ordinary": SOURCES["es"]["ordinary_full"],
-        "notes": "PDFs preprocesados: sin paginación, encabezados ni pies; solo contenido litúrgico útil. Español basado exclusivamente en la versión de México.",
+        "canonical_la_ordinary": SOURCES["la"]["ordinary_full"],
+        "notes": "PDFs preprocesados: sin paginación, encabezados ni pies; solo contenido litúrgico útil. Español basado exclusivamente en la versión de México; latín controlado contra el Ordo Missae completo.",
         "languages": {},
     }
 
