@@ -45,7 +45,9 @@ public class StudyEditorActivity extends ThemedActivity {
         entry.semanticUnitId = value(getIntent().getStringExtra(EXTRA_SEMANTIC_UNIT_ID), "");
         entry.startOffset = getIntent().getIntExtra(EXTRA_START_OFFSET, -1);
         entry.endOffset = getIntent().getIntExtra(EXTRA_END_OFFSET, -1);
-        draftKey = entry.type + ":" + entry.sourceKey;
+        draftKey = entry.type + ":" + entry.sourceKey + ":" + entry.semanticUnitId
+                + ":" + entry.startOffset + ":" + entry.endOffset + ":"
+                + Integer.toHexString(entry.quote.hashCode());
 
         ((TextView) findViewById(R.id.txtStudyEditorTitle)).setText(
                 StudyEntry.NOTE.equals(entry.type) ? "Nueva nota" : "Nueva meditación");
