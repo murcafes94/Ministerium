@@ -48,6 +48,7 @@
             android:layout_height="wrap_content" android:layout_marginTop="6dp"
             android:textColor="@color/muted" android:textSize="11sp" />
     </LinearLayout>
-    <WebView android:id="@+id/canonWebView" android:layout_width="match_parent"
-        android:layout_height="0dp" android:layout_weight="1" />
+    <com.fabri.ministerium.MinisteriumWebView android:id="@+id/canonWebView"
+        android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" />
 </LinearLayout>
