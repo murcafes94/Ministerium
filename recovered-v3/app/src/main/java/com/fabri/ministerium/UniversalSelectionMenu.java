@@ -104,16 +104,21 @@ public final class UniversalSelectionMenu {
     }
 
     /**
-     * Captura el texto y, cuando el renderizador expone data-semantic-id/data-block,
-     * también la unidad estable y los offsets dentro de ella. Los lectores antiguos
-     * siguen funcionando con quote como fallback.
+     * Captura el texto y, cuando el renderizador expone una unidad semántica,
+     * también la unidad estable y los offsets dentro de ella. En la celebración
+     * combinada, cada section.ministerium-section se identifica por su encabezado.
+     * Los lectores antiguos siguen funcionando con quote como fallback.
      */
     private static void capture(WebView webView, SelectionCallback callback) {
         String script = "(function(){var s=window.getSelection&&window.getSelection();"
                 + "if(!s||!s.rangeCount||!s.toString().trim())return '';var r=s.getRangeAt(0);"
+                + "function unit(root){if(!root)return '';var id=root.getAttribute&&"
+                + "(root.getAttribute('data-semantic-id')||root.getAttribute('data-block'));if(id)return id;"
+                + "if(root.matches&&root.matches('section.ministerium-section')){var h=root.querySelector('h2');"
+                + "var t=h?(h.textContent||'').replace(/\\s+/g,' ').trim().toLowerCase():'';return t?'combined:'+t:'';}return '';}"
                 + "var n=r.commonAncestorContainer.nodeType===1?r.commonAncestorContainer:r.commonAncestorContainer.parentElement;"
-                + "var b=n&&n.closest?n.closest('[data-semantic-id],[data-block]'):null;"
-                + "var u=b?(b.getAttribute('data-semantic-id')||b.getAttribute('data-block')||''):'';"
+                + "var b=n&&n.closest?n.closest('[data-semantic-id],[data-block],section.ministerium-section'):null;"
+                + "var u=unit(b);"
                 + "function off(root,node,o){if(!root||!node||node.nodeType!==3)return -1;"
                 + "var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),x,t=0;"
                 + "while(x=w.nextNode()){if(x===node)return t+o;t+=x.nodeValue.length;}return -1;}"
@@ -279,13 +284,17 @@ public final class UniversalSelectionMenu {
 
         String script = "(function(q,id,c,u,s,e){"
                 + "if(document.querySelector('[data-study-id=\\\"'+id+'\\\"]'))return;"
+                + "function unit(root){if(!root)return '';var id=root.getAttribute&&"
+                + "(root.getAttribute('data-semantic-id')||root.getAttribute('data-block'));if(id)return id;"
+                + "if(root.matches&&root.matches('section.ministerium-section')){var h=root.querySelector('h2');"
+                + "var t=h?(h.textContent||'').replace(/\\s+/g,' ').trim().toLowerCase():'';return t?'combined:'+t:'';}return '';}"
                 + "function mark(st,so,en,eo){try{var r=document.createRange();r.setStart(st,so);r.setEnd(en,eo);"
                 + "var m=document.createElement('mark');m.setAttribute('data-study-id',id);"
                 + "m.style.backgroundColor=c;m.style.color='#1f1b18';m.appendChild(r.extractContents());"
                 + "r.insertNode(m);return true;}catch(x){return false;}}"
                 + "function anchored(){if(!u||s<0||e<=s)return false;"
-                + "var roots=document.querySelectorAll('[data-semantic-id],[data-block]'),root=null;"
-                + "for(var h=0;h<roots.length;h++){if((roots[h].getAttribute('data-semantic-id')||roots[h].getAttribute('data-block')||'')===u){root=roots[h];break;}}"
+                + "var roots=document.querySelectorAll('[data-semantic-id],[data-block],section.ministerium-section'),root=null;"
+                + "for(var h=0;h<roots.length;h++){if(unit(roots[h])===u){root=roots[h];break;}}"
                 + "if(!root)return false;var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),n,t=0,st=null,en=null,so=0,eo=0;"
                 + "while(n=w.nextNode()){var l=n.nodeValue.length;if(st===null&&s>=t&&s<=t+l){st=n;so=s-t;}"
                 + "if(e>=t&&e<=t+l){en=n;eo=e-t;break;}t+=l;}return st&&en?mark(st,so,en,eo):false;}"
