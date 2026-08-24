@@ -65,6 +65,7 @@
         <activity android:name=".MassReadingsActivity" android:exported="false" />
         <activity android:name=".MassReadingReaderActivity" android:exported="false" />
         <activity android:name=".MissalActivity" android:exported="false" />
+        <activity android:name=".MissalSectionReaderActivity" android:exported="false" />
         <activity android:name=".CombinedMassActivity" android:exported="false" />
         <activity android:name=".LiturgicalCalendarActivity" android:exported="false" />
         <service android:name=".TtsPlaybackService" android:exported="false" />
