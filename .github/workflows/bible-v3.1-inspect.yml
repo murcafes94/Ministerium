@@ -20,10 +20,10 @@ jobs:
           cat "ministerium-v3.zip (1).part-00" "ministerium-v3.zip (1).part-01" "bootstrap/v3/ministerium-v3.zip (1).part-02" bootstrap/v3/ministerium-v3.zip.part-03 bootstrap/v3/ministerium-v3.zip.part-04 bootstrap/v3/ministerium-v3.zip.part-05 bootstrap/v3/ministerium-v3.zip.part-06 >> "$OUT"
           unzip -q "$OUT" -d "$RUNNER_TEMP/v3"
           rsync -a --exclude='.git/' "$RUNNER_TEMP/v3/" ./
-      - name: Inspect ritual source metadata
+      - name: Inspect adaptive margin validation
         shell: bash
         run: |
-          for f in app/src/main/java/com/fabri/ministerium/RitualRepository.java app/src/main/java/com/fabri/ministerium/RitualCatalogActivity.java app/src/main/java/com/fabri/ministerium/RitualReaderActivity.java app/src/main/res/layout/activity_ritual_catalog.xml app/src/main/res/layout/activity_ritual_reader.xml app/src/main/assets/package-manifest.json; do
-            echo =====$f=====
-            sed -n '1,700p' "$f" || true
-          done
+          echo '===== validate_content margins ====='
+          sed -n '100,150p' tools/validate_content.mjs || true
+          echo '===== matching checks ====='
+          grep -n -A18 -B10 -Ei 'margen|margin|padding|BibleReaderActivity' tools/validate_content.mjs | head -260 || true
