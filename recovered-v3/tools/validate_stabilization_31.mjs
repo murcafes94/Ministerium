@@ -105,9 +105,11 @@ requireText(textSelection, 'SHOW_AS_ACTION_ALWAYS', 'toolbar equivalente en lect
 requireText(readerPrefs, 'public static String family(Context context)', 'preferencia global de tipografía');
 requireText(readerPrefs, 'PALATINO', 'opción Palatino global');
 forbidText(readerPrefs, 'Biblia y Misal se fuerzan a Palatino', 'excepción tipográfica antigua');
+requireText(readerPrefs, 'ignoredLegacyPreserveTypeface', 'compatibilidad de llamada antigua sin excepción tipográfica');
+requireText(readerPrefs, 'applyInternal(context, webView, cssFamily(context))', 'familia global aplicada por WebView');
 requireText(readerSettingsLayout, 'readerPalatino', 'opción visual Palatino');
 requireText(readerSettings, 'ReaderPreferences.PALATINO', 'selección Palatino en ajustes');
-requireText(bible, 'ReaderPreferences.apply(BibleReaderActivity.this, webView, false)', 'tipografía global aplicada a Biblia');
+requireText(bible, 'ReaderPreferences.apply(BibleReaderActivity.this, webView', 'preferencias globales aplicadas a Biblia');
 
 if (failures.length) {
   console.error('Ministerium 3.1 stabilization: FALLÓ');
