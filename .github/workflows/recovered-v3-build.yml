@@ -34,7 +34,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: pip
 
       - name: Install missal preprocessing dependency
         run: python -m pip install 'pypdf>=5,<6'
@@ -46,12 +45,19 @@ jobs:
           python tools/build_liturgiapapal_missal.py --language all --force-download
           test -f app/src/main/assets/missal/manifest.json
           test -f app/src/main/assets/missal/es/initial.txt
+          test -f app/src/main/assets/missal/es/eucharistic_liturgy.txt
+          test -f app/src/main/assets/missal/es/prefaces.txt
+          test -f app/src/main/assets/missal/es/communion.txt
+          test -f app/src/main/assets/missal/es/conclusion.txt
           test -f app/src/main/assets/missal/es/eucharistic_prayer_1.txt
           test -f app/src/main/assets/missal/es/eucharistic_prayer_2.txt
           test -f app/src/main/assets/missal/es/eucharistic_prayer_3.txt
           test -f app/src/main/assets/missal/es/eucharistic_prayer_4.txt
           test -f app/src/main/assets/missal/es/proper_ordinary.txt
           grep -q 'El Señor esté con ustedes' app/src/main/assets/missal/es/initial.txt
+          grep -q 'XXI DOMINGO DEL TIEMPO ORDINARIO' app/src/main/assets/missal/es/proper_ordinary.txt
+          grep -q 'PREFACIO I PARA LOS DOMINGOS' app/src/main/assets/missal/es/prefaces.txt
+          grep -q 'La paz del Señor esté siempre con ustedes' app/src/main/assets/missal/es/communion.txt
           if grep -q 'El Señor esté con vosotros' app/src/main/assets/missal/es/initial.txt; then
             echo 'ERROR: se generó accidentalmente la edición de España.' >&2
             exit 1
@@ -83,8 +89,10 @@ jobs:
           test -f app/src/main/java/com/fabri/ministerium/CombinedMassActivity.java
           test -f app/src/main/java/com/fabri/ministerium/CombinedMassComposer.java
           test -f app/src/main/java/com/fabri/ministerium/CombinedMassPolisher.java
+          test -f app/src/main/java/com/fabri/ministerium/LiturgiaPapalMissalRepository.java
           grep -q "versionName '3.0.0'" app/build.gradle
           grep -q 'CombinedMassPolisher.compose' app/src/main/java/com/fabri/ministerium/CombinedMassActivity.java
+          grep -q 'LiturgiaPapalMissalRepository' app/src/main/java/com/fabri/ministerium/CombinedMassPolisher.java
           grep -q 'Liturgia de la Palabra' app/src/main/java/com/fabri/ministerium/CombinedMassComposer.java
           grep -q 'setPrayer(4)' app/src/main/java/com/fabri/ministerium/CombinedMassComposer.java
           grep -q 'Niceno-constantinopolitano' app/src/main/java/com/fabri/ministerium/CombinedMassComposer.java
