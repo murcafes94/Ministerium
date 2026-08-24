@@ -47,30 +47,30 @@ public final class UniversalSelectionMenu {
             @Override public boolean handle(ActionMode mode, MenuItem item) {
                 int id = item.getItemId();
                 if (id == HIGHLIGHT) {
-                    capture(webView, selected -> {
+                    capture(webView, selection -> {
                         mode.finish();
-                        chooseHighlight(activity, webView, context, selected);
+                        chooseHighlight(activity, webView, context, selection);
                     });
                     return true;
                 }
                 if (id == NOTE) {
-                    capture(webView, selected -> {
+                    capture(webView, selection -> {
                         mode.finish();
-                        openEditor(activity, context, selected, StudyEntry.NOTE);
+                        openEditor(activity, context, selection, StudyEntry.NOTE);
                     });
                     return true;
                 }
                 if (id == MEDITATION) {
-                    capture(webView, selected -> {
+                    capture(webView, selection -> {
                         mode.finish();
-                        openEditor(activity, context, selected, StudyEntry.MEDITATION);
+                        openEditor(activity, context, selection, StudyEntry.MEDITATION);
                     });
                     return true;
                 }
                 if (id == DICTIONARY) {
-                    capture(webView, selected -> {
+                    capture(webView, selection -> {
                         mode.finish();
-                        openDictionary(activity, selected);
+                        openDictionary(activity, selection.text);
                     });
                     return true;
                 }
@@ -79,16 +79,16 @@ public final class UniversalSelectionMenu {
                     return true;
                 }
                 if (id == TRANSLATE) {
-                    capture(webView, selected -> {
+                    capture(webView, selection -> {
                         mode.finish();
-                        openTranslation(activity, selected);
+                        openTranslation(activity, selection.text);
                     });
                     return true;
                 }
                 if (id == READ_ALOUD) {
-                    capture(webView, selected -> {
+                    capture(webView, selection -> {
                         mode.finish();
-                        ReaderTtsController.speakSelection(activity, selected);
+                        ReaderTtsController.speakSelection(activity, selection.text);
                     });
                     return true;
                 }
@@ -103,47 +103,65 @@ public final class UniversalSelectionMenu {
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
     }
 
+    /**
+     * Captura el texto y, cuando el renderizador expone data-semantic-id/data-block,
+     * también la unidad estable y los offsets dentro de ella. Los lectores antiguos
+     * siguen funcionando con quote como fallback.
+     */
     private static void capture(WebView webView, SelectionCallback callback) {
-        webView.evaluateJavascript("(window.getSelection?window.getSelection().toString():'')",
-                raw -> {
-                    String selected = decode(raw);
-                    if (selected.isEmpty()) {
-                        Toast.makeText(webView.getContext(),
-                                "Selecciona primero una palabra o un fragmento.",
-                                Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    callback.onSelection(selected);
-                });
+        String script = "(function(){var s=window.getSelection&&window.getSelection();"
+                + "if(!s||!s.rangeCount||!s.toString().trim())return '';var r=s.getRangeAt(0);"
+                + "var n=r.commonAncestorContainer.nodeType===1?r.commonAncestorContainer:r.commonAncestorContainer.parentElement;"
+                + "var b=n&&n.closest?n.closest('[data-semantic-id],[data-block]'):null;"
+                + "var u=b?(b.getAttribute('data-semantic-id')||b.getAttribute('data-block')||''):'';"
+                + "function off(root,node,o){if(!root||!node||node.nodeType!==3)return -1;"
+                + "var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),x,t=0;"
+                + "while(x=w.nextNode()){if(x===node)return t+o;t+=x.nodeValue.length;}return -1;}"
+                + "var a=-1,z=-1;if(b&&b.contains(r.startContainer)&&b.contains(r.endContainer)){"
+                + "a=off(b,r.startContainer,r.startOffset);z=off(b,r.endContainer,r.endOffset);}"
+                + "return JSON.stringify({text:s.toString(),semanticUnitId:u,startOffset:a,endOffset:z});})()";
+        webView.evaluateJavascript(script, raw -> {
+            SelectionSnapshot selection = decodeSelection(raw);
+            if (selection.text.isEmpty()) {
+                Toast.makeText(webView.getContext(),
+                        "Selecciona primero una palabra o un fragmento.",
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+            callback.onSelection(selection);
+        });
     }
 
     private static void chooseHighlight(Activity activity, WebView webView,
-                                        ReaderContext context, String selected) {
+                                        ReaderContext context, SelectionSnapshot selection) {
         String[] labels = {"Amarillo", "Verde", "Azul", "Rojo", "Gris"};
         String[] colors = {"yellow", "green", "blue", "red", "gray"};
         new AlertDialog.Builder(activity).setTitle("Color del subrayado")
                 .setItems(labels, (dialog, which) -> {
-                    StudyEntry entry = base(context, selected, StudyEntry.HIGHLIGHT);
+                    StudyEntry entry = base(context, selection, StudyEntry.HIGHLIGHT);
                     entry.id = UUID.randomUUID().toString();
                     entry.title = context.reference.isEmpty() ? context.title : context.reference;
                     entry.color = colors[which];
                     StudyStore.save(activity, entry);
-                    injectHighlight(webView, selected, entry.color, entry.id);
+                    injectHighlight(webView, entry);
                     Toast.makeText(activity, "Subrayado guardado en Mi estudio.",
                             Toast.LENGTH_SHORT).show();
                 }).setNegativeButton("Cancelar", null).show();
     }
 
     private static void openEditor(Activity activity, ReaderContext context,
-                                   String selected, String type) {
-        StudyEntry entry = base(context, selected, type);
+                                   SelectionSnapshot selection, String type) {
+        StudyEntry entry = base(context, selection, type);
         Intent intent = new Intent(activity, StudyEditorActivity.class)
                 .putExtra(StudyEditorActivity.EXTRA_TYPE, entry.type)
                 .putExtra(StudyEditorActivity.EXTRA_CATEGORY, entry.category)
                 .putExtra(StudyEditorActivity.EXTRA_SOURCE, entry.source)
                 .putExtra(StudyEditorActivity.EXTRA_SOURCE_KEY, entry.sourceKey)
                 .putExtra(StudyEditorActivity.EXTRA_REFERENCE, entry.reference)
-                .putExtra(StudyEditorActivity.EXTRA_QUOTE, entry.quote);
+                .putExtra(StudyEditorActivity.EXTRA_QUOTE, entry.quote)
+                .putExtra(StudyEditorActivity.EXTRA_SEMANTIC_UNIT_ID, entry.semanticUnitId)
+                .putExtra(StudyEditorActivity.EXTRA_START_OFFSET, entry.startOffset)
+                .putExtra(StudyEditorActivity.EXTRA_END_OFFSET, entry.endOffset);
         activity.startActivity(intent);
     }
 
@@ -229,47 +247,73 @@ public final class UniversalSelectionMenu {
         }
     }
 
-    private static StudyEntry base(ReaderContext context, String selected, String type) {
+    private static StudyEntry base(ReaderContext context, SelectionSnapshot selection,
+                                   String type) {
         StudyEntry entry = new StudyEntry();
         entry.type = type;
         entry.category = context.category.isEmpty() ? "Documentos/libros" : context.category;
         entry.source = context.source;
         entry.sourceKey = context.sourceKey;
         entry.reference = context.reference;
-        entry.quote = selected;
+        entry.quote = selection.text;
+        entry.semanticUnitId = selection.semanticUnitId;
+        entry.startOffset = selection.startOffset;
+        entry.endOffset = selection.endOffset;
         return entry;
     }
 
     public static void restoreHighlights(Activity activity, WebView webView,
                                          String sourceKey) {
         for (StudyEntry entry : StudyStore.forSource(activity, sourceKey)) {
-            if (StudyEntry.HIGHLIGHT.equals(entry.type)) {
-                injectHighlight(webView, entry.quote, entry.color, entry.id);
-            }
+            if (StudyEntry.HIGHLIGHT.equals(entry.type)) injectHighlight(webView, entry);
         }
     }
 
-    private static void injectHighlight(WebView webView, String quote, String color,
-                                        String id) {
+    private static void injectHighlight(WebView webView, StudyEntry entry) {
         String hex;
-        if ("green".equals(color)) hex = "#A8D5A2";
-        else if ("blue".equals(color)) hex = "#A9C7E8";
-        else if ("red".equals(color)) hex = "#E9AAA7";
-        else if ("gray".equals(color)) hex = "#C7C7C7";
+        if ("green".equals(entry.color)) hex = "#A8D5A2";
+        else if ("blue".equals(entry.color)) hex = "#A9C7E8";
+        else if ("red".equals(entry.color)) hex = "#E9AAA7";
+        else if ("gray".equals(entry.color)) hex = "#C7C7C7";
         else hex = "#F4D77A";
-        String script = "(function(q,id,c){if(document.querySelector('[data-study-id=\\\"'+id+'\\\"]'))return;"
-                + "var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),n,a=[],t='';"
-                + "while(n=w.nextNode()){if(n.parentNode&&n.parentNode.tagName!='SCRIPT'&&"
-                + "n.parentNode.tagName!='STYLE'){a.push({n:n,s:t.length,e:t.length+n.nodeValue.length});"
-                + "t+=n.nodeValue;}}var i=t.indexOf(q);if(i<0)return;var j=i+q.length,st,en,so=0,eo=0;"
-                + "for(var k=0;k<a.length;k++){if(!st&&i>=a[k].s&&i<=a[k].e){st=a[k].n;so=i-a[k].s;}"
-                + "if(j>=a[k].s&&j<=a[k].e){en=a[k].n;eo=j-a[k].s;break;}}if(!st||!en)return;"
-                + "try{var r=document.createRange();r.setStart(st,so);r.setEnd(en,eo);"
+
+        String script = "(function(q,id,c,u,s,e){"
+                + "if(document.querySelector('[data-study-id=\\\"'+id+'\\\"]'))return;"
+                + "function mark(st,so,en,eo){try{var r=document.createRange();r.setStart(st,so);r.setEnd(en,eo);"
                 + "var m=document.createElement('mark');m.setAttribute('data-study-id',id);"
                 + "m.style.backgroundColor=c;m.style.color='#1f1b18';m.appendChild(r.extractContents());"
-                + "r.insertNode(m);}catch(e){}})(" + JSONObject.quote(quote) + ","
-                + JSONObject.quote(id) + "," + JSONObject.quote(hex) + ")";
+                + "r.insertNode(m);return true;}catch(x){return false;}}"
+                + "function anchored(){if(!u||s<0||e<=s)return false;"
+                + "var roots=document.querySelectorAll('[data-semantic-id],[data-block]'),root=null;"
+                + "for(var h=0;h<roots.length;h++){if((roots[h].getAttribute('data-semantic-id')||roots[h].getAttribute('data-block')||'')===u){root=roots[h];break;}}"
+                + "if(!root)return false;var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),n,t=0,st=null,en=null,so=0,eo=0;"
+                + "while(n=w.nextNode()){var l=n.nodeValue.length;if(st===null&&s>=t&&s<=t+l){st=n;so=s-t;}"
+                + "if(e>=t&&e<=t+l){en=n;eo=e-t;break;}t+=l;}return st&&en?mark(st,so,en,eo):false;}"
+                + "if(anchored())return;var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),n,a=[],t='';"
+                + "while(n=w.nextNode()){if(n.parentNode&&n.parentNode.tagName!='SCRIPT'&&n.parentNode.tagName!='STYLE'){"
+                + "a.push({n:n,s:t.length,e:t.length+n.nodeValue.length});t+=n.nodeValue;}}"
+                + "var i=t.indexOf(q);if(i<0)return;var j=i+q.length,st=null,en=null,so=0,eo=0;"
+                + "for(var k=0;k<a.length;k++){if(st===null&&i>=a[k].s&&i<=a[k].e){st=a[k].n;so=i-a[k].s;}"
+                + "if(j>=a[k].s&&j<=a[k].e){en=a[k].n;eo=j-a[k].s;break;}}if(st&&en)mark(st,so,en,eo);"
+                + "})(" + JSONObject.quote(entry.quote) + "," + JSONObject.quote(entry.id) + ","
+                + JSONObject.quote(hex) + "," + JSONObject.quote(entry.semanticUnitId) + ","
+                + entry.startOffset + "," + entry.endOffset + ")";
         webView.evaluateJavascript(script, null);
+    }
+
+    private static SelectionSnapshot decodeSelection(String raw) {
+        try {
+            Object value = new org.json.JSONTokener(raw).nextValue();
+            if (value == null) return SelectionSnapshot.EMPTY;
+            JSONObject json = value instanceof JSONObject
+                    ? (JSONObject) value : new JSONObject(value.toString());
+            String text = json.optString("text").replaceAll("\\s+", " ").trim();
+            if (text.isEmpty()) return SelectionSnapshot.EMPTY;
+            return new SelectionSnapshot(text, json.optString("semanticUnitId"),
+                    json.optInt("startOffset", -1), json.optInt("endOffset", -1));
+        } catch (Exception ignored) {
+            return SelectionSnapshot.EMPTY;
+        }
     }
 
     private static String decode(String raw) {
@@ -281,5 +325,20 @@ public final class UniversalSelectionMenu {
         }
     }
 
-    private interface SelectionCallback { void onSelection(String selected); }
+    private interface SelectionCallback { void onSelection(SelectionSnapshot selection); }
+
+    private static final class SelectionSnapshot {
+        static final SelectionSnapshot EMPTY = new SelectionSnapshot("", "", -1, -1);
+        final String text;
+        final String semanticUnitId;
+        final int startOffset;
+        final int endOffset;
+
+        SelectionSnapshot(String text, String semanticUnitId, int startOffset, int endOffset) {
+            this.text = text == null ? "" : text;
+            this.semanticUnitId = semanticUnitId == null ? "" : semanticUnitId;
+            this.startOffset = startOffset;
+            this.endOffset = endOffset;
+        }
+    }
 }
