@@ -7,6 +7,7 @@ on:
       - 'app/**'
       - 'migration/**'
       - 'tools/bible_import/**'
+      - 'tools/calendar_regression/**'
       - 'bootstrap/v3/**'
       - 'ministerium-v3.zip (1).part-*'
       - 'gradle/**'
@@ -31,6 +32,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Test Roman calendar arithmetic
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/calendar-test"
+          javac -d "$RUNNER_TEMP/calendar-test" \
+            app/src/main/java/com/fabri/ministerium/RomanCalendarMath.java \
+            tools/calendar_regression/RomanCalendarMathTest.java
+          java -cp "$RUNNER_TEMP/calendar-test" com.fabri.ministerium.RomanCalendarMathTest
 
       - name: Reconstruct and verify full v3 project
         shell: bash
@@ -144,6 +154,7 @@ jobs:
           grep -q "versionCode 31" app/build.gradle
           grep -q "versionName '3.1.0'" app/build.gradle
           grep -q "SemanticBibleCompat.chapterHtml" app/src/main/java/com/fabri/ministerium/BibleReaderActivity.java
+          grep -q "RomanCalendarMath.ordinaryWeekNumber" app/src/main/java/com/fabri/ministerium/LiturgicalResolver.java
           if [ -f tools/validate_project.mjs ]; then node tools/validate_project.mjs; fi
           if [ -f tools/validate_content.mjs ]; then node tools/validate_content.mjs; fi
 
