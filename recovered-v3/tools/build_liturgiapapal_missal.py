@@ -8,6 +8,10 @@ Para español se usa deliberadamente la VERSIÓN DE MÉXICO publicada por
 Liturgia Papal. Esta es la base latinoamericana de Ministerium; no debe
 sustituirse por la edición de España mediante reemplazos mecánicos.
 
+El Ordinario completo de México se descarga también como fuente canónica de
+control. Los archivos parciales del mismo artículo se usan para producir bloques
+más pequeños, pero deben concordar con ese Ordinario completo.
+
 NO conserva:
 - números de página;
 - encabezados/pies repetidos;
@@ -51,6 +55,9 @@ DEFAULT_OUTPUT = ROOT / "app" / "src" / "main" / "assets" / "missal"
 SOURCES = {
     "es": {
         # Liturgia Papal: Misal Romano, VERSIÓN DE MÉXICO (article/1030).
+        # Fuente canónica de control para todo el Ordinario.
+        "ordinary_full": "https://liturgiapapal.org/attachments/article/1030/Ordinario%20de%20la%20Misa%20Me%CC%81xico.pdf",
+        # Bloques del mismo Ordinario, más cómodos para el runtime semántico.
         "initial": "https://liturgiapapal.org/attachments/article/1030/Iniciales.pdf",
         "word": "https://liturgiapapal.org/attachments/article/1030/Palabra.pdf",
         "eucharistic_liturgy": "https://liturgiapapal.org/attachments/article/1030/LiturgiaEucaristica.pdf",
@@ -61,6 +68,7 @@ SOURCES = {
         "eucharistic_prayer_4": "https://liturgiapapal.org/attachments/article/1030/PEIV.pdf",
         "communion": "https://liturgiapapal.org/attachments/article/1030/Comunion.pdf",
         "conclusion": "https://liturgiapapal.org/attachments/article/1030/Conclusion.pdf",
+        # Propio del tiempo: URLs canónicas facilitadas/verificadas para México.
         "proper_advent": "https://liturgiapapal.org/attachments/article/1030/Adviento.pdf",
         "proper_christmas": "https://liturgiapapal.org/attachments/article/1030/Navidad.pdf",
         "proper_lent": "https://liturgiapapal.org/attachments/article/1030/Cuaresma.pdf",
@@ -166,26 +174,16 @@ def clean_line(line: str) -> str:
     if SITE_RE.match(line) or PAGE_ONLY_RE.match(line) or SEPARATOR_RE.match(line):
         return ""
     if ONLY_HEADER_RE.match(line) or PROPER_FOOTER_RE.match(line):
-        # Los títulos litúrgicos reales reaparecen sin número de página dentro del
-        # cuerpo. Esta forma corresponde al encabezado/pie de la hoja.
         return ""
 
-    # El extractor de PDF puede soldar el pie de una página con la frase anterior.
     line = INLINE_HEADER_RE.sub("", line)
-
-    # En los propios aparecen pies como "Adviento_____" pegados al final.
     line = re.sub(
         r"(?:Adviento|Navidad|Cuaresma|Pascua|Propio del tiempo|Tiempo ordinario)\s*[_\-—–]{5,}.*$",
         "",
         line,
         flags=re.IGNORECASE,
     ).strip()
-
-    # La numeración de los números del Ordinario es editorial; no hace falta para
-    # celebrar y no debe confundirse con referencias bíblicas.
     line = EDITORIAL_NUMBER_RE.sub("", line)
-
-    # Espacios accidentales del PDF.
     line = re.sub(r"[ \t]+", " ", line).strip()
     return line
 
@@ -203,13 +201,39 @@ def clean_text(raw: str) -> str:
         cleaned.append(line)
         previous_blank = False
 
-    # Quita blancos inicial/final y limita dobles saltos; no recompone párrafos de
-    # forma agresiva porque los saltos conservan estrofas, respuestas y rúbricas.
     while cleaned and not cleaned[0]:
         cleaned.pop(0)
     while cleaned and not cleaned[-1]:
         cleaned.pop()
     return "\n".join(cleaned).strip() + "\n"
+
+
+def validate_mexico_ordinary(component: str, text: str) -> list[str]:
+    """Impide que una fuente española de España vuelva a contaminar el paquete ES."""
+    errors: list[str] = []
+    normalized = unicodedata.normalize("NFC", text)
+    lower = normalized.lower()
+
+    # Señales positivas de la edición mexicana.
+    if component in {"ordinary_full", "initial"} and "el señor esté con ustedes" not in lower:
+        errors.append("no aparece la fórmula mexicana «El Señor esté con ustedes»")
+    if component in {"ordinary_full", "eucharistic_prayer_2"}:
+        if "por ustedes" not in lower:
+            errors.append("no aparece «por ustedes» en la Plegaria II mexicana")
+
+    # Señales negativas inequívocas de la edición española en estos bloques.
+    forbidden = (
+        "el señor esté con vosotros",
+        "tomad y comed",
+        "tomad y bebed",
+        "será entregado por vosotros",
+        "será derramada por vosotros",
+        "podéis ir en paz",
+    )
+    for phrase in forbidden:
+        if phrase in lower:
+            errors.append(f"se detectó fórmula de España: «{phrase}»")
+    return errors
 
 
 def validate_cleaned(language: str, component: str, text: str) -> list[str]:
@@ -222,13 +246,10 @@ def validate_cleaned(language: str, component: str, text: str) -> list[str]:
         errors.append("quedó el pie liturgiapapal.org")
     if re.search(rf"(?im)^(?:\d+\s+)?(?:{PAGE_LABEL_ALT})\s+\d+\s*$", text):
         errors.append("quedó un encabezado con número de página")
-    if language == "es" and component == "initial":
-        if "En el nombre del Padre" not in text:
+    if language == "es":
+        errors.extend(validate_mexico_ordinary(component, text))
+        if component == "initial" and "En el nombre del Padre" not in text:
             errors.append("no se encontró el comienzo del Ordinario español")
-        if "El Señor esté con ustedes" not in text:
-            errors.append("la fuente española no parece ser la edición de México")
-        if "El Señor esté con vosotros" in text:
-            errors.append("se detectó la fórmula de la edición de España")
     if language == "la" and component == "initial" and "In nomine Patris" not in text:
         errors.append("no se encontró el comienzo del Ordo latino")
     return errors
@@ -237,13 +258,14 @@ def validate_cleaned(language: str, component: str, text: str) -> list[str]:
 def build(output: Path, languages: list[str], force: bool) -> None:
     output.mkdir(parents=True, exist_ok=True)
     manifest = {
-        "schema": 2,
+        "schema": 3,
         "provider": "Liturgia Papal",
         "editions": {
             "es": "Misal Romano - versión de México",
             "la": "Missale Romanum",
         },
-        "notes": "PDFs preprocesados: sin paginación, encabezados ni pies; solo contenido litúrgico útil. Español basado en la versión de México.",
+        "canonical_es_ordinary": SOURCES["es"]["ordinary_full"],
+        "notes": "PDFs preprocesados: sin paginación, encabezados ni pies; solo contenido litúrgico útil. Español basado exclusivamente en la versión de México.",
         "languages": {},
     }
 
