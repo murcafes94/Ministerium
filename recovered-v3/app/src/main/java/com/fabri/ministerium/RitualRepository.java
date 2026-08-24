@@ -1,13 +1,8 @@
 package com.fabri.ministerium;
 
 import android.content.Context;
-import android.graphics.Color;
-import android.text.SpannableString;
-import android.text.Spanned;
-import android.text.style.ForegroundColorSpan;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
@@ -16,217 +11,228 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
+/** Ritual catalog sourced from Liturgia Papal build packages. */
 public final class RitualRepository {
-    public static final String COMMON_BLESSINGS_ID = "common_blessings";
-    public static final String BAPTISM_ID = "baptism_children";
-
-    private static final Map<String, String> TEXT_CACHE = new ConcurrentHashMap<>();
-    private static final String[] BAPTISM_RUBRICS = {
-            "Entonces el celebrante se dirige a los padres con estas palabras u otras semejantes:",
-            "Y, en silencio, signa al niño en la frente. Después invita a los padres, y si parece oportuno a los padrinos, para que hagan lo mismo.",
-            "Estando todos sentados, se lee una o algunas de las siguientes perícopas, según la oportunidad.",
-            "Entre las lecturas pueden cantarse los salmos responsoriales con sus respuestas, tal como se proponen en los números 194-197.",
-            "Después de la lectura el celebrante hace una breve homilía, para ilustrar a los oyentes sobre lo que han oído, haciéndoles penetrar más profundamente en el misterio del Bautismo e invitándoles a abrazar con entusiasmo la misión que les concierne especialmente como padres y padrinos. Después de la homilía o de la letanía, o durante la misma letanía, es muy conveniente que el celebrante invite a la asamblea a orar en silencio, y que los fieles oren al Señor en su interior. Después, si se puede, se entona un canto apropiado.",
-            "Después el celebrante invita a los presentes a invocar a los santos.",
-            "Pueden añadirse los nombres de otros santos, sobre todo de los que sean patronos del niño, de la iglesia o del lugar. Se termina así:",
-            "Se hace la unción con el óleo de los catecúmenos en el pecho.",
-            "Bendición e invocación a Dios sobre el agua",
-            "El celebrante toca el agua con la mano derecha y prosigue:",
-            "Renuncias y profesión de fe",
-            "Seguidamente el celebrante pide esta triple profesión de fe a los padres y padrinos:",
-            "E inmediatamente el celebrante bautiza al niño diciendo:",
-            "El celebrante dice:",
-            "Después el celebrante muestra el cirio pascual y dice:",
-            "Seguidamente el celebrante dice:",
-            "Recitación de la oración dominical",
-            "Celebrante:"
-    };
-    private static final List<RitualDocument> DOCUMENTS = Collections.unmodifiableList(
-            Arrays.asList(commonBlessings(), baptism(), enfermos(), atencionBreve()));
-    private static final List<RitualDocument> PASTORAL_DOCUMENTS = Collections.unmodifiableList(
-            Arrays.asList(baptism(), enfermos(), atencionBreve()));
+    private static final String SOURCE = "Liturgia Papal · libros litúrgicos";
+    private static final String BASE = "rituals/liturgiapapal/";
 
     private RitualRepository() {}
 
-    public static List<RitualDocument> all() {
-        return DOCUMENTS;
-    }
-
-    public static List<RitualDocument> pastoral() {
-        return PASTORAL_DOCUMENTS;
+    public static List<RitualDocument> documents() {
+        return Arrays.asList(
+                baptismOneChild(),
+                baptismDanger(),
+                baptismAlreadyBaptized(),
+                sickPastoral(),
+                funeralPraenotanda(),
+                funeralPreces(),
+                funeralTypical(),
+                funeralSimplified(),
+                funeralAshes(),
+                blessingFamily(),
+                blessingHouse(),
+                blessingSick(),
+                blessingTravel(),
+                blessingTransport(),
+                blessingLiturgicalObjects(),
+                blessingWater(),
+                blessingRosaries(),
+                blessingAnimals()
+        );
     }
 
     public static RitualDocument find(String id) {
-        for (RitualDocument document : DOCUMENTS) {
-            if (document.id.equals(id)) return document;
+        if (id == null) return null;
+        for (RitualDocument document : documents()) {
+            if (id.equals(document.id)) return document;
         }
         return null;
     }
 
-    public static String readSection(Context context, RitualDocument document, int position)
-            throws IOException {
-        if (position < 0 || position >= document.entries.size()) return "";
-        String complete = readDocument(context, document);
-        RitualEntry entry = document.entries.get(position);
-        int start = findOccurrence(complete, entry.sourceTitle, entry.sourceOccurrence, 0);
-        if (start < 0) return "No se pudo localizar esta sección dentro de la fuente.";
-
-        int end = complete.length();
-        if (position + 1 < document.entries.size()) {
+    public static String readSection(Context context, RitualDocument document,
+                                     RitualEntry entry) throws Exception {
+        String source = readAsset(context, document.assetPath);
+        int start = findOccurrence(source, entry.sourceTitle, entry.sourceOccurrence, 0);
+        if (start < 0) return source.trim();
+        int end = source.length();
+        int position = document.entries.indexOf(entry);
+        if (position >= 0 && position + 1 < document.entries.size()) {
             RitualEntry next = document.entries.get(position + 1);
-            int candidate = findOccurrence(complete, next.sourceTitle, 0,
-                    start + entry.sourceTitle.length());
+            int candidate = findOccurrence(source, next.sourceTitle,
+                    next.sourceOccurrence == 0 ? 0 : next.sourceOccurrence, start + 1);
             if (candidate > start) end = candidate;
         }
-        return clean(complete.substring(start, end));
+        return source.substring(start, end).trim();
     }
 
-    public static CharSequence readSectionStyled(Context context, RitualDocument document,
-                                                  int position) throws IOException {
-        String text = readSection(context, document, position);
-        if (!BAPTISM_ID.equals(document.id)) return text;
-        SpannableString styled = new SpannableString(text);
-        int rubricColor = Color.parseColor("#C62828");
-        for (String rubric : BAPTISM_RUBRICS) {
-            int from = 0;
-            while (from < text.length()) {
-                int start = text.indexOf(rubric, from);
-                if (start < 0) break;
-                styled.setSpan(new ForegroundColorSpan(rubricColor), start,
-                        start + rubric.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                from = start + rubric.length();
-            }
-        }
-        return styled;
+    public static String readAll(Context context, RitualDocument document) throws Exception {
+        return readAsset(context, document.assetPath).trim();
     }
 
-    public static List<SearchResult> search(Context context, String query, int maximum)
-            throws IOException {
-        String wanted = normalize(query);
-        List<SearchResult> results = new ArrayList<>();
-        for (RitualDocument document : DOCUMENTS) {
-            for (int i = 0; i < document.entries.size(); i++) {
-                RitualEntry entry = document.entries.get(i);
-                String content = readSection(context, document, i);
-                if (normalize(entry.title + " " + entry.category + " " + content)
-                        .contains(wanted)) {
-                    results.add(new SearchResult(document, entry, i,
-                            entry.category + " · " + document.sourceName));
-                    if (results.size() >= maximum) return results;
-                }
-            }
-        }
-        return results;
+    private static RitualDocument baptismOneChild() {
+        return one("baptism", "Bautismo de un solo niño",
+                "Rito completo ordinario del Bautismo de un niño",
+                "baptism_one_child.txt", "BAUTISMO DE UN SOLO NIÑO", "Bautismo");
     }
 
-    private static String readDocument(Context context, RitualDocument document)
-            throws IOException {
-        String cached = TEXT_CACHE.get(document.id);
-        if (cached != null) return cached;
-        try (InputStream input = context.getAssets().open(document.assetPath);
+    private static RitualDocument baptismDanger() {
+        return one("baptism-danger", "Bautismo en peligro de muerte",
+                "Ritual abreviado para un niño en peligro de muerte",
+                "baptism_danger.txt", "BAUTISMO DE UN NIÑO EN PELIGRO DE MUERTE", "Bautismo");
+    }
+
+    private static RitualDocument baptismAlreadyBaptized() {
+        return one("baptism-reception", "Recepción de un niño ya bautizado",
+                "Rito para recibir en la Iglesia a un niño ya bautizado",
+                "baptism_received.txt", "PARA RECIBIR EN LA IGLESIA A UN NIÑO YA BAUTIZADO", "Bautismo");
+    }
+
+    private static RitualDocument sickPastoral() {
+        List<RitualEntry> entries = Arrays.asList(
+                new RitualEntry("Praenotanda", "PRAENOTANDA", "Enfermos", 1),
+                new RitualEntry("Visita y comunión de los enfermos", "CAPÍTULO I.", "Enfermos", 1),
+                new RitualEntry("Unción del enfermo", "CAPÍTULO II.", "Enfermos", 1),
+                new RitualEntry("El Viático", "CAPÍTULO III.", "Enfermos", 1),
+                new RitualEntry("Sacramentos en peligro inmediato de muerte", "CAPÍTULO IV.", "Enfermos", 1),
+                new RitualEntry("Confirmación en peligro de muerte", "CAPÍTULO V.", "Enfermos", 1),
+                new RitualEntry("Recomendación del alma", "CAPÍTULO VI.", "Enfermos", 1)
+        );
+        return new RitualDocument("sick", "Unción y pastoral de enfermos",
+                "Visita, comunión, Unción, Viático y recomendación del alma",
+                SOURCE + " · Ritual de la Unción y de la pastoral de enfermos",
+                BASE + "unction.txt", entries);
+    }
+
+    private static RitualDocument funeralPraenotanda() {
+        return one("funeral-praenotanda", "Exequias · Praenotanda",
+                "Observaciones generales previas del Ritual de exequias",
+                "funeral_praenotanda.txt", "OBSERVACIONES GENERALES PREVIAS", "Exequias");
+    }
+
+    private static RitualDocument funeralPreces() {
+        return one("funeral-preces", "Preces antes de las exequias",
+                "Oraciones para los momentos previos a las exequias",
+                "funeral_preces.txt", "PRECES PARA ANTES DE LAS EXEQUIAS", "Exequias");
+    }
+
+    private static RitualDocument funeralTypical() {
+        return one("funeral-typical", "Exequias · forma típica",
+                "Celebración con tres estaciones",
+                "funeral_typical.txt", "EXEQUIAS", "Exequias");
+    }
+
+    private static RitualDocument funeralSimplified() {
+        return one("funeral-simplified", "Exequias · rito simplificado",
+                "Celebración con una sola estación en la iglesia",
+                "funeral_simplified.txt", "EXEQUIAS", "Exequias");
+    }
+
+    private static RitualDocument funeralAshes() {
+        return one("funeral-ashes", "Exequias ante la urna de las cenizas",
+                "Celebración ante la urna de las cenizas",
+                "funeral_ashes.txt", "CELEBRACIÓN DE LAS EXEQUIAS ANTE LA URNA", "Exequias");
+    }
+
+    private static RitualDocument blessingFamily() {
+        return one("blessing-family", "Bendición de una familia", "Bendicional",
+                "blessing_family.txt", "BENDICIÓN DE UNA FAMILIA", "Bendiciones");
+    }
+
+    private static RitualDocument blessingHouse() {
+        return one("blessing-house", "Bendición de una nueva casa", "Bendicional",
+                "blessing_house.txt", "BENDICIÓN DE UNA NUEVA CASA", "Bendiciones");
+    }
+
+    private static RitualDocument blessingSick() {
+        return one("blessing-sick", "Bendición de los enfermos", "Bendicional",
+                "blessing_sick.txt", "BENDICIÓN DE LOS ENFERMOS", "Bendiciones");
+    }
+
+    private static RitualDocument blessingTravel() {
+        return one("blessing-travel", "Bendición antes de un viaje", "Bendicional",
+                "blessing_travel.txt", "BENDICIÓN DE LOS QUE VAN A EMPRENDER UN VIAJE", "Bendiciones");
+    }
+
+    private static RitualDocument blessingTransport() {
+        return one("blessing-transport", "Bendición relativa a desplazamientos humanos",
+                "Vehículos y otros medios de desplazamiento · Bendicional",
+                "blessing_transport.txt", "DESPLAZAMIENTOS HUMANOS", "Bendiciones");
+    }
+
+    private static RitualDocument blessingLiturgicalObjects() {
+        return one("blessing-liturgical-objects", "Bendición de objetos litúrgicos", "Bendicional",
+                "blessing_liturgical_objects.txt", "BENDICIÓN DE OBJETOS QUE SE USAN EN LAS", "Bendiciones");
+    }
+
+    private static RitualDocument blessingWater() {
+        return one("blessing-water", "Bendición del agua fuera de la Misa", "Bendicional",
+                "blessing_water.txt", "RITO DE LA BENDICIÓN", "Bendiciones");
+    }
+
+    private static RitualDocument blessingRosaries() {
+        return one("blessing-rosaries", "Bendición de los rosarios", "Bendicional",
+                "blessing_rosaries.txt", "BENDICIÓN DE LOS ROSARIOS", "Bendiciones");
+    }
+
+    private static RitualDocument blessingAnimals() {
+        return one("blessing-animals", "Bendición de los animales", "Bendicional",
+                "blessing_animals.txt", "BENDICIÓN DE LOS ANIMALES", "Bendiciones");
+    }
+
+    private static RitualDocument one(String id, String title, String subtitle,
+                                      String file, String marker, String category) {
+        return new RitualDocument(id, title, subtitle, SOURCE,
+                BASE + file,
+                Collections.singletonList(new RitualEntry(title, marker, category)));
+    }
+
+    private static String readAsset(Context context, String path) throws Exception {
+        try (InputStream input = context.getAssets().open(path);
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[16 * 1024];
+            byte[] buffer = new byte[8192];
             int count;
             while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
-            String text = output.toString(StandardCharsets.UTF_8.name());
-            TEXT_CACHE.put(document.id, text);
-            return text;
+            return new String(output.toByteArray(), StandardCharsets.UTF_8);
         }
     }
 
-    private static int findOccurrence(String text, String marker, int occurrence, int from) {
-        String lowerText = text.toLowerCase(Locale.ROOT);
-        String lowerMarker = marker.toLowerCase(Locale.ROOT);
-        int position = Math.max(0, from);
-        for (int found = 0; found <= occurrence; found++) {
-            position = lowerText.indexOf(lowerMarker, position);
-            if (position < 0) return -1;
-            if (found < occurrence) position += lowerMarker.length();
+    private static int findOccurrence(String source, String needle, int occurrence, int from) {
+        if (source == null || needle == null || needle.isEmpty()) return -1;
+        String haystack = normalize(source);
+        String target = normalize(needle);
+        int normalizedFrom = Math.max(0, Math.min(from, source.length()));
+        int search = 0;
+        int found = -1;
+        int count = 0;
+        while ((found = haystack.indexOf(target, search)) >= 0) {
+            if (found >= normalizedFrom) {
+                if (count == occurrence) return mapNormalizedIndex(source, target, found);
+                count++;
+            }
+            search = found + Math.max(1, target.length());
         }
-        return position;
-    }
-
-    private static String clean(String value) {
-        return value.replace('\u00a0', ' ')
-                .replaceAll("[ \\t]+\\n", "\n")
-                .replaceAll("\\n{3,}", "\n\n")
-                .trim();
+        return -1;
     }
 
     private static String normalize(String value) {
-        return Normalizer.normalize(value, Normalizer.Form.NFD)
+        return Normalizer.normalize(value == null ? "" : value, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}+", "")
                 .toLowerCase(Locale.ROOT);
     }
 
-    private static RitualDocument commonBlessings() {
-        List<RitualEntry> entries = Arrays.asList(
-                new RitualEntry("Bendición de una familia",
-                        "BENDICIÓN DE UNA FAMILIA", "Familia"),
-                new RitualEntry("Bendición anual de las familias en sus casas",
-                        "BENDICIÓN ANUAL DE LAS FAMILIAS EN SUS PROPIAS CASAS", "Familia y vivienda"),
-                new RitualEntry("Bendición de quienes emprenden un viaje",
-                        "BENDICIÓN DE LOS QUE VAN A EMPRENDER UN VIAJE", "Viaje"),
-                new RitualEntry("Bendición de los enfermos",
-                        "BENDICIÓN DE LOS ENFERMOS", "Enfermos"),
-                new RitualEntry("Bendición de medios de transporte y desplazamientos",
-                        "BENDICIÓN DE TODO LO RELACIONADO CON LOS DESPLAZAMIENTOS HUMANOS",
-                        "Vehículos, vías y embarcaciones")
-        );
-        return new RitualDocument(COMMON_BLESSINGS_ID, "Bendicional",
-                "Bendiciones comunes para la familia, enfermos y movilidad",
-                "Selección pastoral del Bendicional",
-                "rituals/bendicional_comun.txt", entries);
-    }
-
-    private static RitualDocument baptism() {
-        List<RitualEntry> entries = Collections.singletonList(
-                new RitualEntry("Bautismo de un solo niño",
-                        "BAUTISMO DE UN SOLO NIÑO", "Ritual completo"));
-        return new RitualDocument(BAPTISM_ID, "Ritual Del Bautismo de Niños",
-                "Rito de acogida, Palabra, sacramento y conclusión",
-                "Ritual Del Bautismo de Niños",
-                "rituals/bautismo_ninos.txt", entries);
-    }
-
-    private static RitualDocument enfermos() {
-        List<RitualEntry> entries = Arrays.asList(
-                new RitualEntry("Nociones generales", "NOCIONES GENERALES", "Orientaciones", 1),
-                new RitualEntry("Visita y comunión de los enfermos",
-                        "Capítulo I\n\nVISITA Y COMUNIÓN DE LOS ENFERMOS", "Capítulo I"),
-                new RitualEntry("Unción de los enfermos",
-                        "Capítulo II\n\nUNCION DE LOS ENFERMOS", "Capítulo II"),
-                new RitualEntry("El Viático", "Capítulo III\n\nEL VIATICO", "Capítulo III"),
-                new RitualEntry("Sacramentos en peligro próximo de muerte",
-                        "Capítulo IV\n\nRITO PARA ADMINISTRAR LOS SACRAMENTOS A UN ENFERMO QUE ESTA EN PELIGRO PROXIMO DE MUERTE", "Capítulo IV"),
-                new RitualEntry("Confirmación en peligro de muerte",
-                        "Capítulo V\n\nCONFIRMACION EN PELIGRO DE MUERTE", "Capítulo V"),
-                new RitualEntry("Asistencia a los moribundos",
-                        "ASISTENCIA A LOS MORIBUNDOS", "Capítulo VI", 1),
-                new RitualEntry("Textos varios del Ritual de Enfermos",
-                        "Capítulo VII\n\nTEXTOS VARIOS DEL RITUAL DE ENFERMOS", "Capítulo VII"),
-                new RitualEntry("Orden de la Misa",
-                        "APENDICE I\n\nORDEN DE LA MISA", "Apéndice I"),
-                new RitualEntry("Confirmación sin Misa",
-                        "APENDICE II\n\nORDEN PARA ADMINISTRAR LA CONFIRMACION SIN MISA", "Apéndice II")
-        );
-        return new RitualDocument("sick_ritual", "Ritual de Enfermos",
-                "Unción, Viático y cuidado pastoral", "Edición pastoral argentina",
-                "rituals/ritual_enfermos.txt", entries);
-    }
-
-    private static RitualDocument atencionBreve() {
-        List<RitualEntry> entries = Arrays.asList(
-                new RitualEntry("Sagrada Comunión al enfermo", "SAGRADA COMUNIÓN", "Atención de enfermos"),
-                new RitualEntry("Penitencia, Unción y Viático",
-                        "RITO CONJUNTO DE LA PENITENCIA, UNCIÓN Y VIÁTICO", "Rito conjunto"),
-                new RitualEntry("Plegaria por un difunto", "PLEGARIA POR UN DIFUNTO", "Difuntos")
-        );
-        return new RitualDocument("sick_deceased_quick", "Enfermos y difuntos",
-                "Formularios pastorales de consulta rápida", "Edición pastoral argentina",
-                "rituals/enfermos_difuntos.txt", entries);
+    /**
+     * Normalization only removes combining marks, so a direct scan can map the
+     * normalized index back to the original UTF-16 offset closely enough for section slicing.
+     */
+    private static int mapNormalizedIndex(String original, String normalizedNeedle, int normalizedIndex) {
+        if (normalizedIndex <= 0) return 0;
+        int seen = 0;
+        for (int i = 0; i < original.length(); i++) {
+            String one = normalize(String.valueOf(original.charAt(i)));
+            seen += one.length();
+            if (seen > normalizedIndex) return i;
+        }
+        return original.length();
     }
 }
