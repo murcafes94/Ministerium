@@ -101,14 +101,24 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
                 synchronize(latin, spanish, scrollY));
     }
 
+    /**
+     * Después de insertar espaciadores semánticos las dos columnas siguen sin
+     * tener exactamente la misma altura. Copiar píxeles absolutos hacía que la
+     * columna más larga se desplazara progresivamente. Se sincroniza ahora por
+     * proporción dentro del recorrido útil de cada WebView.
+     */
     private void synchronize(WebView source, WebView target, int sourceY) {
         if (syncingScroll || source.getVisibility() != View.VISIBLE
                 || target.getVisibility() != View.VISIBLE) return;
+        int sourceRange = Math.round(source.getContentHeight() * source.getScale())
+                - source.getHeight();
         int targetRange = Math.round(target.getContentHeight() * target.getScale())
                 - target.getHeight();
-        if (targetRange <= 0) return;
+        if (sourceRange <= 0 || targetRange <= 0) return;
+        float progress = Math.max(0f, Math.min(1f, sourceY / (float) sourceRange));
+        int targetY = Math.round(progress * targetRange);
         syncingScroll = true;
-        target.scrollTo(target.getScrollX(), Math.max(0, Math.min(sourceY, targetRange)));
+        target.scrollTo(target.getScrollX(), Math.max(0, Math.min(targetY, targetRange)));
         target.postDelayed(() -> syncingScroll = false, 60L);
     }
 
