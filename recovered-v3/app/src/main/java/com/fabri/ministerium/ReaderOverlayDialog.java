@@ -17,6 +17,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONObject;
+
 public final class ReaderOverlayDialog {
     private ReaderOverlayDialog() {}
 
@@ -56,39 +58,62 @@ public final class ReaderOverlayDialog {
         WebView reader = new WebView(activity);
         reader.setBackgroundColor(background);
         reader.getSettings().setTextZoom(105);
+        reader.getSettings().setJavaScriptEnabled(true);
         reader.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                return openTranslation(view, heading, url);
+                return handleInternal(view, heading, url);
             }
             @Override public boolean shouldOverrideUrlLoading(
                     WebView view, WebResourceRequest request) {
-                return openTranslation(view, heading, request.getUrl().toString());
+                return handleInternal(view, heading, request.getUrl().toString());
             }
 
-            private boolean openTranslation(WebView view, TextView title, String url) {
+            private boolean handleInternal(WebView view, TextView titleView, String url) {
                 Uri uri = Uri.parse(url);
-                if (!("ministerium".equals(uri.getScheme())
-                        && "translate".equals(uri.getHost()))) return false;
-                String text = uri.getQueryParameter("text");
-                String target = uri.getQueryParameter("target");
-                if (text == null || text.trim().isEmpty()) return true;
-                if (!("es".equals(target) || "la".equals(target) || "en".equals(target))) {
-                    target = "es";
+                if (!"ministerium".equals(uri.getScheme())) return false;
+                if ("translate".equals(uri.getHost())) {
+                    String text = uri.getQueryParameter("text");
+                    String target = uri.getQueryParameter("target");
+                    if (text == null || text.trim().isEmpty()) return true;
+                    if (!("es".equals(target) || "la".equals(target) || "en".equals(target))) {
+                        target = "es";
+                    }
+                    String label = "la".equals(target) ? "Latín"
+                            : "en".equals(target) ? "Inglés" : "Español";
+                    titleView.setText("Traductor en línea · " + label);
+                    view.getSettings().setDomStorageEnabled(true);
+                    String destination = "https://translate.google.com/?sl=auto&tl=" + target
+                            + "&text=" + Uri.encode(text) + "&op=translate";
+                    try {
+                        view.loadUrl(destination);
+                    } catch (Exception error) {
+                        Toast.makeText(activity, "No se pudo abrir el traductor en línea.",
+                                Toast.LENGTH_LONG).show();
+                    }
+                    return true;
                 }
-                String label = "la".equals(target) ? "Latín"
-                        : "en".equals(target) ? "Inglés" : "Español";
-                title.setText("Traductor en línea · " + label);
-                view.getSettings().setJavaScriptEnabled(true);
-                view.getSettings().setDomStorageEnabled(true);
-                String destination = "https://translate.google.com/?sl=auto&tl=" + target
-                        + "&text=" + Uri.encode(text) + "&op=translate";
-                try {
-                    view.loadUrl(destination);
-                } catch (Exception error) {
-                    Toast.makeText(activity, "No se pudo abrir el traductor en línea.",
-                            Toast.LENGTH_LONG).show();
+                if ("rae".equals(uri.getHost())) {
+                    String word = uri.getQueryParameter("word");
+                    if (word == null || word.trim().isEmpty()) return true;
+                    titleView.setText("RAE · " + word);
+                    view.evaluateJavascript("document.body.innerHTML='<p>Consultando RAE…</p>'", null);
+                    new Thread(() -> {
+                        try {
+                            String html = RaeOnlineRepository.lookupHtml(activity, word);
+                            activity.runOnUiThread(() -> view.evaluateJavascript(
+                                    "document.body.innerHTML=" + JSONObject.quote(html), null));
+                        } catch (Exception error) {
+                            String message = error.getMessage() == null
+                                    ? "No se pudo consultar RAE en este momento." : error.getMessage();
+                            activity.runOnUiThread(() -> view.evaluateJavascript(
+                                    "document.body.innerHTML=" + JSONObject.quote(
+                                            "<article class=\"dictionary-card\"><h2>RAE</h2><p>"
+                                                    + escape(message) + "</p><p class=\"dictionary-source\">Los diccionarios offline siguen disponibles.</p></article>"), null));
+                        }
+                    }).start();
+                    return true;
                 }
-                return true;
+                return false;
             }
         });
         String css = "html,body{margin:0;background:" + (dark ? "#181818" : "#fffdf7")
@@ -134,6 +159,11 @@ public final class ReaderOverlayDialog {
             params.gravity = Gravity.BOTTOM;
         }
         window.setAttributes(params);
+    }
+
+    private static String escape(String value) {
+        return value == null ? "" : value.replace("&", "&amp;").replace("<", "&lt;")
+                .replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;");
     }
 
     private static int dp(Activity activity, int value) {
