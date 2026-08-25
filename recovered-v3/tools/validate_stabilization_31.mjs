@@ -12,6 +12,7 @@ const papal = read('app/src/main/java/com/fabri/ministerium/LiturgiaPapalMissalR
 const missalActivity = read('app/src/main/java/com/fabri/ministerium/MissalActivity.java');
 const missalReader = read('app/src/main/java/com/fabri/ministerium/MissalSectionReaderActivity.java');
 const missalDocument = read('app/src/main/java/com/fabri/ministerium/MissalDocument31.java');
+const missalCompact = read('app/src/main/java/com/fabri/ministerium/MissalCompactView.java');
 const manifest = read('app/src/main/AndroidManifest.xml');
 const packageManifest = read('app/src/main/assets/package-manifest.json');
 const ritualRepository = read('app/src/main/java/com/fabri/ministerium/RitualRepository.java');
@@ -35,9 +36,14 @@ const markers = read('app/src/main/java/com/fabri/ministerium/MarkersActivity.ja
 const complineRepo = read('app/src/main/java/com/fabri/ministerium/ComplineContentRepository.java');
 const complineReader = read('app/src/main/java/com/fabri/ministerium/ComplineReaderActivity.java');
 const cleanHours = read('app/src/main/java/com/fabri/ministerium/CleanHoursAssets.java');
+const dailyHours = read('app/src/main/java/com/fabri/ministerium/DailyHoursRepository.java');
+const hoursBuilder = read('tools/build_clean_hours_31.py');
 const epubUtils = read('app/src/main/java/com/fabri/ministerium/EpubUtils.java');
 const hoursToday = read('app/src/main/java/com/fabri/ministerium/HoursTodayActivity.java');
 const updateCenter = read('app/src/main/java/com/fabri/ministerium/UpdateCenterActivity.java');
+const mainActivity = read('app/src/main/java/com/fabri/ministerium/MainActivity.java');
+const readingsActivity = read('app/src/main/java/com/fabri/ministerium/MassReadingsActivity.java');
+const liturgicalResolver = read('app/src/main/java/com/fabri/ministerium/LiturgicalResolver.java');
 const liturgicalStyle = read('app/src/main/java/com/fabri/ministerium/LiturgicalWebStyle.java');
 const layout = read('app/src/main/res/layout/activity_combined_mass.xml');
 
@@ -57,7 +63,14 @@ for (const source of [missalActivity, missalDocument])
 requireText(missalActivity, 'MissalSectionReaderActivity.class', 'lector autónomo Liturgia Papal');
 requireText(missalReader, 'LiturgicalWebStyle.apply', 'línea gráfica común del Misal');
 requireText(missalReader, 'ReaderPreferences.apply(', 'fuente global del Misal');
+requireText(missalReader, 'MissalInteractiveOptions.inject', 'Credo/Padre Nuestro también en bilingüe');
+forbidText(missalReader, 'if ("es".equals(language))', 'restricción de opciones litúrgicas solo a español');
 requireText(missalDocument, 'LiturgiaPapalMissalRepository', 'fuente Liturgia Papal');
+requireText(missalDocument, 'parallel-unit', 'alineación ES/LAT por unidades');
+requireText(missalDocument, 'setPrayer(n)', 'una Plegaria eucarística visible por selector');
+forbidText(missalDocument, 'MassReadingsRepository.syncDay', 'descarga implícita al abrir Misal');
+forbidText(composer, 'MassReadingsRepository.syncDay', 'descarga implícita al abrir Misa unida');
+requireText(missalCompact, 'ministerium-technical-note', 'ocultación de notas técnicas');
 requireText(manifest, '.MissalSectionReaderActivity', 'Activity del nuevo Misal');
 requireText(papal, 'liturgia-papal-mexico', 'trazabilidad Liturgia Papal México');
 requireText(liturgicalStyle, '.reading-section', 'estilo compartido con lecturas');
@@ -75,6 +88,7 @@ requireText(readerPrefs, 'data-ministerium-align-key', 'división paralela tipo 
 
 for (const action of ['Subrayar', 'Nota', 'Reflexión', 'Diccionario', 'Traducir', 'Leer'])
   requireText(selectionMenu, `\"${action}\"`, `acción contextual ${action}`);
+requireText(selectionMenu, 'addSubMenu', 'acciones secundarias dentro de Más');
 requireText(selectionMenu, 'RaeOnlineRepository.actionCard', 'RAE opcional desde selección');
 requireText(selectionChrome, 'super.startActionMode(wrap(callback), type)', 'geometría nativa del toolbar contextual');
 forbidText(selectionChrome, 'resolvedType = ActionMode.TYPE_FLOATING', 'forzado del popup fuera del texto');
@@ -102,19 +116,30 @@ requireText(markers, 'StudyStore.ofType(this, StudyEntry.HIGHLIGHT)', 'subrayado
 requireText(complineRepo, 'liturgicalVolume', 'criterio de tomos para Completas');
 requireText(complineRepo, 'ordinaryWeek >= 18', 'Tomo IV desde semana XVIII');
 requireText(complineReader, 'Tomo " + volume', 'tomo visible/resuelto en Completas');
+requireText(complineReader, 'ComplineMarianLanguage.inject', 'antífonas marianas ES/LAT en Completas');
 requireText(hoursToday, 'Semana " + roman(ordinaryWeek) + " del Tiempo Ordinario', 'semana ordinaria visible');
 requireText(hoursToday, 'Salterio " + currentDay.psalterWeek', 'semana del salterio separada');
 requireText(hoursToday, 'Tomo " + ComplineContentRepository.liturgicalVolume', 'tomo físico visible');
 
 requireText(cleanHours, 'hours-clean/', 'paquete limpio de Horas');
+requireText(cleanHours, '.ready-3.1.1-nav3', 'refresco de extracción limpia');
+requireText(dailyHours, 'links.get("IN")', 'Invitatorio desde navegación limpia');
+requireText(dailyHours, 'targetFromToc', 'fallback de tarjetas de Horas sin EPUB');
+requireText(hoursBuilder, 'NAV_INLINE', 'limpieza de tokens editoriales sueltos');
 requireText(epubUtils, 'CleanHoursAssets.ensureExtracted', 'Horas españolas sin EPUB en runtime');
 requireText(epubUtils, 'CleanHoursAssets.tableOfContents', 'TOC limpio de Horas');
 if (!fs.existsSync('tools/build_clean_hours_31.py')) failures.push('Falta extractor limpio de Liturgia de las Horas');
 requireText(packageManifest, '"hours-es-clean"', 'manifiesto de Horas limpias');
 requireText(packageManifest, '"delivery": "bundled"', 'contenido incluido en APK');
 forbidText(packageManifest, 'LH - 5. TIEMPO ORDINARIO.epub', 'EPUB de Horas como paquete runtime');
+
+forbidText(mainActivity, 'LiturgicalCalendarRepository.ensureCurrentYear', 'actualización automática del calendario al iniciar');
+requireText(updateCenter, 'LiturgicalCalendarRepository.updateYear', 'actualización explícita del calendario desde Ajustes');
 requireText(updateCenter, 'incluido en la APK', 'estado de contenido incluido');
 requireText(updateCenter, 'se descarga solo cuando lo solicites', 'actualizaciones opcionales');
+requireText(readingsActivity, 'Sincronizar desde Ajustes', 'Leccionario pasivo al abrir');
+forbidText(readingsActivity, 'syncDay(', 'sincronización al entrar en Lecturas');
+requireText(liturgicalResolver, '!event.isOptionalMemorial()', 'feria separada de memoria libre');
 
 for (const asset of [
   'app/src/main/assets/hours-clean/manifest.json',
