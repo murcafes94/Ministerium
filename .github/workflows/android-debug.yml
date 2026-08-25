@@ -45,6 +45,11 @@ jobs:
           test -f app/src/main/assets/rituals/liturgiapapal/funeral_typical.txt
           test -f app/src/main/assets/rituals/liturgiapapal/blessing_house.txt
 
+      - name: Build fast Bible search index
+        run: |
+          python tools/build_bible_search_index.py
+          test -s app/src/main/assets/bible-search-index.tsv
+
       - name: Validate Ministerium 3.1 contract
         run: |
           node tools/validate_stabilization_31.mjs
@@ -69,7 +74,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: Ministerium-3.1-stabilization-debug
+          name: Ministerium-3.1.1-debug
           path: |
             recovered-v3/app/build/outputs/apk/debug/app-debug.apk
             recovered-v3/app/build/outputs/apk/debug/app-debug.apk.sha256
