@@ -18,7 +18,9 @@ import java.util.Calendar;
 public class UpdateCenterActivity extends ThemedActivity {
     private TextView status;
     private View lectionaryButton;
+    private View calendarButton;
     private volatile boolean syncingLectionary;
+    private volatile boolean syncingCalendar;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         ThemeUtils.apply(this);
@@ -26,18 +28,42 @@ public class UpdateCenterActivity extends ThemedActivity {
         setContentView(R.layout.activity_update_center);
         status = findViewById(R.id.txtUpdateStatus);
         lectionaryButton = findViewById(R.id.btnUpdateLectionary);
+        calendarButton = findViewById(R.id.btnUpdateCalendar);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         findViewById(R.id.btnCheckAll).setOnClickListener(v -> verifyAll());
         findViewById(R.id.btnUpdateApp).setOnClickListener(v -> showChangelog());
-        findViewById(R.id.btnUpdateCalendar).setOnClickListener(v ->
-                startActivity(new Intent(this, LiturgicalCalendarActivity.class)));
+        calendarButton.setOnClickListener(v -> syncCalendar());
         findViewById(R.id.btnUpdateBreviary).setOnClickListener(v ->
                 startActivity(new Intent(this, LatinHoursActivity.class)));
         lectionaryButton.setOnClickListener(v -> syncLectionary());
         findViewById(R.id.btnUpdateRituals).setOnClickListener(v ->
                 startActivity(new Intent(this, PastoralActivity.class)));
         showVersions();
+    }
+
+    private void syncCalendar() {
+        if (syncingCalendar) return;
+        syncingCalendar = true;
+        calendarButton.setEnabled(false);
+        calendarButton.setAlpha(0.55f);
+        final int year = Calendar.getInstance().get(Calendar.YEAR);
+        final boolean hadLocal = LiturgicalCalendarRepository.hasCalendar(this, year);
+        status.setText("Buscando actualización del Calendario litúrgico de Ecuador " + year + "…");
+        LiturgicalCalendarRepository.updateYear(getApplicationContext(), year, updated ->
+                runOnUiThread(() -> {
+                    syncingCalendar = false;
+                    calendarButton.setEnabled(true);
+                    calendarButton.setAlpha(1f);
+                    if (updated) {
+                        status.setText("Calendario " + year + " actualizado y guardado en el dispositivo.");
+                        Toast.makeText(this, "Calendario litúrgico actualizado.", Toast.LENGTH_LONG).show();
+                    } else {
+                        status.setText(hadLocal
+                                ? "No se pudo buscar una revisión nueva. El calendario local de " + year + " sigue disponible sin conexión."
+                                : "No se pudo descargar el calendario de " + year + ". Inténtalo de nuevo cuando tengas conexión.");
+                    }
+                }));
     }
 
     private void syncLectionary() {
