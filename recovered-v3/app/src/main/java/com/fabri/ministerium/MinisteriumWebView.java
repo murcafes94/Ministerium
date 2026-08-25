@@ -1,11 +1,13 @@
 package com.fabri.ministerium;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.webkit.WebView;
 
 /**
@@ -18,6 +20,8 @@ public class MinisteriumWebView extends WebView {
         void populate(Menu menu);
         boolean handle(ActionMode mode, MenuItem item);
     }
+
+    private interface WrappedSelectionCallback {}
 
     private SelectionActionHandler selectionActionHandler;
 
@@ -48,7 +52,10 @@ public class MinisteriumWebView extends WebView {
     }
 
     private ActionMode.Callback wrap(ActionMode.Callback original) {
-        if (original instanceof SelectionCallback) return original;
+        if (original instanceof WrappedSelectionCallback) return original;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return new SelectionCallback2(original);
+        }
         return new SelectionCallback(original);
     }
 
@@ -79,43 +86,100 @@ public class MinisteriumWebView extends WebView {
         }
     }
 
-    private final class SelectionCallback implements ActionMode.Callback {
+    private boolean onCreateSelectionMode(ActionMode.Callback original, ActionMode mode, Menu menu) {
+        boolean created = original == null || original.onCreateActionMode(mode, menu);
+        if (created && selectionActionHandler != null) {
+            selectionActionHandler.populate(menu);
+            promoteCoreActions(menu);
+        }
+        return created;
+    }
+
+    private boolean onPrepareSelectionMode(ActionMode.Callback original, ActionMode mode, Menu menu) {
+        boolean changed = original != null && original.onPrepareActionMode(mode, menu);
+        if (selectionActionHandler != null) {
+            selectionActionHandler.populate(menu);
+            promoteCoreActions(menu);
+            changed = true;
+        }
+        return changed;
+    }
+
+    private boolean onSelectionItemClicked(ActionMode.Callback original, ActionMode mode, MenuItem item) {
+        if (selectionActionHandler != null && selectionActionHandler.handle(mode, item)) {
+            return true;
+        }
+        return original != null && original.onActionItemClicked(mode, item);
+    }
+
+    private void onDestroySelectionMode(ActionMode.Callback original, ActionMode mode) {
+        if (original != null) original.onDestroyActionMode(mode);
+    }
+
+    private final class SelectionCallback implements ActionMode.Callback, WrappedSelectionCallback {
         private final ActionMode.Callback original;
 
         SelectionCallback(ActionMode.Callback original) { this.original = original; }
 
         @Override
         public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-            boolean created = original == null || original.onCreateActionMode(mode, menu);
-            if (created && selectionActionHandler != null) {
-                selectionActionHandler.populate(menu);
-                promoteCoreActions(menu);
-            }
-            return created;
+            return onCreateSelectionMode(original, mode, menu);
         }
 
         @Override
         public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-            boolean changed = original != null && original.onPrepareActionMode(mode, menu);
-            if (selectionActionHandler != null) {
-                selectionActionHandler.populate(menu);
-                promoteCoreActions(menu);
-                changed = true;
-            }
-            return changed;
+            return onPrepareSelectionMode(original, mode, menu);
         }
 
         @Override
         public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-            if (selectionActionHandler != null && selectionActionHandler.handle(mode, item)) {
-                return true;
-            }
-            return original != null && original.onActionItemClicked(mode, item);
+            return onSelectionItemClicked(original, mode, item);
         }
 
         @Override
         public void onDestroyActionMode(ActionMode mode) {
-            if (original != null) original.onDestroyActionMode(mode);
+            onDestroySelectionMode(original, mode);
+        }
+    }
+
+    /**
+     * Desde Android 6 el floating toolbar usa Callback2.onGetContentRect()
+     * para anclarse a la selección. Delegar este rectángulo al callback
+     * original de WebView conserva la geometría que calcula Chromium.
+     */
+    private final class SelectionCallback2 extends ActionMode.Callback2
+            implements WrappedSelectionCallback {
+        private final ActionMode.Callback original;
+
+        SelectionCallback2(ActionMode.Callback original) { this.original = original; }
+
+        @Override
+        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+            return onCreateSelectionMode(original, mode, menu);
+        }
+
+        @Override
+        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+            return onPrepareSelectionMode(original, mode, menu);
+        }
+
+        @Override
+        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+            return onSelectionItemClicked(original, mode, item);
+        }
+
+        @Override
+        public void onDestroyActionMode(ActionMode mode) {
+            onDestroySelectionMode(original, mode);
+        }
+
+        @Override
+        public void onGetContentRect(ActionMode mode, View view, Rect outRect) {
+            if (original instanceof ActionMode.Callback2) {
+                ((ActionMode.Callback2) original).onGetContentRect(mode, view, outRect);
+                return;
+            }
+            view.getLocalVisibleRect(outRect);
         }
     }
 }
