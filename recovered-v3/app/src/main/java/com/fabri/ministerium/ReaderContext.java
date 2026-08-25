@@ -1,8 +1,12 @@
 package com.fabri.ministerium;
 
+/** Contexto común del lector y de sus anotaciones. */
 public final class ReaderContext {
     public final String source;
+    /** Clave histórica usada para restaurar datos existentes. */
     public final String sourceKey;
+    /** Identificador canónico estable para relaciones y exportación. */
+    public final String contentId;
     public final String title;
     public final String reference;
     public final String category;
@@ -12,14 +16,23 @@ public final class ReaderContext {
     public ReaderContext(String source, String sourceKey, String title,
                          String reference, String category,
                          boolean omitRubricsInTts) {
-        this(source, sourceKey, title, reference, category, omitRubricsInTts, true);
+        this(source, sourceKey, sourceKey, title, reference, category,
+                omitRubricsInTts, true);
     }
 
     public ReaderContext(String source, String sourceKey, String title,
                          String reference, String category,
                          boolean omitRubricsInTts, boolean allowTts) {
+        this(source, sourceKey, sourceKey, title, reference, category,
+                omitRubricsInTts, allowTts);
+    }
+
+    public ReaderContext(String source, String sourceKey, String contentId,
+                         String title, String reference, String category,
+                         boolean omitRubricsInTts, boolean allowTts) {
         this.source = value(source);
         this.sourceKey = value(sourceKey);
+        this.contentId = value(contentId).isEmpty() ? this.sourceKey : value(contentId);
         this.title = value(title);
         this.reference = value(reference);
         this.category = value(category);
