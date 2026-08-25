@@ -1,7 +1,6 @@
 package com.fabri.ministerium;
 
 import android.content.Context;
-import android.net.Uri;
 import android.text.Html;
 
 import java.io.ByteArrayOutputStream;
@@ -16,20 +15,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Ministerium 3.1 composer for Lauds/Vespers immediately joined to Mass.
- *
- * Mass source policy:
- * - Spanish Ordinary/Temporal: Liturgia Papal, Mexico PDFs preprocessed to assets/missal.
- * - Readings: MassReadingsRepository / Lectionary.
- * - Hours: existing Liturgy of the Hours local content.
- * - The historical Missal EPUB is never opened by this class and is not a fallback.
- *
- * The order follows GILH/OGLH 93-96: one introductory scheme, Hour psalmody up to
- * but excluding its reading, no penitential act, optional Kyrie, Gloria when required,
- * Mass collect and Word, intercessions, Eucharistic liturgy, gospel canticle after
- * Communion, post-communion and the usual conclusion.
- */
+/** Continuous Mass + Lauds/Vespers celebration according to OGLH 93–96. */
 public final class CombinedMassComposer31 {
     private static final Pattern BLOCK = Pattern.compile(
             "(?is)<(p|h1|h2|h3|h4|h5|h6)\\b[^>]*>.*?</\\1>");
@@ -42,9 +28,9 @@ public final class CombinedMassComposer31 {
         Calendar date = (Calendar) selectedDate.clone();
         LiturgicalDay day = LiturgicalResolver.resolve(context, date);
         HourEntry hour = findHour(context, day, date, hourKey);
-        if (hour == null) throw new IllegalStateException("No se encontró la Hora elegida.");
+        if (hour == null) throw new IllegalStateException("No se encontró " + hourName(hourKey) + " para esta fecha.");
         if (!LiturgiaPapalMissalRepository.isAvailable(context, "es")) {
-            throw new IllegalStateException("Falta el paquete del Misal generado desde Liturgia Papal México.");
+            throw new IllegalStateException("Falta el contenido local del Misal Romano.");
         }
 
         String hourHtml = composeHour(context, day, date, hour);
@@ -83,13 +69,13 @@ public final class CombinedMassComposer31 {
         body.append(sectionHtml("combined:collect", "Oración colecta", proper.collect));
         body.append(sectionHtml("combined:word", "Liturgia de la Palabra", readings));
         body.append("<section class=\"ministerium-section\" data-semantic-id=\"combined:homily\">"
-                + "<h2>Homilía</h2><p class=\"rubric\">Después del Evangelio tiene lugar la homilía según las rúbricas.</p></section>");
+                + "<h2>Homilía</h2></section>");
 
         if (creed) body.append(creedBlock(context));
 
         body.append(sectionHtml("combined:intercessions", "Preces de " + hourName(hourKey),
                 intercessions.isEmpty()
-                        ? "<p class=\"rubric\">Se hacen las preces u oración universal conforme al día.</p>"
+                        ? "<p class=\"rubric\">Se hacen las preces u oración universal.</p>"
                         : intercessions));
         body.append(sectionHtml("combined:eucharist", "Liturgia eucarística",
                 preparation + preface + prayers));
@@ -101,8 +87,7 @@ public final class CombinedMassComposer31 {
         body.append(sectionHtml("combined:conclusion", "Rito de conclusión", conclusion));
 
         String title = "Misa + " + hourName(hourKey);
-        String html = document(context, body.toString(), language,
-                proper.complete ? "Liturgia Papal México" : "Liturgia Papal México · propio pendiente");
+        String html = document(context, body.toString());
         return new CombinedMassComposer.Result(title,
                 day.celebration + " · " + day.dateLabel, html);
     }
@@ -135,23 +120,22 @@ public final class CombinedMassComposer31 {
                 options = LiturgiaPapalMissalRepository.ordinarySundayPrefacesHtml(context);
             }
             if (options.isEmpty()) {
-                options = "<p class=\"source-warning\">" + escape(prefaceHint(day, primary))
-                        + " El texto específico se mostrará cuando esté incorporado al paquete semántico; no se sustituye por el antiguo EPUB.</p>";
+                options = "<p class=\"source-warning\">" + escape(prefaceHint(day, primary)) + "</p>";
             }
             return "<div id=\"prefaceBlock\" data-semantic-id=\"mass:preface\"><h3>Prefacio</h3>"
                     + dialogue + options + "</div>";
         } catch (Exception error) {
-            return "<div class=\"source-warning\">Prefacio pendiente de resolver desde Liturgia Papal.</div>";
+            return "<div class=\"source-warning\">Prefacio pendiente de incorporar.</div>";
         }
     }
 
     private static String prefaceHint(LiturgicalDay day, LiturgicalEvent primary) {
         String normalized = normalize(day == null ? "" : day.celebration);
         if (normalized.contains("apostol")) return "Corresponde el prefacio de los Apóstoles.";
-        if (normalized.contains("martir")) return "Corresponde el prefacio/común indicado para los mártires.";
-        if (primary != null && primary.isSolemnity()) return "Corresponde el prefacio indicado por la solemnidad.";
-        if (primary != null && primary.isFeast()) return "Corresponde el prefacio indicado por la fiesta.";
-        return "Use el prefacio que corresponde al formulario del día.";
+        if (normalized.contains("martir")) return "Corresponde el prefacio indicado para los mártires.";
+        if (primary != null && primary.isSolemnity()) return "Corresponde el prefacio propio de la solemnidad.";
+        if (primary != null && primary.isFeast()) return "Corresponde el prefacio propio de la fiesta.";
+        return "Prefacio según el formulario del día.";
     }
 
     private static boolean properPrefaceRequired(LiturgicalDay day, LiturgicalEvent primary,
@@ -178,7 +162,7 @@ public final class CombinedMassComposer31 {
                     + "<div id=\"creedApostles\" class=\"hidden\">" + apostles + "</div></section>";
         } catch (Exception error) {
             return sectionHtml("mass:creed", "Profesión de fe",
-                    "<p class=\"source-warning\">No se pudo cargar la profesión de fe desde Liturgia Papal México.</p>");
+                    "<p class=\"source-warning\">Profesión de fe pendiente de incorporar.</p>");
         }
     }
 
@@ -199,7 +183,7 @@ public final class CombinedMassComposer31 {
                         + "<p><b>" + escape(lines[response].trim()) + "</b></p></div>";
             }
         } catch (Exception ignored) {}
-        return "<p class=\"source-warning\">No se pudo cargar el rito inicial desde Liturgia Papal México.</p>";
+        return "<p class=\"source-warning\">Rito inicial pendiente de incorporar.</p>";
     }
 
     private static HourEntry findHour(Context context, LiturgicalDay day, Calendar date,
@@ -243,23 +227,20 @@ public final class CombinedMassComposer31 {
         return readRequired(new File(root, hour.filePath));
     }
 
+    /** Opening a celebration never starts Lectionary synchronization. */
     private static String readings(Context context, Calendar date) {
         try {
-            if (!MassReadingsRepository.has(context, date)
-                    && MassReadingsRepository.isCurrentMonth(date)) {
-                try { MassReadingsRepository.syncDay(context, date); } catch (Exception ignored) {}
-            }
             if (MassReadingsRepository.has(context, date)) {
                 return bodyContent(MassReadingsRepository.read(context, date));
             }
         } catch (Exception ignored) {}
-        return "<div class=\"source-warning\"><b>Leccionario pendiente.</b> Las lecturas de esta fecha todavía no están guardadas en el dispositivo.</div>";
+        return "<div class=\"source-warning\"><b>Lecturas no sincronizadas.</b> Sincroniza el Leccionario desde Ajustes → Actualizaciones.</div>";
     }
 
     private static LiturgicalEvent primaryEvent(Context context, Calendar date) {
         try {
-            List<LiturgicalEvent> events = LiturgicalCalendarRepository.eventsFor(context, date);
-            return events.isEmpty() ? null : events.get(0);
+            return LiturgicalResolver.primaryEvent(
+                    LiturgicalCalendarRepository.eventsFor(context, date));
         } catch (Exception ignored) {
             return null;
         }
@@ -330,25 +311,23 @@ public final class CombinedMassComposer31 {
                 + "<p>Bendito sea el Señor, Dios de Israel, porque ha visitado y redimido a su pueblo; "
                 + "suscitándonos una fuerza de salvación en la casa de David, su siervo.</p>"
                 + "<p>Por la entrañable misericordia de nuestro Dios, nos visitará el sol que nace de lo alto, "
-                + "para iluminar a los que viven en tiniebla y en sombra de muerte, para guiar nuestros pasos por el camino de la paz.</p>"
-                + "<p class=\"rubric\">El cántico completo se conserva en el texto de la Hora; este bloque se usa solo cuando el enlace del EPUB no quedó expandido.</p></div>";
+                + "para iluminar a los que viven en tiniebla y en sombra de muerte, para guiar nuestros pasos por el camino de la paz.</p></div>";
     }
 
     private static String magnificat() {
         return "<div class=\"ministerium-canticle\"><h3>Magníficat · Lc 1,46-55</h3>"
-                + "<p>Proclama mi alma la grandeza del Señor, se alegra mi espíritu en Dios, mi salvador.</p>"
-                + "<p class=\"rubric\">El cántico completo se conserva en el texto de la Hora; este bloque se usa solo cuando el enlace del EPUB no quedó expandido.</p></div>";
+                + "<p>Proclama mi alma la grandeza del Señor, se alegra mi espíritu en Dios, mi salvador.</p></div>";
     }
 
     private static String sectionHtml(String id, String title, String content) {
         String value = content == null || content.trim().isEmpty()
-                ? "<p class=\"source-warning\">Este bloque está pendiente de su fuente litúrgica verificada.</p>"
+                ? "<p class=\"source-warning\">Contenido pendiente de incorporar.</p>"
                 : content;
         return "<section class=\"ministerium-section\" data-semantic-id=\"" + escape(id) + "\">"
                 + "<h2>" + escape(title) + "</h2>" + value + "</section>";
     }
 
-    private static String document(Context context, String body, String language, String source) {
+    private static String document(Context context, String body) {
         boolean dark = ThemeUtils.isDark(context);
         String background = dark ? "#26211E" : "#FFFDF7";
         String surface = dark ? "#332C28" : "#FFFFFF";
@@ -366,12 +345,11 @@ public final class CombinedMassComposer31 {
                 + ".choicebar{display:flex;gap:7px;overflow-x:auto;margin:8px 0 13px}.choicebar button{border:1px solid " + wine + ";background:transparent;color:" + wine + ";border-radius:18px;padding:8px 12px;font-weight:bold;}"
                 + ".choicebar button.selected{background:" + wine + ";color:" + background + ";}.hidden{display:none!important;}"
                 + ".liturgia-papal p{margin:.7em 0}.ministerium-canticle{padding:10px;border-left:3px solid " + wine + ";}"
-                + "</style></head><body><div class=\"source-banner\"><p class=\"rubric\">Fuente del Misal: "
-                + escape(source) + " · sin Misal EPUB</p></div>" + body
+                + "</style></head><body>" + body
                 + "<script>function setCreed(w){var n=document.getElementById('creedNicene'),a=document.getElementById('creedApostles');"
                 + "var nb=document.getElementById('creedNiceneButton'),ab=document.getElementById('creedApostlesButton');var x=w==='nicene';"
                 + "if(n)n.classList.toggle('hidden',!x);if(a)a.classList.toggle('hidden',x);if(nb)nb.classList.toggle('selected',x);if(ab)ab.classList.toggle('selected',!x);}" 
-                + "function setPrayer(n){for(var i=1;i<=4;i++){var p=document.getElementById('prayer'+i),b=document.getElementById('prayerButton'+i);var x=i===n;if(p)p.classList.toggle('hidden',!x);if(b)b.classList.toggle('selected',x);}var pref=document.getElementById('prefaceBlock');if(pref)pref.style.display=n===4?'none':'';}"
+                + "function setPrayer(n){for(var i=1;i<=4;i++){var p=document.getElementById('prayer'+i),b=document.getElementById('prayerButton'+i);var x=i===n;if(p)p.classList.toggle('hidden',!x);if(b&&!b.disabled){b.classList.toggle('selected',x);b.setAttribute('aria-pressed',x?'true':'false');}}var pref=document.getElementById('prefaceBlock');if(pref)pref.style.display=n===4?'none':'';}"
                 + "</script></body></html>";
     }
 
@@ -450,7 +428,7 @@ public final class CombinedMassComposer31 {
 
         static ProperParts missing(String celebration) {
             String note = "<p class=\"source-warning\"><b>" + escape(celebration)
-                    + ".</b> El formulario propio de esta celebración todavía no está incorporado al paquete de Liturgia Papal México. Se ha bloqueado el fallback al Misal EPUB para evitar mostrar un formulario incorrecto.</p>";
+                    + ".</b> Texto propio pendiente de incorporar.</p>";
             return new ProperParts(note, note, note, "", note, false);
         }
     }
