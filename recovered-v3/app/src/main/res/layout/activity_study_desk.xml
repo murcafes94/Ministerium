@@ -11,12 +11,15 @@
         <TextView android:layout_width="0dp" android:layout_height="wrap_content"
             android:layout_weight="1" android:text="Mesa de estudio"
             android:textColor="#FFFFFF" android:textSize="20sp" android:textStyle="bold" />
+        <Button android:id="@+id/btnStudyExport" android:layout_width="wrap_content"
+            android:layout_height="44dp" android:backgroundTint="@android:color/transparent"
+            android:text="Exportar" android:textAllCaps="false" android:textColor="@color/gold" />
     </LinearLayout>
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="horizontal" android:padding="12dp">
         <EditText android:id="@+id/inputStudyQuery" android:layout_width="0dp"
             android:layout_height="52dp" android:layout_weight="1"
-            android:hint="Tema o referencia" android:imeOptions="actionSearch"
+            android:hint="Tema, referencia o etiqueta" android:imeOptions="actionSearch"
             android:inputType="text" android:singleLine="true" android:textColor="@color/ink"
             android:textColorHint="@color/muted" />
         <Button android:id="@+id/btnStudyDeskRun" android:layout_width="90dp"
