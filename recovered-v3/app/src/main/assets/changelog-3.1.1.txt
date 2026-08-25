@@ -1,0 +1,13 @@
+Ministerium 3.1.1
+
+Correcciones de estabilidad y lectura:
+
+• Búsqueda bíblica: las citas abren directamente y la búsqueda por palabras usa un índice local generado desde la Biblia instalada.
+• Diccionarios: índice en memoria y caché para abrir definiciones con mucha menos espera.
+• Subrayados: el apartado Subrayados usa el mismo almacén que Mi estudio.
+• Bendicional: abre como catálogo de bendiciones disponibles desde Liturgia Papal.
+• Menú contextual: Android decide la posición del diálogo de selección para evitar que aparezca fuera del texto.
+• Completas: resolución explícita de los cuatro tomos de la Liturgia de las Horas; en Tiempo Ordinario, Tomo III para semanas I–XVII y Tomo IV para XVIII–XXXIV.
+• Liturgia de las Horas: se ocultan las variantes estacionales que no corresponden cuando la fuente imprime varias alternativas juntas.
+• Calendario: se distingue entre calendario local disponible y fallo al comprobar una actualización por Internet.
+• Misal y Rituales: continúan usando paquetes generados desde Liturgia Papal y no el antiguo Misal EPUB.
