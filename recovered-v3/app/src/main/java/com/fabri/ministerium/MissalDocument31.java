@@ -83,7 +83,7 @@ public final class MissalDocument31 {
             case "dead":
             case "saints":
                 title = label(key);
-                content = pending("Este grupo de formularios todavía no está normalizado desde una fuente de Liturgia Papal México. No se abrirá el antiguo Misal EPUB.");
+                content = MissalReferenceCatalog.groupHtml(context, key, date, day);
                 break;
             case "day":
             default:
@@ -98,6 +98,9 @@ public final class MissalDocument31 {
     private static String daily(Context context, Calendar date, LiturgicalDay day, String language)
             throws Exception {
         StringBuilder out = new StringBuilder(64000);
+        String dayHint = MissalReferenceCatalog.dayHintHtml(context, date,
+                day == null ? "" : day.celebration);
+        if (!dayHint.isEmpty()) out.append(dayHint);
         out.append(block("Ritos iniciales", component(context, "initial", language)));
         out.append(block("Oración colecta",
                 proper(context, date, day, LiturgiaPapalMissalRepository.COLLECT)));
@@ -143,7 +146,15 @@ public final class MissalDocument31 {
                 && date.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
             out.append(LiturgiaPapalMissalRepository.ordinarySundayPrefacesHtml(context));
         } else {
-            out.append(pending("El prefacio propio/común de esta celebración se incorporará desde su fuente verificada; no se sustituye por el EPUB."));
+            MissalReferenceCatalog.SaintReference saint = MissalReferenceCatalog.findSaint(
+                    context, date, day == null ? "" : day.celebration);
+            if (saint != null && !saint.preface.isEmpty()) {
+                out.append("<div class=\"reference-day-hint\"><b>Prefacio indicado por la estructura del día:</b> ")
+                        .append(escape(saint.preface))
+                        .append(".<br>El texto se toma del paquete de prefacios de Liturgia Papal, no de Curas.com.ar.</div>");
+            } else {
+                out.append(pending("El prefacio propio/común de esta celebración se incorporará desde su fuente verificada; no se sustituye por el EPUB."));
+            }
         }
         out.append("<h3>Plegarias eucarísticas</h3>").append(prayers(context, language));
         return out.toString();
@@ -185,8 +196,11 @@ public final class MissalDocument31 {
                 if (!value.isEmpty()) return value;
             } catch (Exception ignored) {}
         }
-        return pending("El propio de «" + escape(day == null ? "esta celebración" : day.celebration)
-                + "» todavía no está normalizado en el paquete de Liturgia Papal México. Se bloqueó el fallback al Misal EPUB para evitar un formulario equivocado.");
+        String hint = MissalReferenceCatalog.dayHintHtml(context, date,
+                day == null ? "" : day.celebration);
+        return hint + pending("El propio de «" + escape(day == null ? "esta celebración" : day.celebration)
+                + "» todavía no está normalizado en el paquete textual de Liturgia Papal México. "
+                + "La estructura ya está identificada y se bloqueó el fallback al Misal EPUB para evitar un formulario equivocado.");
     }
 
     private static String component(Context context, String id, String language) throws Exception {
@@ -255,10 +269,12 @@ public final class MissalDocument31 {
         String border = dark ? "#665746" : "#E2D7C7";
         return "<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
                 + "<style>html,body{margin:0;background:" + bg + ";color:" + ink + "}body{font-family:serif;line-height:1.62;padding:20px 18px 70px;box-sizing:border-box;max-width:1000px;margin:auto}"
-                + "section{margin:0 0 20px;padding:16px;border:1px solid " + border + ";border-radius:12px;background:" + surface + "}h1,h2,h3,summary{color:" + wine + "}.source{color:" + muted + ";font-style:italic}.pending{padding:12px;border-left:4px solid " + wine + ";background:" + bg + ";color:" + muted + "}.parallel{display:grid;grid-template-columns:1fr 1fr;gap:14px}.col{min-width:0}.lang{font-weight:bold;color:" + wine + ";border-bottom:1px solid " + border + ";padding-bottom:4px}.lectionary-insert{margin:16px 0;padding:12px;border:1px solid " + border + ";border-radius:9px}@media(max-width:680px){.parallel{grid-template-columns:1fr}.col+.col{border-top:1px solid " + border + ";padding-top:12px}}"
-                + "</style></head><body><h1>" + escape(title) + "</h1><p class=\"source\">Fuente: Liturgia Papal · Misal Romano, versión de México"
+                + "section{margin:0 0 20px;padding:16px;border:1px solid " + border + ";border-radius:12px;background:" + surface + "}h1,h2,h3,summary{color:" + wine + "}.source{color:" + muted + ";font-style:italic}.pending{padding:12px;border-left:4px solid " + wine + ";background:" + bg + ";color:" + muted + "}.parallel{display:grid;grid-template-columns:1fr 1fr;gap:14px}.col{min-width:0}.lang{font-weight:bold;color:" + wine + ";border-bottom:1px solid " + border + ";padding-bottom:4px}.lectionary-insert{margin:16px 0;padding:12px;border:1px solid " + border + ";border-radius:9px}"
+                + ".reference-source,.reference-day-hint{margin:0 0 16px;padding:12px 14px;border-left:4px solid " + wine + ";border-radius:8px;background:" + surface + ";color:" + muted + "}.reference-day-hint{color:" + ink + "}.reference-group{padding:14px}.reference-items{display:grid;gap:8px}.reference-item{display:flex;flex-direction:column;gap:3px;padding:10px 12px;border:1px solid " + border + ";border-radius:9px;background:" + bg + "}.reference-item small{color:" + muted + ";font-family:sans-serif;font-size:.78em}"
+                + "@media(max-width:680px){.parallel{grid-template-columns:1fr}.col+.col{border-top:1px solid " + border + ";padding-top:12px}}"
+                + "</style></head><body><h1>" + escape(title) + "</h1><p class=\"source\">Fuente textual: Liturgia Papal · Misal Romano, versión de México"
                 + ("lat_es".equals(language) ? " + Missale Romanum latino" : "")
-                + " · sin Misal EPUB</p>" + content + "</body></html>";
+                + " · catálogo estructural contrastado · sin Misal EPUB</p>" + content + "</body></html>";
     }
 
     private static String label(String key) {
