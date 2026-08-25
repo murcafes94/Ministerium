@@ -6,6 +6,7 @@ import re
 import shutil
 import zipfile
 from pathlib import Path
+from urllib.parse import urljoin
 from xml.etree import ElementTree as ET
 
 try:
@@ -24,8 +25,10 @@ VOLUMES = {
     "ordinary": "epubs/LH - 5. TIEMPO ORDINARIO.epub",
     "sanctoral": "epubs/LH - 6. SANTORAL.epub",
 }
-NAV_TOKEN = re.compile(r"^\s*\[?\s*(?:1V|2V|C1|C2|IN|O|L|M)\s*\]?\s*$", re.I)
+NAV_LABELS = {"1V", "2V", "V", "C", "C1", "C2", "IN", "O", "L", "M"}
+NAV_TOKEN = re.compile(r"^\s*\[?\s*(?:1V|2V|V|C|C1|C2|IN|O|L|M)\s*\]?\s*$", re.I)
 NAV_WORD = re.compile(r"^\s*(?:anterior|siguiente|índice|indice|inicio|volver)\s*$", re.I)
+NAV_GARBAGE = re.compile(r"^[\s\[\](){}|·•/\\,.;:_-]*$")
 HTML_EXT = {".html", ".htm", ".xhtml"}
 
 
@@ -59,16 +62,12 @@ def find_toc(zf: zipfile.ZipFile):
     xml = ET.fromstring(zf.read(toc_path))
     rows = []
 
-    # NCX wraps navPoint in ncx/navMap, and navPoints may be nested. Walk all
-    # container nodes while increasing depth only when entering a navPoint.
     def walk(node, depth):
         for child in list(node):
             tag = child.tag.split("}")[-1]
             if tag == "navPoint":
                 title = ""
                 src = ""
-                # Only inspect the navLabel/content belonging to this navPoint;
-                # descendants are traversed separately to preserve hierarchy.
                 for sub in list(child):
                     name = sub.tag.split("}")[-1]
                     if name == "navLabel":
@@ -91,6 +90,26 @@ def find_toc(zf: zipfile.ZipFile):
     return rows
 
 
+def extract_hour_navigation(raw: bytes, source_path: str):
+    soup = BeautifulSoup(raw.decode("utf-8", errors="replace"), "html.parser")
+    rows = []
+    base_dir = source_path.rsplit("/", 1)[0] + "/" if "/" in source_path else ""
+    for anchor in soup.find_all("a"):
+        label = re.sub(r"\s+", "", " ".join(anchor.stripped_strings)).strip("[](){} ").upper()
+        if label not in NAV_LABELS:
+            continue
+        href = (anchor.get("href") or "").strip()
+        if not href or href.lower().startswith(("http:", "https:", "mailto:", "javascript:")):
+            continue
+        target, _, fragment = href.partition("#")
+        if target:
+            resolved = normpath(base_dir + target)
+        else:
+            resolved = source_path
+        rows.append((source_path, label, resolved, fragment))
+    return rows
+
+
 def remove_epub_navigation(soup: BeautifulSoup):
     for tag in soup.find_all(["script", "style", "nav"]):
         tag.decompose()
@@ -105,11 +124,15 @@ def remove_epub_navigation(soup: BeautifulSoup):
             continue
         for attr in ["target", "style", "onclick", "onmousedown", "onmouseup"]:
             a.attrs.pop(attr, None)
-    for node in list(soup.find_all(["p", "div", "td", "tr"])):
+    # After removing the EPUB navigation links, discard wrappers that contain
+    # only the orphan brackets/punctuation left by constructs such as [O] [L].
+    for node in list(soup.find_all(["p", "div", "td", "tr", "span"])):
+        if not node.parent:
+            continue
         if node.find(["p", "div", "table", "h1", "h2", "h3", "h4"]):
             continue
         text = " ".join(node.stripped_strings).strip()
-        if not text and not node.find(["img", "audio"]):
+        if (not text or NAV_GARBAGE.fullmatch(text)) and not node.find(["img", "audio"]):
             node.decompose()
 
 
@@ -171,6 +194,7 @@ def build_volume(volume_id: str, epub_rel: str):
     if target_root.exists():
         shutil.rmtree(target_root)
     target_root.mkdir(parents=True, exist_ok=True)
+    navigation = []
     with zipfile.ZipFile(epub) as zf:
         toc = find_toc(zf)
         referenced = {row[1] for row in toc}
@@ -182,6 +206,7 @@ def build_volume(volume_id: str, epub_rel: str):
                 raw = zf.read(internal)
             except KeyError:
                 continue
+            navigation.extend(extract_hour_navigation(raw, internal))
             output = target_root / internal
             output.parent.mkdir(parents=True, exist_ok=True)
             output.write_text(clean_html(raw), encoding="utf-8")
@@ -191,6 +216,14 @@ def build_volume(volume_id: str, epub_rel: str):
             for title, path, frag, depth in toc:
                 safe_title = re.sub(r"[\t\r\n]+", " ", title).strip()
                 fh.write(f"{safe_title}\t{path}\t{frag}\t{depth}\n")
+        with (target_root / "navigation.tsv").open("w", encoding="utf-8") as fh:
+            fh.write("#source\tlabel\ttarget\tfragment\n")
+            seen = set()
+            for row in navigation:
+                if row in seen:
+                    continue
+                seen.add(row)
+                fh.write("\t".join(row) + "\n")
         (target_root / "files.txt").write_text("\n".join(written) + "\n", encoding="utf-8")
         info = {
             "id": volume_id,
@@ -198,6 +231,7 @@ def build_volume(volume_id: str, epub_rel: str):
             "sourceSha256": sha256(epub),
             "tocEntries": len(toc),
             "htmlFiles": len(written),
+            "navigationTargets": len(navigation),
             "runtimeUsesEpub": False,
             "generatedBy": "build_clean_hours_31.py",
         }
@@ -214,7 +248,7 @@ def main():
     results = [build_volume(k, v) for k, v in selected]
     if args.volume == "all":
         overall = {
-            "schema": 1,
+            "schema": 2,
             "version": "3.1.1",
             "sourceMode": "EPUB build input → clean runtime package",
             "runtimeUsesEpub": False,
@@ -222,7 +256,7 @@ def main():
         }
         (OUT / "manifest.json").write_text(json.dumps(overall, ensure_ascii=False, indent=2), encoding="utf-8")
     for item in results:
-        print(f"{item['id']}: {item['tocEntries']} TOC / {item['htmlFiles']} HTML")
+        print(f"{item['id']}: {item['tocEntries']} TOC / {item['htmlFiles']} HTML / {item['navigationTargets']} nav")
 
 
 if __name__ == "__main__":
