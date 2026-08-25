@@ -51,19 +51,20 @@ public class LiturgicalCalendarActivity extends ThemedActivity {
                 date.set(Calendar.DAY_OF_MONTH, day);
                 dates.add(date);
                 List<LiturgicalEvent> events = LiturgicalCalendarRepository.eventsFor(this, date);
-                String title = day + " · " + (events.isEmpty()
-                        ? "Feria del día" : events.get(0).summary);
+                LiturgicalEvent primary = LiturgicalResolver.primaryEvent(events);
+                String title = day + " · " + (primary == null ? "Feria del día" : primary.summary);
                 StringBuilder subtitle = new StringBuilder();
-                for (int i = 0; i < events.size(); i++) {
-                    LiturgicalEvent event = events.get(i);
-                    if (subtitle.length() > 0) subtitle.append(" · ");
-                    if (i > 0 && event.summary != null && !event.summary.trim().isEmpty()) {
-                        subtitle.append(event.summary).append(" — ");
-                    }
-                    subtitle.append(event.rankLabel());
-                    if (!event.color.isEmpty()) subtitle.append(" · ").append(event.color);
+                if (primary != null) {
+                    subtitle.append(primary.rankLabel());
+                    if (!primary.color.isEmpty()) subtitle.append(" · ").append(primary.color);
+                } else {
+                    subtitle.append("Feria · se conserva el oficio temporal");
                 }
-                if (subtitle.length() == 0) subtitle.append("Calendario romano");
+                for (LiturgicalEvent event : events) {
+                    if (!event.isOptionalMemorial()) continue;
+                    subtitle.append(" · Memoria libre: ").append(event.summary);
+                    if (!event.color.isEmpty()) subtitle.append(" (").append(event.color).append(")");
+                }
                 subtitle.append(" · toca para abrir el oficio o las lecturas");
                 rows.add(Rows.row(title, subtitle.toString()));
             }
