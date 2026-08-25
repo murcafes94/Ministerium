@@ -9,12 +9,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /** Runtime access to the build-generated, EPUB-free Liturgy of the Hours package. */
 public final class CleanHoursAssets {
     private static final String BASE = "hours-clean/";
-    private static final String VERSION_MARKER = ".ready-3.1.1";
+    private static final String VERSION_MARKER = ".ready-3.1.1-nav2";
 
     private CleanHoursAssets() {}
 
@@ -46,6 +48,24 @@ public final class CleanHoursAssets {
         return Collections.unmodifiableList(result);
     }
 
+    public static Map<String, NavigationTarget> navigation(Context context, String volumeId,
+                                                            String sourcePath) throws Exception {
+        Map<String, NavigationTarget> result = new LinkedHashMap<>();
+        try (InputStream input = context.getAssets().open(BASE + volumeId + "/navigation.tsv");
+             BufferedReader reader = new BufferedReader(new InputStreamReader(input, "UTF-8"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.isEmpty() || line.charAt(0) == '#') continue;
+                String[] parts = line.split("\\t", -1);
+                if (parts.length < 4 || !parts[0].equals(sourcePath)) continue;
+                if (!result.containsKey(parts[1])) {
+                    result.put(parts[1], new NavigationTarget(parts[2], parts[3]));
+                }
+            }
+        }
+        return result;
+    }
+
     public static File ensureExtracted(Context context, String volumeId) throws Exception {
         File root = new File(context.getFilesDir(), "liturgy_hours_clean_31/" + volumeId);
         File marker = new File(root, VERSION_MARKER);
@@ -56,6 +76,7 @@ public final class CleanHoursAssets {
         }
         copyListedFiles(context, volumeId, root);
         copySmallAsset(context, BASE + volumeId + "/toc.tsv", new File(root, "toc.tsv"));
+        copySmallAsset(context, BASE + volumeId + "/navigation.tsv", new File(root, "navigation.tsv"));
         copySmallAsset(context, BASE + volumeId + "/manifest.json", new File(root, "manifest.json"));
         try (FileOutputStream output = new FileOutputStream(marker)) { output.write(1); }
         return root;
@@ -99,5 +120,14 @@ public final class CleanHoursAssets {
         }
         //noinspection ResultOfMethodCallIgnored
         file.delete();
+    }
+
+    public static final class NavigationTarget {
+        public final String path;
+        public final String fragment;
+        NavigationTarget(String path, String fragment) {
+            this.path = path;
+            this.fragment = fragment;
+        }
     }
 }
