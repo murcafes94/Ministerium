@@ -1,6 +1,7 @@
 package com.fabri.ministerium;
 
 import android.content.Context;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.view.ActionMode;
 import android.view.Menu;
@@ -9,8 +10,8 @@ import android.webkit.WebView;
 
 /**
  * WebView de lectura que conserva los tiradores y la geometría nativa de
- * selección. Ministerium añade acciones, pero Android/WebView decide dónde
- * situar el toolbar contextual para que no quede fuera del texto en tablets.
+ * selección. Ministerium añade acciones y solicita el ActionMode flotante
+ * para que el toolbar aparezca junto al texto seleccionado en Android 6+.
  */
 public class MinisteriumWebView extends WebView {
     public interface SelectionActionHandler {
@@ -32,11 +33,17 @@ public class MinisteriumWebView extends WebView {
 
     @Override
     public ActionMode startActionMode(ActionMode.Callback callback) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return super.startActionMode(wrap(callback), ActionMode.TYPE_FLOATING);
+        }
         return super.startActionMode(wrap(callback));
     }
 
     @Override
     public ActionMode startActionMode(ActionMode.Callback callback, int type) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return super.startActionMode(wrap(callback), ActionMode.TYPE_FLOATING);
+        }
         return super.startActionMode(wrap(callback), type);
     }
 
