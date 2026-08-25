@@ -49,10 +49,10 @@ public class MissalSectionReaderActivity extends ThemedActivity {
                 ReaderPreferences.apply(MissalSectionReaderActivity.this, webView, false);
                 LiturgicalWebStyle.apply(MissalSectionReaderActivity.this, webView);
                 MissalCompactView.inject(webView);
-                if ("es".equals(language)) {
-                    MissalInteractiveOptions.inject(MissalSectionReaderActivity.this,
-                            webView, true);
-                }
+                // Credo, Padre Nuestro y selector de Plegaria se mantienen disponibles
+                // tanto en español como en la vista ES/LAT.
+                MissalInteractiveOptions.inject(MissalSectionReaderActivity.this,
+                        webView, true);
                 MissalRuntimeFixes31.inject(webView);
                 ReaderContext context = readerContext();
                 UniversalSelectionMenu.restoreHighlights(MissalSectionReaderActivity.this, webView, context.sourceKey);
