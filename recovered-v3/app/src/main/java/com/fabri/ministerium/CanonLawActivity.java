@@ -58,6 +58,7 @@ public class CanonLawActivity extends ThemedActivity {
                 UniversalSelectionMenu.restoreHighlights(CanonLawActivity.this,
                         webView, sourceKey());
                 updateHeader();
+                CanonCommentIcon.sync(CanonLawActivity.this, webView, currentCanon);
             }
         });
 
@@ -142,15 +143,8 @@ public class CanonLawActivity extends ThemedActivity {
                     + " · español y latín del archivo del Vaticano · toca para abrir la fuente"
                 : "Canon " + currentCanon + " · texto vigente consolidado desde "
                     + amendment.date + " · toca para abrir la reforma oficial");
-        try {
-            CanonCommentaryRepository.Entry entry =
-                    CanonCommentaryRepository.find(this, currentCanon);
-            comments.setEnabled(entry != null);
-            comments.setVisibility(entry == null ? View.GONE : View.VISIBLE);
-        } catch (Exception error) {
-            comments.setEnabled(false);
-            comments.setVisibility(View.GONE);
-        }
+        comments.setEnabled(false);
+        comments.setVisibility(View.GONE);
     }
 
     private void showComment(int canon) {
@@ -191,8 +185,7 @@ public class CanonLawActivity extends ThemedActivity {
         String style = "html,body{background:" + background + "!important;color:" + ink
                 + "!important}body{width:100%;max-width:none;margin:0;padding:24px!important;box-sizing:border-box}"
                 + "body *{color:" + ink + "!important;-webkit-text-fill-color:" + ink
-                + "!important}.comment-link{background:" + accent
-                + "!important;color:#fff!important;-webkit-text-fill-color:#fff!important}"
+                + "!important}.comment-link{display:none!important}"
                 + "h1,h2{color:" + accent + "!important;-webkit-text-fill-color:" + accent
                 + "!important}.canon-language{background:" + panel + "!important;border-color:"
                 + border + "!important}h2{border-color:" + border + "!important}"
