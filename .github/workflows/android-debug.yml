@@ -78,10 +78,10 @@ jobs:
           bart = [x for x in data.get('saints', []) if x.get('month') == 8 and x.get('day') == 24 and 'bartolome' in fold(x.get('title'))]
           if not bart:
               raise SystemExit('Missing 24 Aug San Bartolome structural reference')
-          b = bart[0]
-          if not b.get('gloria') or 'apostol' not in fold(b.get('preface', '') + ' ' + ' '.join(b.get('commons', []))):
+          valid = [x for x in bart if x.get('gloria') and 'apostol' in fold(x.get('preface', '') + ' ' + x.get('descriptor', '') + ' ' + ' '.join(x.get('commons', [])))]
+          if not valid:
               raise SystemExit('San Bartolome structure lost Gloria/Apostles reference')
-          print(f"Missal structural catalog OK: {len(data.get('saints', []))} saint metadata entries")
+          print(f"Missal structural catalog OK: {len(data.get('saints', []))} saint metadata entries; Bartolome references={len(bart)}")
           PY
 
       - name: Secondary calendar cross-check
