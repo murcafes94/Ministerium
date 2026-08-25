@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 import argparse
 import hashlib
-import html
 import json
 import re
 import shutil
-import sys
 import zipfile
 from pathlib import Path
 from xml.etree import ElementTree as ET
@@ -18,7 +16,6 @@ except Exception as exc:
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "app" / "src" / "main" / "assets"
 OUT = ASSETS / "hours-clean"
-
 VOLUMES = {
     "advent": "epubs/LH - 1. ADVIENTO.epub",
     "christmas": "epubs/LH - 2. NAVIDAD.epub",
@@ -27,7 +24,6 @@ VOLUMES = {
     "ordinary": "epubs/LH - 5. TIEMPO ORDINARIO.epub",
     "sanctoral": "epubs/LH - 6. SANTORAL.epub",
 }
-
 NAV_TOKEN = re.compile(r"^\s*\[?\s*(?:1V|2V|C1|C2|IN|O|L|M)\s*\]?\s*$", re.I)
 NAV_WORD = re.compile(r"^\s*(?:anterior|siguiente|índice|indice|inicio|volver)\s*$", re.I)
 HTML_EXT = {".html", ".htm", ".xhtml"}
@@ -63,25 +59,35 @@ def find_toc(zf: zipfile.ZipFile):
     xml = ET.fromstring(zf.read(toc_path))
     rows = []
 
+    # NCX wraps navPoint in ncx/navMap, and navPoints may be nested. Walk all
+    # container nodes while increasing depth only when entering a navPoint.
     def walk(node, depth):
         for child in list(node):
             tag = child.tag.split("}")[-1]
-            if tag != "navPoint":
-                continue
-            title = ""
-            src = ""
-            for sub in child.iter():
-                name = sub.tag.split("}")[-1]
-                if name == "text" and not title:
-                    title = "".join(sub.itertext()).strip()
-                elif name == "content" and not src:
-                    src = (sub.attrib.get("src") or "").strip()
-            if title and src:
-                path, _, frag = src.partition("#")
-                rows.append((title, normpath(base + path), frag, depth))
-            walk(child, depth + 1)
+            if tag == "navPoint":
+                title = ""
+                src = ""
+                # Only inspect the navLabel/content belonging to this navPoint;
+                # descendants are traversed separately to preserve hierarchy.
+                for sub in list(child):
+                    name = sub.tag.split("}")[-1]
+                    if name == "navLabel":
+                        for label_node in sub.iter():
+                            if label_node.tag.split("}")[-1] == "text":
+                                title = "".join(label_node.itertext()).strip()
+                                break
+                    elif name == "content":
+                        src = (sub.attrib.get("src") or "").strip()
+                if title and src:
+                    path, _, frag = src.partition("#")
+                    rows.append((title, normpath(base + path), frag, depth))
+                walk(child, depth + 1)
+            else:
+                walk(child, depth)
 
     walk(xml, 0)
+    if not rows:
+        raise RuntimeError(f"EPUB TOC is empty: {toc_path}")
     return rows
 
 
@@ -97,11 +103,8 @@ def remove_epub_navigation(soup: BeautifulSoup):
         if NAV_TOKEN.fullmatch(text) or NAV_WORD.fullmatch(text):
             a.decompose()
             continue
-        # Keep links required by Ministerium's internal resolvers (week numbers,
-        # canticles and cross-references), but remove browser-only target styling.
         for attr in ["target", "style", "onclick", "onmousedown", "onmouseup"]:
             a.attrs.pop(attr, None)
-    # Remove now-empty navigation containers but never large liturgical sections.
     for node in list(soup.find_all(["p", "div", "td", "tr"])):
         if node.find(["p", "div", "table", "h1", "h2", "h3", "h4"]):
             continue
@@ -171,7 +174,6 @@ def build_volume(volume_id: str, epub_rel: str):
     with zipfile.ZipFile(epub) as zf:
         toc = find_toc(zf)
         referenced = {row[1] for row in toc}
-        # Include all HTML because OrdinaryReferenceResolver follows internal week links.
         html_files = {normpath(n) for n in zf.namelist() if Path(n).suffix.lower() in HTML_EXT}
         paths = sorted(referenced | html_files)
         written = []
