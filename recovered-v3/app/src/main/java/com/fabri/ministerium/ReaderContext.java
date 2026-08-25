@@ -16,14 +16,14 @@ public final class ReaderContext {
     public ReaderContext(String source, String sourceKey, String title,
                          String reference, String category,
                          boolean omitRubricsInTts) {
-        this(source, sourceKey, sourceKey, title, reference, category,
+        this(source, sourceKey, "", title, reference, category,
                 omitRubricsInTts, true);
     }
 
     public ReaderContext(String source, String sourceKey, String title,
                          String reference, String category,
                          boolean omitRubricsInTts, boolean allowTts) {
-        this(source, sourceKey, sourceKey, title, reference, category,
+        this(source, sourceKey, "", title, reference, category,
                 omitRubricsInTts, allowTts);
     }
 
@@ -32,9 +32,11 @@ public final class ReaderContext {
                          boolean omitRubricsInTts, boolean allowTts) {
         this.source = value(source);
         this.sourceKey = value(sourceKey);
-        this.contentId = value(contentId).isEmpty() ? this.sourceKey : value(contentId);
         this.title = value(title);
         this.reference = value(reference);
+        String explicit = value(contentId);
+        this.contentId = explicit.isEmpty()
+                ? ContentReference.infer(this.sourceKey, this.reference) : explicit;
         this.category = value(category);
         this.omitRubricsInTts = omitRubricsInTts;
         this.allowTts = allowTts;
