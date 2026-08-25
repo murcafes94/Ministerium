@@ -27,6 +27,7 @@ VOLUMES = {
 }
 NAV_LABELS = {"1V", "2V", "V", "C", "C1", "C2", "IN", "O", "L", "M"}
 NAV_TOKEN = re.compile(r"^\s*\[?\s*(?:1V|2V|V|C|C1|C2|IN|O|L|M)\s*\]?\s*$", re.I)
+NAV_INLINE = re.compile(r"(?i)\[\s*(?:1V|2V|V|C1|C2|C|IN|O|L|M)\s*\]")
 NAV_WORD = re.compile(r"^\s*(?:anterior|siguiente|índice|indice|inicio|volver)\s*$", re.I)
 NAV_GARBAGE = re.compile(r"^[\s\[\](){}|·•/\\,.;:_-]*$")
 HTML_EXT = {".html", ".htm", ".xhtml"}
@@ -124,8 +125,27 @@ def remove_epub_navigation(soup: BeautifulSoup):
             continue
         for attr in ["target", "style", "onclick", "onmousedown", "onmouseup"]:
             a.attrs.pop(attr, None)
-    # After removing the EPUB navigation links, discard wrappers that contain
-    # only the orphan brackets/punctuation left by constructs such as [O] [L].
+
+    # Some source EPUB pages contain editorial navigation tokens as plain text
+    # rather than links (especially around the Invitatory). Remove those tokens
+    # too, but preserve all actual liturgical prose.
+    for text_node in list(soup.find_all(string=True)):
+        parent = getattr(text_node, "parent", None)
+        if parent is None or parent.name in {"script", "style"}:
+            continue
+        raw = str(text_node)
+        stripped = raw.strip()
+        if not stripped:
+            continue
+        if NAV_TOKEN.fullmatch(stripped) or NAV_WORD.fullmatch(stripped):
+            text_node.extract()
+            continue
+        cleaned = NAV_INLINE.sub("", raw)
+        if cleaned != raw:
+            text_node.replace_with(cleaned)
+
+    # After removing the EPUB navigation links/tokens, discard wrappers that
+    # contain only orphan brackets or punctuation left by constructs like [O] [L].
     for node in list(soup.find_all(["p", "div", "td", "tr", "span"])):
         if not node.parent:
             continue
