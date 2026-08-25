@@ -61,19 +61,27 @@ public final class MissalReferenceCatalog {
             JSONArray saints = load(context).optJSONArray("saints");
             if (saints == null) return null;
             String wanted = normalize(celebration);
-            SaintReference sameDate = null;
+            SaintReference best = null;
+            int bestScore = Integer.MIN_VALUE;
             for (int i = 0; i < saints.length(); i++) {
                 JSONObject item = saints.optJSONObject(i);
                 if (item == null) continue;
                 if (item.optInt("month") != date.get(Calendar.MONTH) + 1
                         || item.optInt("day") != date.get(Calendar.DAY_OF_MONTH)) continue;
                 SaintReference candidate = new SaintReference(item);
-                if (sameDate == null) sameDate = candidate;
                 String title = normalize(candidate.title);
-                if (!wanted.isEmpty() && (title.contains(wanted) || wanted.contains(title)
-                        || overlap(title, wanted))) return candidate;
+                int match = matchScore(title, wanted);
+                if (!wanted.isEmpty() && match < 0) continue;
+                int score = match * 100 + richness(candidate);
+                // Seed/primary verified metadata normally has no structuralSource;
+                // use it as a tie-breaker over automatically inferred references.
+                if (item.optString("structuralSource", "").isEmpty()) score += 10;
+                if (score > bestScore) {
+                    bestScore = score;
+                    best = candidate;
+                }
             }
-            return sameDate;
+            return best;
         } catch (Exception ignored) {
             return null;
         }
@@ -168,6 +176,28 @@ public final class MissalReferenceCatalog {
                     + "El calendario local de Ecuador sigue determinando la celebración.</div>");
         }
         return html.append("</section>").toString();
+    }
+
+    private static int matchScore(String title, String wanted) {
+        if (wanted == null || wanted.isEmpty()) return 0;
+        if (title.equals(wanted)) return 5;
+        if (title.startsWith(wanted) || wanted.startsWith(title)) return 4;
+        if (title.contains(wanted) || wanted.contains(title)) return 3;
+        if (overlap(title, wanted)) return 2;
+        return -1;
+    }
+
+    private static int richness(SaintReference ref) {
+        int value = 0;
+        if (!ref.rank.isEmpty()) value += 2;
+        if (!ref.color.isEmpty()) value += 2;
+        if (ref.gloria) value += 1;
+        if (ref.creed) value += 1;
+        if (!ref.preface.isEmpty()) value += 3;
+        if (!ref.solemnBlessing.isEmpty()) value += 1;
+        if (!ref.readings.isEmpty()) value += 2;
+        value += Math.min(3, ref.commons.length());
+        return value;
     }
 
     private static String sourceNote() {
