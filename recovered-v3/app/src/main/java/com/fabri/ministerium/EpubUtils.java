@@ -52,14 +52,26 @@ public final class EpubUtils {
              ZipInputStream zip = new ZipInputStream(input)) {
             ZipEntry entry;
             while ((entry = zip.getNextEntry()) != null) {
-                if (!entry.isDirectory() && entry.getName().toLowerCase().endsWith("toc.ncx")) {
+                if (!entry.isDirectory() && entry.getName().toLowerCase(Locale.ROOT)
+                        .endsWith("toc.ncx")) {
                     tocPath = entry.getName();
                     tocBytes = readCurrentEntry(zip);
                     break;
                 }
             }
         }
-        if (tocBytes == null || tocPath == null) throw new IOException("El libro no contiene índice.");
+
+        // EPUB 3 can omit NCX entirely. Follow the standard navigation document
+        // before declaring the book unreadable.
+        if (tocBytes == null || tocPath == null) {
+            List<EpubTocEntry> nav = EpubNavigation.navTableOfContents(
+                    context, volume.assetPath);
+            if (!nav.isEmpty()) {
+                TOC_CACHE.put(volume.id, nav);
+                return nav;
+            }
+            throw new IOException("El libro no contiene un índice NCX ni NAV compatible.");
+        }
 
         String base = tocPath.contains("/")
                 ? tocPath.substring(0, tocPath.lastIndexOf('/') + 1) : "";
