@@ -85,6 +85,7 @@ public class CombinedMassActivity extends ThemedActivity {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 ReaderPreferences.applyPalatino(CombinedMassActivity.this, webView);
+                MissalCompactView.inject(webView);
                 UniversalSelectionMenu.restoreHighlights(CombinedMassActivity.this,
                         webView, readerContext().sourceKey);
                 statusView.setText("Liturgia Papal México · Leccionario · OGLH 93–96");
