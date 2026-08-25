@@ -11,6 +11,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.OutputStream;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -22,12 +23,14 @@ import java.util.concurrent.Executors;
 
 public class StudyDeskActivity extends ThemedActivity {
     public static final String EXTRA_QUERY = "study_query";
+    private static final int EXPORT_STUDY = 91;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private EditText input;
     private TextView status;
     private ProgressBar progress;
     private ListView list;
     private List<DeskRow> rows = new ArrayList<>();
+    private boolean exportMarkdown;
 
     @Override protected void onCreate(Bundle state) {
         ThemeUtils.apply(this);
@@ -39,6 +42,7 @@ public class StudyDeskActivity extends ThemedActivity {
         list = findViewById(R.id.listStudyDeskResults);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         findViewById(R.id.btnStudyDeskRun).setOnClickListener(v -> search());
+        findViewById(R.id.btnStudyExport).setOnClickListener(v -> chooseExport());
         input.setOnEditorActionListener((v, action, event) -> {
             if (action == EditorInfo.IME_ACTION_SEARCH) { search(); return true; }
             return false;
@@ -49,7 +53,9 @@ public class StudyDeskActivity extends ThemedActivity {
             input.setText(initial);
             search();
         } else {
-            status.setText("Busca un tema o una referencia. Los resultados indican la fuente y por qué aparecen.");
+            int count = StudyStore.all(this).size();
+            status.setText("Busca un tema, referencia o etiqueta. Mi estudio contiene "
+                    + count + (count == 1 ? " anotación." : " anotaciones."));
         }
     }
 
@@ -72,11 +78,13 @@ public class StudyDeskActivity extends ThemedActivity {
             } catch (Exception ignored) {}
             String wanted = normalize(query);
             for (StudyEntry entry : StudyStore.all(getApplicationContext())) {
-                String text = normalize(entry.title + " " + entry.reference + " "
-                        + entry.quote + " " + entry.body);
-                if (!text.contains(wanted)) continue;
+                StringBuilder personal = new StringBuilder(entry.title).append(' ')
+                        .append(entry.reference).append(' ').append(entry.quote).append(' ')
+                        .append(entry.body).append(' ').append(entry.contentId);
+                for (String tag : entry.tags) personal.append(' ').append(tag);
+                if (!normalize(personal.toString()).contains(wanted)) continue;
                 found.add(new DeskRow("Mi estudio · " + entry.category,
-                        "Coincide con una nota, meditación o resaltado personal",
+                        "Coincide con una nota, reflexión, etiqueta o subrayado personal",
                         entry.title.isEmpty() ? entry.reference : entry.title,
                         entry.body.isEmpty() ? entry.quote : entry.body, null, entry));
             }
@@ -99,9 +107,22 @@ public class StudyDeskActivity extends ThemedActivity {
 
     private void open(DeskRow row) {
         if (row.study != null) {
+            StringBuilder message = new StringBuilder();
+            if (!row.study.quote.isEmpty()) message.append('“').append(row.study.quote)
+                    .append("”\n\n");
+            if (!row.study.body.isEmpty()) message.append(row.study.body);
+            if (!row.study.tags.isEmpty()) {
+                message.append("\n\nEtiquetas: ");
+                for (int i = 0; i < row.study.tags.size(); i++) {
+                    if (i > 0) message.append(", ");
+                    message.append(row.study.tags.get(i));
+                }
+            }
+            if (!row.study.contentId.isEmpty()) {
+                message.append("\n\nID: ").append(row.study.contentId);
+            }
             new AlertDialog.Builder(this).setTitle(row.title)
-                    .setMessage((row.study.quote.isEmpty() ? "" : "“" + row.study.quote + "”\n\n")
-                            + row.study.body).setPositiveButton("Cerrar", null).show();
+                    .setMessage(message.toString()).setPositiveButton("Cerrar", null).show();
             return;
         }
         SearchResult result = row.result;
@@ -125,6 +146,40 @@ public class StudyDeskActivity extends ThemedActivity {
             startActivity(new Intent(this, TextReaderActivity.class)
                     .putExtra(TextReaderActivity.EXTRA_DOCUMENT, result.document.id)
                     .putExtra(TextReaderActivity.EXTRA_PAGE, result.pageIndex));
+        }
+    }
+
+    private void chooseExport() {
+        new AlertDialog.Builder(this).setTitle("Exportar Mi estudio")
+                .setItems(new String[]{"Markdown (.md)", "JSON portable (.json)"},
+                        (dialog, which) -> launchExport(which == 0))
+                .setNegativeButton("Cancelar", null).show();
+    }
+
+    private void launchExport(boolean markdown) {
+        exportMarkdown = markdown;
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType(markdown ? "text/markdown" : "application/json");
+        intent.putExtra(Intent.EXTRA_TITLE,
+                markdown ? "ministerium-mi-estudio.md" : "ministerium-mi-estudio.json");
+        startActivityForResult(intent, EXPORT_STUDY);
+    }
+
+    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != EXPORT_STUDY || resultCode != RESULT_OK
+                || data == null || data.getData() == null) return;
+        try {
+            byte[] bytes = exportMarkdown ? StudyExport.markdown(this) : StudyExport.json(this);
+            try (OutputStream output = getContentResolver().openOutputStream(data.getData(), "w")) {
+                if (output == null) throw new IllegalStateException("No se pudo abrir el destino.");
+                output.write(bytes);
+                output.flush();
+            }
+            Toast.makeText(this, "Mi estudio se exportó correctamente.", Toast.LENGTH_LONG).show();
+        } catch (Exception error) {
+            Toast.makeText(this, "No se pudo exportar Mi estudio.", Toast.LENGTH_LONG).show();
         }
     }
 
