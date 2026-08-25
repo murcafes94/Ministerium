@@ -105,6 +105,14 @@ def common_ids(segment: list[str]) -> list[str]:
 def parse_month(month: int) -> list[dict]:
     html = fetch(BASE.format(month))
     soup = BeautifulSoup(html, "html.parser")
+    # Curas links key structural words such as «Gloria», «Credo», «Apóstoles»
+    # and names of Commons. Remove only the anchor element, keeping its visible
+    # text in place; then merge adjacent text nodes so a phrase such as
+    # «Se dice Gloria» is seen as one structural line. No linked destination or
+    # prayer text is stored in the resulting metadata catalog.
+    for anchor in soup.find_all("a"):
+        anchor.unwrap()
+    soup.smooth()
     lines = [re.sub(r"\s+", " ", x).strip() for x in soup.stripped_strings]
     lines = [x for x in lines if x]
     current_day = None
