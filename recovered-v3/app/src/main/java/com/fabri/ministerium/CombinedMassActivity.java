@@ -22,8 +22,7 @@ public class CombinedMassActivity extends ThemedActivity {
     private String hourKey;
     private String language;
     private WebView webView;
-    private TextView celebrationView;
-    private TextView statusView;
+    private TextView subtitleView;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         ThemeUtils.apply(this);
@@ -38,12 +37,12 @@ public class CombinedMassActivity extends ThemedActivity {
         hourKey = "vespers".equals(getIntent().getStringExtra(EXTRA_HOUR)) ? "vespers" : "lauds";
         language = "lat_es".equals(getIntent().getStringExtra(EXTRA_LANGUAGE)) ? "lat_es" : "es";
         ((TextView) findViewById(R.id.txtCombinedMassTitle)).setText("Misa + " + hourName());
-        celebrationView = findViewById(R.id.txtCombinedMassCelebration);
-        statusView = findViewById(R.id.txtCombinedMassStatus);
+        subtitleView = findViewById(R.id.txtCombinedMassSubtitle);
         webView = findViewById(R.id.combinedMassWebView);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         configureWebView();
-        UniversalSelectionMenu.attach(this, webView, readerContext());
+        ReaderChrome.attach(this, webView, findViewById(R.id.combinedMassHeader),
+                readerContext(), null, false);
         buildCelebration();
     }
 
@@ -68,40 +67,46 @@ public class CombinedMassActivity extends ThemedActivity {
                 MissalCompactView.inject(webView);
                 MissalInteractiveOptions.inject(CombinedMassActivity.this, webView, false);
                 MissalRuntimeFixes31.inject(webView);
-                UniversalSelectionMenu.restoreHighlights(CombinedMassActivity.this, webView, readerContext().sourceKey);
-                statusView.setText("Liturgia de las Horas · Liturgia Papal México · Leccionario · OGLH 93–96");
+                UniversalSelectionMenu.restoreHighlights(CombinedMassActivity.this,
+                        webView, readerContext().sourceKey);
             }
         });
     }
 
     private void buildCelebration() {
-        celebrationView.setText("Preparando celebración…");
-        statusView.setText("Uniendo Hora, Liturgia Papal México y Leccionario…");
+        subtitleView.setText("Preparando celebración…");
         webView.setVisibility(WebView.INVISIBLE);
         new Thread(() -> {
             try {
-                CombinedMassComposer.Result result = CombinedMassComposer31.compose(getApplicationContext(), date, hourKey, language);
+                CombinedMassComposer.Result result = CombinedMassComposer31.compose(
+                        getApplicationContext(), date, hourKey, language);
                 runOnUiThread(() -> {
                     ((TextView) findViewById(R.id.txtCombinedMassTitle)).setText(result.title);
-                    celebrationView.setText(result.celebration);
+                    subtitleView.setText(result.celebration);
                     webView.setVisibility(WebView.VISIBLE);
-                    webView.loadDataWithBaseURL("file:///android_asset/", result.html, "text/html", "UTF-8", null);
+                    webView.loadDataWithBaseURL("file:///android_asset/", result.html,
+                            "text/html", "UTF-8", null);
                 });
             } catch (Exception error) {
                 runOnUiThread(() -> {
-                    statusView.setText(error.getMessage() == null ? "No se pudo preparar la celebración completa." : error.getMessage());
-                    Toast.makeText(this, "No se pudo unir la Misa con " + hourName() + ".", Toast.LENGTH_LONG).show();
+                    subtitleView.setText(error.getMessage() == null
+                            ? "No se pudo preparar la celebración completa."
+                            : error.getMessage());
+                    Toast.makeText(this, "No se pudo unir la Misa con " + hourName() + ".",
+                            Toast.LENGTH_LONG).show();
                 });
             }
         }).start();
     }
 
     private ReaderContext readerContext() {
-        String sourceKey = "combined-mass:" + date.get(Calendar.YEAR) + "-" + (date.get(Calendar.MONTH) + 1)
-                + "-" + date.get(Calendar.DAY_OF_MONTH) + ":" + hourKey + ":" + language;
+        String sourceKey = "combined-mass:" + date.get(Calendar.YEAR) + "-"
+                + (date.get(Calendar.MONTH) + 1) + "-" + date.get(Calendar.DAY_OF_MONTH)
+                + ":" + hourKey + ":" + language;
         String title = "Misa + " + hourName();
         String reference = LiturgicalCalendarRepository.dateLabel(date) + " · " + title;
-        return new ReaderContext("Celebración unida", sourceKey, title, reference, "Liturgia", true);
+        return new ReaderContext("Celebración unida", sourceKey, title, reference,
+                "Liturgia", true);
     }
 
     private String hourName() { return "vespers".equals(hourKey) ? "Vísperas" : "Laudes"; }
