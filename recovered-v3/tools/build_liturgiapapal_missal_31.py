@@ -9,6 +9,7 @@ an app build depend on repeatedly downloading very large PDFs.
 import json
 import time
 import unicodedata
+import urllib.error
 import urllib.request
 
 import build_liturgiapapal_missal as base
@@ -48,27 +49,52 @@ def validate_cleaned_31(language: str, component: str, text: str) -> list[str]:
     return problems
 
 
+def _download_once(url: str, headers: dict[str, str] | None) -> bytes:
+    request = urllib.request.Request(url, headers=headers or {})
+    with urllib.request.urlopen(request, timeout=180) as response:
+        data = response.read()
+    if not data.startswith(b"%PDF"):
+        raise RuntimeError(f"La URL no devolvió un PDF válido: {url}")
+    return data
+
+
 def resilient_download(url, destination):
     destination.parent.mkdir(parents=True, exist_ok=True)
     if destination.exists() and destination.stat().st_size > 1024:
         return
+
+    browser_headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36"
+        ),
+        "Accept": "application/pdf,application/octet-stream;q=0.9,*/*;q=0.8",
+        "Accept-Language": "es-EC,es;q=0.9,en;q=0.7",
+        "Referer": "https://liturgiapapal.org/",
+        "Connection": "close",
+    }
+    minimal_headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Referer": "https://liturgiapapal.org/",
+    }
+    profiles = (browser_headers, minimal_headers, None)
     last_error = None
-    for attempt in range(1, 4):
-        try:
-            request = urllib.request.Request(url, headers={
-                "User-Agent": "Ministerium-Missal-Builder/3.1 (+GitHub Actions)",
-                "Accept": "application/pdf,*/*;q=0.8",
-            })
-            with urllib.request.urlopen(request, timeout=180) as response:
-                data = response.read()
-            if not data.startswith(b"%PDF"):
-                raise RuntimeError(f"La URL no devolvió un PDF válido: {url}")
-            destination.write_bytes(data)
-            return
-        except Exception as error:
-            last_error = error
-            if attempt < 3:
-                time.sleep(3 * attempt)
+
+    for round_no in range(1, 4):
+        for headers in profiles:
+            try:
+                data = _download_once(url, headers)
+                destination.write_bytes(data)
+                return
+            except Exception as error:
+                last_error = error
+                # 415/403 responses from the attachment handler have proved
+                # transient and header-sensitive in GitHub Actions. Try the
+                # next request profile immediately before backing off.
+                continue
+        if round_no < 3:
+            time.sleep(5 * round_no)
+
     raise last_error
 
 
