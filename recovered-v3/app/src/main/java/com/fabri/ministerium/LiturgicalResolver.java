@@ -19,22 +19,16 @@ public final class LiturgicalResolver {
     public static LiturgicalDay resolve(Context context, Calendar selected) throws Exception {
         Calendar date = normalized(selected);
         List<LiturgicalEvent> events = LiturgicalCalendarRepository.eventsFor(context, date);
-        String celebration = events.isEmpty()
-                ? "Liturgia del día" : events.get(0).summary;
+        LiturgicalEvent primary = primaryEvent(events);
+        String celebration = primary == null ? "Feria del día" : primary.summary;
         String psalter = "";
-        String color = "";
         for (LiturgicalEvent event : events) {
             if (!event.psalterWeek.isEmpty()) {
                 psalter = event.psalterWeek;
                 break;
             }
         }
-        for (LiturgicalEvent event : events) {
-            if (!event.color.isEmpty()) {
-                color = event.color;
-                break;
-            }
-        }
+        String color = primary == null ? "" : primary.color;
 
         HoursLink temporal = temporalOffice(context, date, celebration, psalter);
         List<HoursLink> saints = matchingSaints(
@@ -47,6 +41,18 @@ public final class LiturgicalResolver {
                 date.get(Calendar.DAY_OF_MONTH),
                 LiturgicalCalendarRepository.dateLabel(date), celebration, source,
                 psalter, color, temporal, saints);
+    }
+
+    /**
+     * Una memoria libre nunca sustituye por defecto a la feria. Se conserva en
+     * saintOffices para que el usuario pueda elegirla explícitamente.
+     */
+    public static LiturgicalEvent primaryEvent(List<LiturgicalEvent> events) {
+        if (events == null || events.isEmpty()) return null;
+        for (LiturgicalEvent event : events) {
+            if (event != null && !event.isOptionalMemorial()) return event;
+        }
+        return null;
     }
 
     public static int ordinaryWeekNumber(Calendar selected) {
@@ -274,7 +280,7 @@ public final class LiturgicalResolver {
     }
 
     private static String normalize(String value) {
-        return Normalizer.normalize(value, Normalizer.Form.NFD)
+        return Normalizer.normalize(value == null ? "" : value, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}+", "")
                 .toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9]+", " ")
