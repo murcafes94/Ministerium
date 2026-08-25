@@ -2,20 +2,18 @@ import fs from 'node:fs';
 
 const read = (path) => fs.readFileSync(path, 'utf8');
 const failures = [];
-const requireText = (source, text, label) => {
-  if (!source.includes(text)) failures.push(`Falta ${label}: ${text}`);
-};
-const forbidText = (source, text, label) => {
-  if (source.includes(text)) failures.push(`No debe existir ${label}: ${text}`);
-};
+const requireText = (source, text, label) => { if (!source.includes(text)) failures.push(`Falta ${label}: ${text}`); };
+const forbidText = (source, text, label) => { if (source.includes(text)) failures.push(`No debe existir ${label}: ${text}`); };
 
 const build = read('app/build.gradle');
 const activity = read('app/src/main/java/com/fabri/ministerium/CombinedMassActivity.java');
 const composer = read('app/src/main/java/com/fabri/ministerium/CombinedMassComposer31.java');
 const papal = read('app/src/main/java/com/fabri/ministerium/LiturgiaPapalMissalRepository.java');
 const missalActivity = read('app/src/main/java/com/fabri/ministerium/MissalActivity.java');
+const missalReader = read('app/src/main/java/com/fabri/ministerium/MissalSectionReaderActivity.java');
 const missalDocument = read('app/src/main/java/com/fabri/ministerium/MissalDocument31.java');
 const manifest = read('app/src/main/AndroidManifest.xml');
+const packageManifest = read('app/src/main/assets/package-manifest.json');
 const ritualRepository = read('app/src/main/java/com/fabri/ministerium/RitualRepository.java');
 const ritualCatalog = read('app/src/main/java/com/fabri/ministerium/RitualCatalogActivity.java');
 const backup = read('app/src/main/java/com/fabri/ministerium/BackupActivity.java');
@@ -30,34 +28,39 @@ const bible = read('app/src/main/java/com/fabri/ministerium/BibleReaderActivity.
 const bibleSearch = read('app/src/main/java/com/fabri/ministerium/BibleSearchActivity.java');
 const bibleSearchRepo = read('app/src/main/java/com/fabri/ministerium/BibleSearchRepository.java');
 const dictionary = read('app/src/main/java/com/fabri/ministerium/BibleDictionaryRepository.java');
+const epubEntryReader = read('app/src/main/java/com/fabri/ministerium/EpubEntryReader.java');
+const rae = read('app/src/main/java/com/fabri/ministerium/RaeOnlineRepository.java');
+const overlay = read('app/src/main/java/com/fabri/ministerium/ReaderOverlayDialog.java');
 const markers = read('app/src/main/java/com/fabri/ministerium/MarkersActivity.java');
 const complineRepo = read('app/src/main/java/com/fabri/ministerium/ComplineContentRepository.java');
 const complineReader = read('app/src/main/java/com/fabri/ministerium/ComplineReaderActivity.java');
+const cleanHours = read('app/src/main/java/com/fabri/ministerium/CleanHoursAssets.java');
+const epubUtils = read('app/src/main/java/com/fabri/ministerium/EpubUtils.java');
+const hoursToday = read('app/src/main/java/com/fabri/ministerium/HoursTodayActivity.java');
+const updateCenter = read('app/src/main/java/com/fabri/ministerium/UpdateCenterActivity.java');
+const liturgicalStyle = read('app/src/main/java/com/fabri/ministerium/LiturgicalWebStyle.java');
 const layout = read('app/src/main/res/layout/activity_combined_mass.xml');
 
 requireText(build, 'versionCode 32', 'versionCode 3.1.1');
 requireText(build, "versionName '3.1.1'", 'versionName 3.1.1');
-
 requireText(layout, 'combinedMassWebView', 'lector continuo');
 requireText(activity, 'CombinedMassComposer31.compose', 'compositor 3.1');
 forbidText(activity, 'CombinedMassPolisher.compose', 'compositor heredado');
 forbidText(activity, 'startActivity(', 'salida a otra Activity desde la celebración');
-for (const required of ['MassReadingsRepository.read', 'LiturgiaPapalMissalRepository',
-  'Cántico evangélico de ', 'Oración después de la Comunión']) {
+for (const required of ['MassReadingsRepository.read', 'LiturgiaPapalMissalRepository', 'Cántico evangélico de ', 'Oración después de la Comunión'])
   requireText(composer, required, `contrato combinado ${required}`);
-}
-for (const forbidden of ['HoursRepository.ROMAN_MISSAL', 'Misal-Diario-Romano.epub',
-  'MissalProperRepository', 'CombinedMassComposer.compose', 'CombinedMassPolisher']) {
+for (const forbidden of ['HoursRepository.ROMAN_MISSAL', 'Misal-Diario-Romano.epub', 'MissalProperRepository', 'CombinedMassComposer.compose', 'CombinedMassPolisher'])
   forbidText(composer, forbidden, `fallback de Misal EPUB (${forbidden})`);
-}
-for (const source of [missalActivity, missalDocument]) {
+for (const source of [missalActivity, missalDocument])
   for (const forbidden of ['HoursRepository.ROMAN_MISSAL', 'Misal-Diario-Romano.epub', 'MissalProperRepository'])
     forbidText(source, forbidden, `Misal autónomo heredado (${forbidden})`);
-}
 requireText(missalActivity, 'MissalSectionReaderActivity.class', 'lector autónomo Liturgia Papal');
+requireText(missalReader, 'LiturgicalWebStyle.apply', 'línea gráfica común del Misal');
+requireText(missalReader, 'ReaderPreferences.apply(', 'fuente global del Misal');
 requireText(missalDocument, 'LiturgiaPapalMissalRepository', 'fuente Liturgia Papal');
 requireText(manifest, '.MissalSectionReaderActivity', 'Activity del nuevo Misal');
 requireText(papal, 'liturgia-papal-mexico', 'trazabilidad Liturgia Papal México');
+requireText(liturgicalStyle, '.reading-section', 'estilo compartido con lecturas');
 
 forbidText(ritualRepository, 'argentina', 'fuente ritual argentina heredada');
 requireText(ritualRepository, 'rituals/liturgiapapal/', 'ruta de rituales Liturgia Papal');
@@ -68,9 +71,11 @@ requireText(ritualCatalog, '"Bendiciones".equalsIgnoreCase', 'filtro de bendicio
 requireText(backup, 'createDriveBackup()', 'acción de Google Drive');
 requireText(backup, 'com.google.android.apps.docs', 'proveedor Google Drive');
 requireText(bilingual, 'sourceY / (float) sourceRange', 'scroll bilingüe proporcional base');
+requireText(readerPrefs, 'data-ministerium-align-key', 'división paralela tipo Divinum Officium');
 
 for (const action of ['Subrayar', 'Nota', 'Reflexión', 'Diccionario', 'Traducir', 'Leer'])
   requireText(selectionMenu, `\"${action}\"`, `acción contextual ${action}`);
+requireText(selectionMenu, 'RaeOnlineRepository.actionCard', 'RAE opcional desde selección');
 requireText(selectionChrome, 'super.startActionMode(wrap(callback), type)', 'geometría nativa del toolbar contextual');
 forbidText(selectionChrome, 'resolvedType = ActionMode.TYPE_FLOATING', 'forzado del popup fuera del texto');
 requireText(selectionChrome, 'SHOW_AS_ACTION_ALWAYS', 'acciones principales visibles');
@@ -81,20 +86,39 @@ requireText(readerPrefs, 'applyInternal(context, webView, cssFamily(context))', 
 requireText(readerSettingsLayout, 'readerPalatino', 'opción visual Palatino');
 requireText(readerSettings, 'ReaderPreferences.PALATINO', 'selección Palatino');
 requireText(bible, 'ReaderPreferences.apply(BibleReaderActivity.this, webView', 'preferencias globales en Biblia');
-
 requireText(bibleSearch, 'ReferenceParser.parse(this, query)', 'apertura directa de referencias bíblicas');
 requireText(bibleSearch, 'EXTRA_SCROLL_VERSE', 'salto al versículo buscado');
 requireText(bibleSearchRepo, 'bible-search-index.tsv', 'índice bíblico rápido');
 forbidText(bibleSearchRepo, 'BibleChapterDocument.from', 'reconstrucción completa del EPUB en cada búsqueda');
 requireText(dictionary, 'ENTRY_INDEX_CACHE', 'índice directo de diccionario');
 requireText(dictionary, 'byTerm.get(candidate)', 'lookup O(1) de diccionario');
+requireText(dictionary, 'EpubEntryReader.read', 'lectura de una sola entrada del diccionario');
+requireText(epubEntryReader, 'ZipInputStream', 'lector parcial de EPUB');
+requireText(rae, 'https://rae-api.com/api/words/', 'RAE API opcional');
+requireText(rae, 'dictionary_cache/rae', 'caché local RAE');
+requireText(overlay, '"rae".equals(uri.getHost())', 'consulta RAE dentro del overlay');
 requireText(markers, 'StudyStore.ofType(this, StudyEntry.HIGHLIGHT)', 'subrayados unificados con Mi estudio');
 
 requireText(complineRepo, 'liturgicalVolume', 'criterio de tomos para Completas');
 requireText(complineRepo, 'ordinaryWeek >= 18', 'Tomo IV desde semana XVIII');
 requireText(complineReader, 'Tomo " + volume', 'tomo visible/resuelto en Completas');
+requireText(hoursToday, 'Semana " + roman(ordinaryWeek) + " del Tiempo Ordinario', 'semana ordinaria visible');
+requireText(hoursToday, 'Salterio " + currentDay.psalterWeek', 'semana del salterio separada');
+requireText(hoursToday, 'Tomo " + ComplineContentRepository.liturgicalVolume', 'tomo físico visible');
+
+requireText(cleanHours, 'hours-clean/', 'paquete limpio de Horas');
+requireText(epubUtils, 'CleanHoursAssets.ensureExtracted', 'Horas españolas sin EPUB en runtime');
+requireText(epubUtils, 'CleanHoursAssets.tableOfContents', 'TOC limpio de Horas');
+if (!fs.existsSync('tools/build_clean_hours_31.py')) failures.push('Falta extractor limpio de Liturgia de las Horas');
+requireText(packageManifest, '"hours-es-clean"', 'manifiesto de Horas limpias');
+requireText(packageManifest, '"delivery": "bundled"', 'contenido incluido en APK');
+forbidText(packageManifest, 'LH - 5. TIEMPO ORDINARIO.epub', 'EPUB de Horas como paquete runtime');
+requireText(updateCenter, 'incluido en la APK', 'estado de contenido incluido');
+requireText(updateCenter, 'se descarga solo cuando lo solicites', 'actualizaciones opcionales');
 
 for (const asset of [
+  'app/src/main/assets/hours-clean/manifest.json',
+  'app/src/main/assets/hours-clean/ordinary/toc.tsv',
   'app/src/main/assets/missal/es/initial.txt',
   'app/src/main/assets/missal/es/word.txt',
   'app/src/main/assets/missal/es/proper_ordinary.txt',
@@ -113,4 +137,4 @@ if (failures.length) {
   failures.forEach((failure) => console.error(`- ${failure}`));
   process.exit(1);
 }
-console.log('Ministerium 3.1.1 stabilization: OK');
+console.log('Ministerium 3.1.1 final fixes: OK');
