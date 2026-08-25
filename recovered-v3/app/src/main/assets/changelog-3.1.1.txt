@@ -5,9 +5,11 @@ Correcciones de estabilidad y lectura:
 • Búsqueda bíblica: las citas abren directamente y la búsqueda por palabras usa un índice local generado desde la Biblia instalada.
 • Diccionarios: índice en memoria y caché para abrir definiciones con mucha menos espera.
 • Subrayados: el apartado Subrayados usa el mismo almacén que Mi estudio.
-• Bendicional: abre como catálogo de bendiciones disponibles desde Liturgia Papal.
+• Bendicional y Rituales: los ritos de una sola sección abren directamente, sin una pantalla intermedia con un botón repetido; las secciones largas se cargan fuera del hilo de interfaz para evitar bloqueos.
 • Menú contextual: Android decide la posición del diálogo de selección para evitar que aparezca fuera del texto.
-• Completas: resolución explícita de los cuatro tomos de la Liturgia de las Horas; en Tiempo Ordinario, Tomo III para semanas I–XVII y Tomo IV para XVIII–XXXIV.
+• Completas: resolución explícita de los cuatro tomos de la Liturgia de las Horas; en Tiempo Ordinario, Tomo III para semanas I–XVII y Tomo IV para XVIII–XXXIV. Las antífonas marianas finales permiten cambiar entre español y latín.
 • Liturgia de las Horas: se ocultan las variantes estacionales que no corresponden cuando la fuente imprime varias alternativas juntas.
-• Calendario: se distingue entre calendario local disponible y fallo al comprobar una actualización por Internet.
+• Código de Derecho Canónico: la búsqueda puede ejecutarse desde la tecla Buscar del teclado y el icono de comentario aparece junto al número del canon solamente cuando existe comentario para ese canon.
+• Calendario: se distingue entre calendario local disponible y fallo al comprobar una actualización por Internet; el hash SHA-256 del calendario incluido se valida también durante la compilación.
+• Misal: el formulario español ofrece los dos credos —niceno-constantinopolitano y de los Apóstoles— y permite cambiar ES/LAT tanto en el Credo como en el Padre Nuestro usando los textos español y latino de Liturgia Papal.
 • Misal y Rituales: continúan usando paquetes generados desde Liturgia Papal y no el antiguo Misal EPUB.
