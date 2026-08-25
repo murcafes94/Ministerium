@@ -50,6 +50,7 @@ public class MissalSectionReaderActivity extends ThemedActivity {
         webView.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
                 ReaderPreferences.applyPalatino(MissalSectionReaderActivity.this, webView);
+                MissalCompactView.inject(webView);
                 ReaderContext context = readerContext();
                 UniversalSelectionMenu.restoreHighlights(MissalSectionReaderActivity.this,
                         webView, context.sourceKey);
