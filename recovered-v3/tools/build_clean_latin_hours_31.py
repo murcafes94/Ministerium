@@ -14,8 +14,6 @@ SOURCE = ASSETS / "epubs" / "Liturgia-horarum-2026-latin.epub"
 OUT = ASSETS / "hours-clean" / "latin" / "2026"
 HTML_EXT = {".htm", ".html", ".xhtml"}
 
-# Keep the Latin build-time cleaning contract equivalent to the Spanish one:
-# source EPUB is only an input; runtime receives clean HTML without EPUB UI.
 NAV_LABELS = {"1V", "2V", "V", "C", "C1", "C2", "IN", "O", "L", "M"}
 NAV_TOKEN = re.compile(r"^\s*\[?\s*(?:1V|2V|V|C|C1|C2|IN|O|L|M)\s*\]?\s*$", re.I)
 NAV_WORD = re.compile(
@@ -63,8 +61,6 @@ def remove_epub_navigation(soup):
         for attr in ["style", "target", "onclick", "onmousedown", "onmouseup"]:
             a.attrs.pop(attr, None)
 
-    # Same cleanup used by the Spanish package: after removing EPUB navigation,
-    # discard empty wrappers and orphan punctuation such as "[ ]" or "|".
     for node in list(soup.find_all(["p", "div", "td", "tr", "span"])):
         if not node.parent:
             continue
@@ -99,6 +95,9 @@ def semantic_markup(soup):
                 key = f"{kind}:{counts[kind]}"
                 node["data-ministerium-block"] = key
                 node["data-semantic-id"] = f"hours-la:{key}"
+                # Shared key with the Spanish build. The reader may use this to
+                # align equivalent semantic units without comparing translated text.
+                node["data-ministerium-align-key"] = key
                 break
 
 
@@ -126,7 +125,7 @@ def clean(raw):
 
     marker = soup.new_tag("meta")
     marker["name"] = "ministerium-source"
-    marker["content"] = "clean-latin-hours-3.1.1"
+    marker["content"] = "clean-latin-hours-3.1.1-align4"
     soup.head.append(marker)
     return str(soup)
 
@@ -148,13 +147,12 @@ def main():
             target.write_text(clean(zf.read(name)), encoding="utf-8")
             written.append(normalized)
 
-    # The current package is expected to include every 2026 day file.
     dates = [p for p in written if re.search(r"(?:^|/)26\d{4}\.htm$", p, re.I)]
     if len(dates) < 365:
         raise SystemExit(f"Latin package has only {len(dates)} date files")
     (OUT / "files.txt").write_text("\n".join(sorted(written)) + "\n", encoding="utf-8")
     manifest = {
-        "schema": 2,
+        "schema": 3,
         "year": 2026,
         "language": "la",
         "source": "epubs/Liturgia-horarum-2026-latin.epub",
@@ -165,6 +163,7 @@ def main():
         "dateFiles": len(dates),
         "generatedBy": "build_clean_latin_hours_31.py",
         "cleanupParity": "Spanish hours 3.1.1",
+        "alignment": "shared semantic keys v1",
     }
     (OUT / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
