@@ -3,12 +3,8 @@ package com.fabri.ministerium;
 import android.content.Context;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,8 +65,7 @@ public final class BibleDictionaryRepository {
                     "dictionary-biblical-index.tsv", HoursRepository.BIBLICAL_DICTIONARY),
             new Source("biblical_san_pablo", "Diccionario bíblico abreviado",
                     "881 voces · Equipo editorial San Pablo · texto extraído · sin conexión",
-                    "dictionary-biblical-san-pablo-index.tsv",
-                    HoursRepository.SAN_PABLO_BIBLICAL_DICTIONARY),
+                    "dictionary-biblical-san-pablo-index.tsv", HoursRepository.SAN_PABLO_BIBLICAL_DICTIONARY),
             new Source("theology_eunsa", "Diccionario de Teología EUNSA",
                     "94 artículos · edición 2006 · sin conexión",
                     "dictionary-theology-index.tsv", HoursRepository.THEOLOGY_DICTIONARY),
@@ -86,7 +81,6 @@ public final class BibleDictionaryRepository {
             return size() > 96;
         }
     };
-    private static final Map<String, File> ROOT_CACHE = new HashMap<>();
 
     private BibleDictionaryRepository() {}
 
@@ -154,7 +148,7 @@ public final class BibleDictionaryRepository {
             String article = article(context, source, match);
             if (article.isEmpty()) continue;
             String sourceName = "rae_15".equals(source.id)
-                    ? "Diccionario de la lengua española (RAE)" : source.title;
+                    ? "Diccionario de la lengua española" : source.title;
             String card = "<article class=\"dictionary-card\"><h2>" + escape(sourceName)
                     + "</h2><p class=\"dictionary-source\">Resultado para «"
                     + escape(match.term) + "» · sin conexión</p>" + article + "</article>";
@@ -192,13 +186,9 @@ public final class BibleDictionaryRepository {
             String cached = ARTICLE_CACHE.get(key);
             if (cached != null) return cached;
         }
-        File root;
-        synchronized (ROOT_CACHE) { root = ROOT_CACHE.get(source.id); }
-        if (root == null) {
-            root = EpubUtils.ensureExtracted(context, source.volume);
-            synchronized (ROOT_CACHE) { ROOT_CACHE.put(source.id, root); }
-        }
-        String document = read(new File(root, entry.filePath));
+        // A single lookup must not unzip an 85k-entry dictionary. Read only the
+        // requested internal document and keep it in the small EpubEntryReader LRU.
+        String document = EpubEntryReader.read(context, source.volume, entry.filePath);
         String value = extractArticle(document, entry);
         synchronized (ARTICLE_CACHE) { ARTICLE_CACHE.put(key, value); }
         return value;
@@ -231,16 +221,6 @@ public final class BibleDictionaryRepository {
             position = close + 7;
         }
         return "";
-    }
-
-    private static String read(File file) throws Exception {
-        try (InputStream input = new FileInputStream(file);
-             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[16384];
-            int count;
-            while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
-            return new String(output.toByteArray(), StandardCharsets.UTF_8);
-        }
     }
 
     private static String escape(String value) {
