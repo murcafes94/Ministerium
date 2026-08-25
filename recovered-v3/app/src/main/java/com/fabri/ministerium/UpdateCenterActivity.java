@@ -32,7 +32,7 @@ public class UpdateCenterActivity extends ThemedActivity {
         findViewById(R.id.btnUpdateLectionary).setOnClickListener(v ->
                 startActivity(new Intent(this, MassReadingsActivity.class)));
         findViewById(R.id.btnUpdateRituals).setOnClickListener(v ->
-                startActivity(new Intent(this, RitualCatalogActivity.class)));
+                startActivity(new Intent(this, PastoralActivity.class)));
         showVersions();
     }
 
