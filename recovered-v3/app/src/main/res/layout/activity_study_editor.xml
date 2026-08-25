@@ -29,14 +29,20 @@
                 android:backgroundTint="@color/wine" android:hint="Título"
                 android:inputType="textCapSentences" android:textColor="@color/ink"
                 android:textColorHint="@color/muted" android:textSize="21sp" />
+            <EditText android:id="@+id/inputStudyTags" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="8dp"
+                android:backgroundTint="@color/wine" android:hint="Etiquetas: oración, estudio, tema…"
+                android:inputType="text" android:singleLine="true" android:textColor="@color/ink"
+                android:textColorHint="@color/muted" android:textSize="14sp" />
             <EditText android:id="@+id/inputStudyBody" android:layout_width="match_parent"
                 android:layout_height="wrap_content" android:layout_marginTop="12dp"
                 android:backgroundTint="@color/wine" android:gravity="top"
                 android:hint="Escribe aquí…" android:inputType="textCapSentences|textMultiLine"
-                android:minHeight="360dp" android:minLines="12" android:textColor="@color/ink"
+                android:minHeight="330dp" android:minLines="11" android:textColor="@color/ink"
                 android:textColorHint="@color/muted" android:textSize="18sp" />
             <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="10dp" android:text="El borrador se guarda automáticamente."
+                android:layout_marginTop="10dp"
+                android:text="El borrador se guarda automáticamente. Las etiquetas se separan con comas."
                 android:textColor="@color/muted" android:textSize="12sp" />
         </LinearLayout>
     </ScrollView>
