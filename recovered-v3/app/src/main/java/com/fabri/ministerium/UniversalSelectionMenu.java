@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.SubMenu;
 import android.webkit.WebView;
 import android.widget.Toast;
 
@@ -24,6 +25,7 @@ public final class UniversalSelectionMenu {
     private static final int COMMENTARY = 8905;
     private static final int TRANSLATE = 8906;
     private static final int READ_ALOUD = 8907;
+    private static final int MORE = 8908;
 
     private UniversalSelectionMenu() {}
 
@@ -34,11 +36,13 @@ public final class UniversalSelectionMenu {
             @Override public void populate(Menu menu) {
                 add(menu, HIGHLIGHT, "Subrayar");
                 add(menu, NOTE, "Nota");
-                add(menu, MEDITATION, "Reflexión");
                 add(menu, DICTIONARY, "Diccionario");
-                if ("Biblia".equalsIgnoreCase(context.category)) add(menu, COMMENTARY, "Comentario");
-                add(menu, TRANSLATE, "Traducir");
-                add(menu, READ_ALOUD, "Leer");
+                SubMenu more = menu.addSubMenu(Menu.NONE, MORE, 120, "Más");
+                more.getItem().setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+                add(more, MEDITATION, "Reflexión");
+                if ("Biblia".equalsIgnoreCase(context.category)) add(more, COMMENTARY, "Comentario");
+                add(more, TRANSLATE, "Traducir");
+                add(more, READ_ALOUD, "Leer");
             }
 
             @Override public boolean handle(ActionMode mode, MenuItem item) {
