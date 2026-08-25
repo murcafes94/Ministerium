@@ -71,6 +71,17 @@ jobs:
         run: |
           node tools/validate_stabilization_31.mjs
           node tools/validate_calendar_31.mjs
+          python - <<'PY'
+          import hashlib, json, pathlib
+          manifest = json.loads(pathlib.Path('app/src/main/assets/package-manifest.json').read_text(encoding='utf-8'))
+          calendar = next(p for p in manifest['packages'] if p['id'] == 'calendar-ec')
+          asset = pathlib.Path('app/src/main/assets') / calendar['asset']
+          actual = hashlib.sha256(asset.read_bytes()).hexdigest()
+          expected = calendar['sha256'].lower()
+          if actual != expected:
+              raise SystemExit(f'Calendar SHA-256 mismatch: manifest={expected} actual={actual}')
+          print(f'Calendar SHA-256 OK: {actual}')
+          PY
 
       - name: Remove Liturgy source EPUBs from runtime APK assets
         run: |
