@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
@@ -62,6 +63,15 @@ public class CanonLawActivity extends ThemedActivity {
 
         findViewById(R.id.btnBack).setOnClickListener(v -> back());
         findViewById(R.id.btnFindCanon).setOnClickListener(v -> findCanon());
+        input.setOnEditorActionListener((view, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH
+                    || actionId == EditorInfo.IME_ACTION_DONE
+                    || actionId == EditorInfo.IME_ACTION_GO) {
+                findCanon();
+                return true;
+            }
+            return false;
+        });
         findViewById(R.id.btnCanonSearch).setOnClickListener(v -> {
             View panel = findViewById(R.id.canonSearchPanel);
             panel.setVisibility(panel.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
