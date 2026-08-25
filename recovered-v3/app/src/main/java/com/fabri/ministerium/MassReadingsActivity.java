@@ -7,19 +7,23 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
+/**
+ * Offline reader entry point for Mass readings.
+ *
+ * This screen never downloads content on entry. Lectionary synchronization is
+ * centralized in Settings -> Updates -> Lectionary so opening today's readings
+ * remains immediate and predictable.
+ */
 public class MassReadingsActivity extends ThemedActivity {
     public static final String EXTRA_YEAR = "mass_year";
     public static final String EXTRA_MONTH = "mass_month";
     public static final String EXTRA_DAY = "mass_day";
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
     private Calendar selectedDate;
     private TextView dateLabel;
     private TextView status;
@@ -28,13 +32,13 @@ public class MassReadingsActivity extends ThemedActivity {
     private Button syncButton;
     private TextView celebrationLabel;
     private TextView liturgicalDetails;
-    private boolean syncing;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         ThemeUtils.apply(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mass_readings);
+
         Calendar now = Calendar.getInstance();
         selectedDate = Calendar.getInstance();
         if (getIntent().hasExtra(EXTRA_YEAR)) {
@@ -44,6 +48,7 @@ public class MassReadingsActivity extends ThemedActivity {
                     getIntent().getIntExtra(EXTRA_DAY, now.get(Calendar.DAY_OF_MONTH)),
                     12, 0, 0);
         }
+
         dateLabel = findViewById(R.id.txtMassDate);
         status = findViewById(R.id.txtReadingsStatus);
         progress = findViewById(R.id.readingsProgress);
@@ -52,14 +57,16 @@ public class MassReadingsActivity extends ThemedActivity {
         celebrationLabel = findViewById(R.id.txtMassCelebration);
         liturgicalDetails = findViewById(R.id.txtMassLiturgicalDetails);
 
+        progress.setVisibility(View.GONE);
         findViewById(R.id.btnBack).setOnClickListener(v -> back());
         findViewById(R.id.btnPreviousDay).setOnClickListener(v -> moveDate(-1));
         findViewById(R.id.btnNextDay).setOnClickListener(v -> moveDate(1));
         findViewById(R.id.btnChooseDate).setOnClickListener(v -> chooseDate());
         dateLabel.setOnClickListener(v -> chooseDate());
         findViewById(R.id.btnOpenMissal).setOnClickListener(v -> openMissal());
-        readButton.setOnClickListener(v -> openOrSync());
-        syncButton.setOnClickListener(v -> syncMonth(false));
+        readButton.setOnClickListener(v -> openReading());
+        syncButton.setText("Sincronizar desde Ajustes");
+        syncButton.setOnClickListener(v -> openUpdates());
         findViewById(R.id.btnUsccbCalendar).setOnClickListener(v ->
                 UsccbLinks.open(this, UsccbLinks.calendar()));
         findViewById(R.id.btnUsccbDate).setOnClickListener(v ->
@@ -68,23 +75,22 @@ public class MassReadingsActivity extends ThemedActivity {
                 startActivity(new Intent(this, LiturgicalCalendarActivity.class)));
 
         showDate();
-        // Fetch only the selected date on entry. The full month remains an
-        // explicit optional action and never blocks reading today's texts.
-        if (!MassReadingsRepository.has(this, selectedDate)
-                && MassReadingsRepository.isCurrentMonth(selectedDate)) {
-            syncSelectedDay(false);
-        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (dateLabel != null) showDate();
     }
 
     private void showDate() {
         String label = new SimpleDateFormat("EEEE, d 'de' MMMM 'de' yyyy",
                 new Locale("es", "EC")).format(selectedDate.getTime());
         dateLabel.setText(label.substring(0, 1).toUpperCase(Locale.ROOT) + label.substring(1));
+
         try {
             LiturgicalDay liturgicalDay = LiturgicalResolver.resolve(this, selectedDate);
             celebrationLabel.setText(liturgicalDay.celebration);
-            // The psalter week belongs to the Liturgy of the Hours, not to the
-            // Mass Lectionary, so do not display it in this module.
             String detail = liturgicalDay.liturgicalColor;
             if (!liturgicalDay.sourceNote.isEmpty()) {
                 if (!detail.isEmpty()) detail += " · ";
@@ -95,115 +101,33 @@ public class MassReadingsActivity extends ThemedActivity {
             celebrationLabel.setText("Lecturas de la celebración del día");
             liturgicalDetails.setText("Leccionario");
         }
+
         boolean saved = MassReadingsRepository.has(this, selectedDate);
         int cached = MassReadingsRepository.cachedDays(this, selectedDate);
-        readButton.setText(saved ? "Leer las lecturas sin conexión"
-                : MassReadingsRepository.isCurrentMonth(selectedDate)
-                ? "Descargar esta fecha y leer" : "Ver esta fecha en USCCB");
-        status.setText(saved
-                ? "Lecturas guardadas en este dispositivo · no necesitan Internet."
-                : cached > 0
-                ? cached + " lecturas guardadas para este mes; esta fecha aún no está disponible."
-                : MassReadingsRepository.isCurrentMonth(selectedDate)
-                ? "Esta fecha todavía no está guardada. Ministerium puede descargarla ahora sin esperar el mes completo."
-                : "Esta fecha no fue guardada anteriormente; puedes consultarla en USCCB.");
-        syncButton.setEnabled(MassReadingsRepository.isCurrentMonth(selectedDate) && !syncing);
-        syncButton.setAlpha(syncButton.isEnabled() ? 1f : 0.55f);
+        readButton.setText(saved ? "Leer las lecturas sin conexión" : "Lecturas no sincronizadas");
+        readButton.setEnabled(saved);
+        readButton.setAlpha(saved ? 1f : 0.55f);
+
+        if (saved) {
+            status.setText("Lecturas guardadas en este dispositivo · no necesitan Internet.");
+        } else if (cached > 0) {
+            status.setText(cached + " días de este mes están sincronizados, pero esta fecha no. "
+                    + "Actualiza el Leccionario desde Ajustes.");
+        } else {
+            status.setText("Esta fecha no está guardada. Sincroniza el Leccionario desde "
+                    + "Ajustes → Actualizaciones → Leccionario.");
+        }
+
+        syncButton.setEnabled(true);
+        syncButton.setAlpha(1f);
     }
 
-    private void openOrSync() {
+    private void openReading() {
         if (MassReadingsRepository.has(this, selectedDate)) openLocalReading();
-        else if (MassReadingsRepository.isCurrentMonth(selectedDate)) syncSelectedDay(true);
-        else UsccbLinks.open(this, UsccbLinks.readings(selectedDate));
     }
 
-    private void syncSelectedDay(boolean openAfter) {
-        if (syncing || !MassReadingsRepository.isCurrentMonth(selectedDate)) return;
-        syncing = true;
-        progress.setVisibility(View.VISIBLE);
-        progress.setIndeterminate(true);
-        readButton.setEnabled(false);
-        syncButton.setEnabled(false);
-        final Calendar requested = (Calendar) selectedDate.clone();
-        status.setText("Descargando las lecturas de esta fecha…");
-        executor.submit(() -> {
-            try {
-                MassReadingsRepository.syncDay(getApplicationContext(), requested);
-                runOnUiThread(() -> {
-                    syncing = false;
-                    progress.setIndeterminate(false);
-                    progress.setVisibility(View.GONE);
-                    readButton.setEnabled(true);
-                    showDate();
-                    if (openAfter && sameDay(requested, selectedDate)) openLocalReading();
-                });
-            } catch (Exception error) {
-                runOnUiThread(() -> {
-                    syncing = false;
-                    progress.setIndeterminate(false);
-                    progress.setVisibility(View.GONE);
-                    readButton.setEnabled(true);
-                    showDate();
-                    Toast.makeText(this,
-                            "No se pudo descargar esta fecha. Puedes abrirla en USCCB.",
-                            Toast.LENGTH_LONG).show();
-                });
-            }
-        });
-    }
-
-    private void syncMonth(boolean openAfter) {
-        if (syncing || !MassReadingsRepository.isCurrentMonth(selectedDate)) return;
-        syncing = true;
-        progress.setIndeterminate(false);
-        progress.setVisibility(View.VISIBLE);
-        syncButton.setEnabled(false);
-        status.setText("Actualizando el mes en segundo plano…");
-        final Calendar requested = (Calendar) selectedDate.clone();
-        executor.submit(() -> {
-            try {
-                if (!MassReadingsRepository.has(getApplicationContext(), requested)) {
-                    try { MassReadingsRepository.syncDay(getApplicationContext(), requested); }
-                    catch (Exception ignored) {}
-                }
-                MassReadingsRepository.SyncResult result =
-                        MassReadingsRepository.syncCurrentMonth(getApplicationContext(), requested,
-                                (completed, total) -> runOnUiThread(() -> {
-                                    progress.setMax(total);
-                                    progress.setProgress(completed);
-                                    status.setText("Actualizando lecturas: " + completed + " de " + total
-                                            + (MassReadingsRepository.has(this, selectedDate)
-                                            ? " · esta fecha ya se puede leer" : ""));
-                                    if (MassReadingsRepository.has(this, selectedDate)) {
-                                        readButton.setEnabled(true);
-                                        readButton.setText("Leer las lecturas sin conexión");
-                                    }
-                                }));
-                runOnUiThread(() -> {
-                    syncing = false;
-                    progress.setVisibility(View.GONE);
-                    showDate();
-                    Toast.makeText(this, result.saved + " de " + result.total
-                            + " días guardados para este mes.", Toast.LENGTH_LONG).show();
-                    if (openAfter && MassReadingsRepository.has(this, selectedDate)) openLocalReading();
-                });
-            } catch (Exception error) {
-                runOnUiThread(() -> {
-                    syncing = false;
-                    progress.setVisibility(View.GONE);
-                    showDate();
-                    Toast.makeText(this,
-                            "La actualización mensual no terminó, pero las fechas ya guardadas siguen disponibles.",
-                            Toast.LENGTH_LONG).show();
-                });
-            }
-        });
-    }
-
-    private static boolean sameDay(Calendar a, Calendar b) {
-        return a.get(Calendar.YEAR) == b.get(Calendar.YEAR)
-                && a.get(Calendar.MONTH) == b.get(Calendar.MONTH)
-                && a.get(Calendar.DAY_OF_MONTH) == b.get(Calendar.DAY_OF_MONTH);
+    private void openUpdates() {
+        startActivity(new Intent(this, UpdateCenterActivity.class));
     }
 
     private void openLocalReading() {
@@ -239,9 +163,4 @@ public class MassReadingsActivity extends ThemedActivity {
     private void back() { finish(); }
 
     @Override public void onBackPressed() { back(); }
-
-    @Override protected void onDestroy() {
-        executor.shutdownNow();
-        super.onDestroy();
-    }
 }
