@@ -49,7 +49,7 @@ public class LatinHoursReaderActivity extends ThemedActivity {
         ReaderChrome.bindGlobalMenu(this, findViewById(R.id.btnGlobalMenu));
         ReaderChrome.attach(this, webView, findViewById(R.id.readerHeader),
                 new ReaderContext("Liturgia en Latín", "latin:" + year + ":" + path,
-                        title, "Latín", "Liturgia", true), null, false);
+                        title, "Latín", "Liturgia", true, false), null, false);
 
         try {
             File target = LatinContentManager.hourFile(this, year, path);
