@@ -33,7 +33,6 @@ public class MainActivity extends ThemedActivity {
         PrayerReminderScheduler.restore(this);
         GospelReminderScheduler.restore(this);
         BiblePlanReminderScheduler.restore(this);
-        LiturgicalCalendarRepository.ensureCurrentYear(this);
 
         findViewById(R.id.cardDevotional).setOnClickListener(v ->
                 startActivity(new Intent(this, DevotionalHubActivity.class)));
