@@ -67,6 +67,7 @@ public class CombinedMassActivity extends ThemedActivity {
                 LiturgicalWebStyle.apply(CombinedMassActivity.this, webView);
                 MissalCompactView.inject(webView);
                 MissalInteractiveOptions.inject(CombinedMassActivity.this, webView, false);
+                MissalRuntimeFixes31.inject(webView);
                 UniversalSelectionMenu.restoreHighlights(CombinedMassActivity.this, webView, readerContext().sourceKey);
                 statusView.setText("Liturgia de las Horas · Liturgia Papal México · Leccionario · OGLH 93–96");
             }
