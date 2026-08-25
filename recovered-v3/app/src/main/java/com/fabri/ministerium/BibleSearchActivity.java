@@ -46,8 +46,7 @@ public class BibleSearchActivity extends ThemedActivity {
             startActivity(new Intent(this, BibleReaderActivity.class)
                     .putExtra(BibleReaderActivity.EXTRA_BOOK_INDEX, hit.bookIndex)
                     .putExtra(BibleReaderActivity.EXTRA_CHAPTER_INDEX, hit.chapterIndex)
-                    .putExtra(BibleReaderActivity.EXTRA_FIND_TEXT,
-                            input.getText().toString().trim()));
+                    .putExtra(BibleReaderActivity.EXTRA_FIND_TEXT, input.getText().toString().trim()));
         });
         mode(false);
     }
@@ -57,7 +56,7 @@ public class BibleSearchActivity extends ThemedActivity {
         findViewById(R.id.btnBibleSearchPrecise).setAlpha(flexible ? .62f : 1f);
         findViewById(R.id.btnBibleSearchFlexible).setAlpha(flexible ? 1f : .62f);
         status.setText(flexible ? "Flexible: encuentra todas las palabras, aunque estén separadas."
-                : "Precisa: busca la frase exactamente como está escrita.");
+                : "Precisa: escribe una frase o una cita como Jn 3,16 o Mt 27,6.");
     }
 
     private void search() {
@@ -66,16 +65,32 @@ public class BibleSearchActivity extends ThemedActivity {
             Toast.makeText(this, "Escribe al menos dos caracteres.", Toast.LENGTH_SHORT).show();
             return;
         }
+
+        ReferenceParser.Target target = ReferenceParser.parse(this, query);
+        if (target != null && target.kind == ReferenceParser.Kind.BIBLE) {
+            Intent intent = new Intent(this, BibleReaderActivity.class)
+                    .putExtra(BibleReaderActivity.EXTRA_BOOK_INDEX, target.bookIndex)
+                    .putExtra(BibleReaderActivity.EXTRA_CHAPTER_INDEX, target.chapterIndex);
+            if (target.verseStart > 0) {
+                intent.putExtra(BibleReaderActivity.EXTRA_SCROLL_VERSE,
+                        String.valueOf(target.verseStart));
+            }
+            startActivity(intent);
+            return;
+        }
+
         progress.setVisibility(View.VISIBLE);
-        status.setText("Buscando en la Biblia local…");
+        status.setText("Buscando en el índice local…");
         executor.submit(() -> {
             try {
                 List<BibleSearchRepository.Hit> found = BibleSearchRepository.search(
                         getApplicationContext(), query, flexible, 150);
                 runOnUiThread(() -> display(found));
             } catch (Exception error) {
-                runOnUiThread(() -> { progress.setVisibility(View.GONE);
-                    status.setText("No se pudo completar la búsqueda local."); });
+                runOnUiThread(() -> {
+                    progress.setVisibility(View.GONE);
+                    status.setText("No se pudo completar la búsqueda local.");
+                });
             }
         });
     }
