@@ -2,6 +2,7 @@ package com.fabri.ministerium;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -16,12 +17,16 @@ import java.util.Calendar;
 
 public class UpdateCenterActivity extends ThemedActivity {
     private TextView status;
+    private View lectionaryButton;
+    private volatile boolean syncingLectionary;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         ThemeUtils.apply(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_update_center);
         status = findViewById(R.id.txtUpdateStatus);
+        lectionaryButton = findViewById(R.id.btnUpdateLectionary);
+
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         findViewById(R.id.btnCheckAll).setOnClickListener(v -> verifyAll());
         findViewById(R.id.btnUpdateApp).setOnClickListener(v -> showChangelog());
@@ -29,11 +34,53 @@ public class UpdateCenterActivity extends ThemedActivity {
                 startActivity(new Intent(this, LiturgicalCalendarActivity.class)));
         findViewById(R.id.btnUpdateBreviary).setOnClickListener(v ->
                 startActivity(new Intent(this, LatinHoursActivity.class)));
-        findViewById(R.id.btnUpdateLectionary).setOnClickListener(v ->
-                startActivity(new Intent(this, MassReadingsActivity.class)));
+        lectionaryButton.setOnClickListener(v -> syncLectionary());
         findViewById(R.id.btnUpdateRituals).setOnClickListener(v ->
                 startActivity(new Intent(this, PastoralActivity.class)));
         showVersions();
+    }
+
+    private void syncLectionary() {
+        if (syncingLectionary) return;
+        syncingLectionary = true;
+        lectionaryButton.setEnabled(false);
+        lectionaryButton.setAlpha(0.55f);
+
+        final Calendar requested = Calendar.getInstance();
+        final int alreadySaved = MassReadingsRepository.cachedDays(this, requested);
+        status.setText("Sincronizando Leccionario del mes actual… " + alreadySaved
+                + " días ya estaban guardados.");
+
+        new Thread(() -> {
+            try {
+                MassReadingsRepository.SyncResult result =
+                        MassReadingsRepository.syncCurrentMonth(getApplicationContext(), requested,
+                                (completed, total) -> runOnUiThread(() ->
+                                        status.setText("Sincronizando Leccionario: " + completed
+                                                + " de " + total + " días…")));
+                runOnUiThread(() -> {
+                    syncingLectionary = false;
+                    lectionaryButton.setEnabled(true);
+                    lectionaryButton.setAlpha(1f);
+                    status.setText("Leccionario sincronizado: " + result.saved + " de "
+                            + result.total + " días disponibles sin conexión.");
+                    Toast.makeText(this, "Sincronización del Leccionario terminada.",
+                            Toast.LENGTH_LONG).show();
+                });
+            } catch (Exception error) {
+                runOnUiThread(() -> {
+                    syncingLectionary = false;
+                    lectionaryButton.setEnabled(true);
+                    lectionaryButton.setAlpha(1f);
+                    int saved = MassReadingsRepository.cachedDays(this, requested);
+                    status.setText("La sincronización no terminó. " + saved
+                            + " días ya guardados siguen disponibles sin conexión.");
+                    Toast.makeText(this,
+                            "No se pudo completar la sincronización del Leccionario.",
+                            Toast.LENGTH_LONG).show();
+                });
+            }
+        }, "ministerium-lectionary-sync").start();
     }
 
     private void showVersions() {
@@ -42,11 +89,14 @@ public class UpdateCenterActivity extends ThemedActivity {
             JSONArray packages = manifest.getJSONArray("packages");
             int year = Calendar.getInstance().get(Calendar.YEAR);
             boolean calendarAvailable = LiturgicalCalendarRepository.hasCalendar(this, year);
+            int readings = MassReadingsRepository.cachedDays(this, Calendar.getInstance());
             StringBuilder value = new StringBuilder("App ")
                     .append(BuildConfig.VERSION_NAME).append(" · canal ")
                     .append(manifest.optString("channel", "testing"))
                     .append("\nCalendario ").append(year).append(calendarAvailable
-                            ? " · instalado y disponible" : " · no encontrado localmente");
+                            ? " · instalado y disponible" : " · no encontrado localmente")
+                    .append("\nLeccionario del mes · ").append(readings)
+                    .append(" días sincronizados");
             for (int i = 0; i < packages.length(); i++) {
                 JSONObject item = packages.getJSONObject(i);
                 if ("calendar-ec".equals(item.optString("id"))) continue;
