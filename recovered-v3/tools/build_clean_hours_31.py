@@ -6,7 +6,6 @@ import re
 import shutil
 import zipfile
 from pathlib import Path
-from urllib.parse import urljoin
 from xml.etree import ElementTree as ET
 
 try:
@@ -126,9 +125,6 @@ def remove_epub_navigation(soup: BeautifulSoup):
         for attr in ["target", "style", "onclick", "onmousedown", "onmouseup"]:
             a.attrs.pop(attr, None)
 
-    # Some source EPUB pages contain editorial navigation tokens as plain text
-    # rather than links (especially around the Invitatory). Remove those tokens
-    # too, but preserve all actual liturgical prose.
     for text_node in list(soup.find_all(string=True)):
         parent = getattr(text_node, "parent", None)
         if parent is None or parent.name in {"script", "style"}:
@@ -144,8 +140,6 @@ def remove_epub_navigation(soup: BeautifulSoup):
         if cleaned != raw:
             text_node.replace_with(cleaned)
 
-    # After removing the EPUB navigation links/tokens, discard wrappers that
-    # contain only orphan brackets or punctuation left by constructs like [O] [L].
     for node in list(soup.find_all(["p", "div", "td", "tr", "span"])):
         if not node.parent:
             continue
@@ -178,8 +172,11 @@ def semantic_markup(soup: BeautifulSoup):
         for kind, pattern in patterns:
             if pattern.search(normalized):
                 counters[kind] = counters.get(kind, 0) + 1
-                node["data-ministerium-block"] = f"{kind}:{counters[kind]}"
-                node["data-semantic-id"] = f"hours:{kind}:{counters[kind]}"
+                key = f"{kind}:{counters[kind]}"
+                node["data-ministerium-block"] = key
+                node["data-semantic-id"] = f"hours:{key}"
+                # Shared with the Latin build for parallel alignment.
+                node["data-ministerium-align-key"] = key
                 break
 
 
@@ -201,7 +198,7 @@ def clean_html(raw: bytes) -> str:
     soup.head.insert(0, meta)
     marker = soup.new_tag("meta")
     marker["name"] = "ministerium-source"
-    marker["content"] = "clean-hours-3.1.1"
+    marker["content"] = "clean-hours-3.1.1-align4"
     soup.head.append(marker)
     return str(soup)
 
@@ -253,6 +250,7 @@ def build_volume(volume_id: str, epub_rel: str):
             "htmlFiles": len(written),
             "navigationTargets": len(navigation),
             "runtimeUsesEpub": False,
+            "alignment": "shared semantic keys v1",
             "generatedBy": "build_clean_hours_31.py",
         }
         (target_root / "manifest.json").write_text(json.dumps(info, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -268,10 +266,11 @@ def main():
     results = [build_volume(k, v) for k, v in selected]
     if args.volume == "all":
         overall = {
-            "schema": 2,
+            "schema": 3,
             "version": "3.1.1",
             "sourceMode": "EPUB build input → clean runtime package",
             "runtimeUsesEpub": False,
+            "alignment": "shared semantic keys v1",
             "volumes": results,
         }
         (OUT / "manifest.json").write_text(json.dumps(overall, ensure_ascii=False, indent=2), encoding="utf-8")
