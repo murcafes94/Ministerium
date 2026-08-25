@@ -13,13 +13,10 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.HashSet;
-import java.util.Set;
 
 public class LiturgicalCalendarActivity extends ThemedActivity {
     private final List<Calendar> dates = new ArrayList<>();
     private Calendar month;
-    private final Set<Integer> requestedYears = new HashSet<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,13 +50,16 @@ public class LiturgicalCalendarActivity extends ThemedActivity {
                 Calendar date = (Calendar) month.clone();
                 date.set(Calendar.DAY_OF_MONTH, day);
                 dates.add(date);
-                List<LiturgicalEvent> events = LiturgicalCalendarRepository.eventsFor(
-                        this, date);
+                List<LiturgicalEvent> events = LiturgicalCalendarRepository.eventsFor(this, date);
                 String title = day + " · " + (events.isEmpty()
                         ? "Feria del día" : events.get(0).summary);
                 StringBuilder subtitle = new StringBuilder();
-                for (LiturgicalEvent event : events) {
+                for (int i = 0; i < events.size(); i++) {
+                    LiturgicalEvent event = events.get(i);
                     if (subtitle.length() > 0) subtitle.append(" · ");
+                    if (i > 0 && event.summary != null && !event.summary.trim().isEmpty()) {
+                        subtitle.append(event.summary).append(" — ");
+                    }
                     subtitle.append(event.rankLabel());
                     if (!event.color.isEmpty()) subtitle.append(" · ").append(event.color);
                 }
@@ -75,26 +75,6 @@ public class LiturgicalCalendarActivity extends ThemedActivity {
             Toast.makeText(this, "No se pudo leer el calendario litúrgico.",
                     Toast.LENGTH_LONG).show();
         }
-        updateCalendarYear(month.get(Calendar.YEAR));
-    }
-
-    private void updateCalendarYear(int year) {
-        if (!requestedYears.add(year)) return;
-        LiturgicalCalendarRepository.updateYear(this, year, updated -> runOnUiThread(() -> {
-            if (isFinishing()) return;
-            if (updated && month.get(Calendar.YEAR) == year) {
-                Toast.makeText(this, "Calendario litúrgico de " + year + " actualizado.",
-                        Toast.LENGTH_SHORT).show();
-                showMonth();
-            } else if (!updated && LiturgicalCalendarRepository.hasCalendar(this, year)) {
-                Toast.makeText(this,
-                        "Calendario " + year + " disponible sin conexión. No se pudo comprobar una versión más reciente en Internet.",
-                        Toast.LENGTH_LONG).show();
-            } else if (!updated) {
-                Toast.makeText(this, "Sin conexión: se usará el cálculo romano general para "
-                        + year + ".", Toast.LENGTH_LONG).show();
-            }
-        }));
     }
 
     private void chooseDestination(Calendar date) {
