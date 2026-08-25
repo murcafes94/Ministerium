@@ -19,6 +19,9 @@ public final class MissalInteractiveOptions {
                     ? LiturgiaPapalWordRepository.professionOfFaithHtml(context) : "";
             String pater = paterNosterHtml(context);
             String script = "(function(){"
+                    + "window.setPrayer=window.setPrayer||function(n){for(var i=1;i<=4;i++){"
+                    + "var p=document.getElementById('prayer'+i),b=document.getElementById('prayerButton'+i);var active=i===n;"
+                    + "if(p){p.hidden=!active;p.classList.toggle('hidden',!active);}if(b&&!b.disabled){b.classList.toggle('selected',active);b.setAttribute('aria-pressed',active?'true':'false');}}};"
                     + "window.ministeriumPrayerLanguage=window.ministeriumPrayerLanguage||function(id,lang){"
                     + "var box=document.querySelector('[data-prayer-language=\"'+id+'\"]');if(!box)return;"
                     + "var es=box.querySelector('[data-language=\"es\"]'),la=box.querySelector('[data-language=\"la\"]');"
@@ -31,20 +34,23 @@ public final class MissalInteractiveOptions {
                     + "if(bn)bn.classList.toggle('selected',!apost);if(ba)ba.classList.toggle('selected',apost);};"
                     + "function firstParagraph(prefix){var ps=document.querySelectorAll('p');for(var i=0;i<ps.length;i++){"
                     + "var t=(ps[i].textContent||'').trim();if(t.indexOf(prefix)===0)return ps[i];}return null;}"
+                    + "var walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);var node;while((node=walker.nextNode())){"
+                    + "if(node.nodeValue&&node.nodeValue.indexOf('\\\\n')>=0)node.nodeValue=node.nodeValue.replace(/\\\\n/g,' ');}"
                     + (replaceRawCreeds
                     ? "if(!document.querySelector('[data-ministerium-creed-selector]')){"
                     + "var nic=firstParagraph('Creo en un solo Dios');var note=firstParagraph('Para utilidad de los fieles');"
                     + "var apo=firstParagraph('Creo en Dios, Padre todopoderoso');if(nic&&apo){"
                     + "var holder=document.createElement('div');holder.innerHTML=" + JSONObject.quote(creed) + ";"
-                    + "var node=holder.firstElementChild;if(node)nic.parentNode.insertBefore(node,nic);nic.remove();if(note)note.remove();apo.remove();}}"
+                    + "var newNode=holder.firstElementChild;if(newNode)nic.parentNode.insertBefore(newNode,nic);nic.remove();if(note)note.remove();apo.remove();}}"
                     : "")
                     + "if(!document.querySelector('[data-prayer-language=\"pater-noster\"]')){"
                     + "var pn=firstParagraph('Padre nuestro, que estás en el cielo');if(pn){"
                     + "var ph=document.createElement('div');ph.innerHTML=" + JSONObject.quote(pater) + ";"
                     + "var pnode=ph.firstElementChild;if(pnode)pn.parentNode.replaceChild(pnode,pn);}}"
+                    + "window.setPrayer(2);"
                     + "if(!document.getElementById('ministeriumMissalInteractiveStyle')){var s=document.createElement('style');"
                     + "s.id='ministeriumMissalInteractiveStyle';s.textContent='"
-                    + ".ministerium-language-switch{display:flex;gap:8px;margin:8px 0 12px}.ministerium-language-switch button{border:1px solid currentColor;border-radius:18px;background:transparent;color:inherit;padding:6px 12px;font:inherit}.ministerium-language-switch button.selected{font-weight:700;text-decoration:underline}.ministerium-creed-selector{margin:12px 0;padding:12px;border:1px solid rgba(128,128,128,.35);border-radius:10px}.ministerium-creed-selector .choicebar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.ministerium-creed-selector .choicebar button{border-radius:18px;padding:7px 12px}.ministerium-prayer-language [data-language=\"la\"]{font-style:normal}';document.head.appendChild(s);}"
+                    + ".hidden{display:none!important}.eucharistic-prayer[hidden]{display:none!important}.choicebar{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}.choicebar button{border:1px solid currentColor;border-radius:18px;background:transparent;color:inherit;padding:6px 12px;font:inherit}.choicebar button.selected{font-weight:700;text-decoration:underline}.ministerium-language-switch{display:flex;gap:8px;margin:8px 0 12px}.ministerium-language-switch button{border:1px solid currentColor;border-radius:18px;background:transparent;color:inherit;padding:6px 12px;font:inherit}.ministerium-language-switch button.selected{font-weight:700;text-decoration:underline}.ministerium-creed-selector{margin:12px 0;padding:12px;border:1px solid rgba(128,128,128,.35);border-radius:10px}.ministerium-creed-selector .choicebar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.ministerium-creed-selector .choicebar button{border-radius:18px;padding:7px 12px}.ministerium-prayer-language [data-language=\"la\"]{font-style:normal}';document.head.appendChild(s);}"
                     + "})()";
             webView.evaluateJavascript(script, null);
         } catch (Exception ignored) {}
@@ -97,6 +103,7 @@ public final class MissalInteractiveOptions {
 
     private static String render(String text) {
         if (text == null || text.trim().isEmpty()) return "";
+        text = text.replace("\\n", "\n");
         String[] blocks = text.trim().split("\\n\\s*\\n");
         StringBuilder html = new StringBuilder("<div class=\"liturgia-papal prayer-text\">");
         for (String block : blocks) {
