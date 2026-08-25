@@ -1,22 +1,24 @@
 package com.fabri.ministerium;
 
 import android.content.Context;
+
 import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public final class BibleDictionaryRepository {
     public static final class Source {
@@ -26,8 +28,7 @@ public final class BibleDictionaryRepository {
         public final String indexAsset;
         public final HoursVolume volume;
 
-        Source(String id, String title, String subtitle, String indexAsset,
-               HoursVolume volume) {
+        Source(String id, String title, String subtitle, String indexAsset, HoursVolume volume) {
             this.id = id;
             this.title = title;
             this.subtitle = subtitle;
@@ -77,13 +78,19 @@ public final class BibleDictionaryRepository {
                     "85.811 voces · 15.ª edición · sin conexión",
                     "dictionary-rae-index.tsv", HoursRepository.SPANISH_DICTIONARY)
     ));
+
     private static final Map<String, List<Entry>> ENTRY_CACHE = new HashMap<>();
+    private static final Map<String, Map<String, Entry>> ENTRY_INDEX_CACHE = new HashMap<>();
+    private static final Map<String, String> ARTICLE_CACHE = new LinkedHashMap<String, String>(64, .75f, true) {
+        @Override protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+            return size() > 96;
+        }
+    };
+    private static final Map<String, File> ROOT_CACHE = new HashMap<>();
 
     private BibleDictionaryRepository() {}
 
-    public static List<Source> sources() {
-        return SOURCES;
-    }
+    public static List<Source> sources() { return SOURCES; }
 
     public static Source findSource(String id) {
         if (id == null) return null;
@@ -92,12 +99,22 @@ public final class BibleDictionaryRepository {
     }
 
     public static List<Entry> entries(Context context, Source source) throws Exception {
-        synchronized (ENTRY_CACHE) {
-            List<Entry> cached = ENTRY_CACHE.get(source.id);
-            if (cached != null) return cached;
+        ensureIndex(context, source);
+        synchronized (ENTRY_CACHE) { return ENTRY_CACHE.get(source.id); }
+    }
+
+    private static Map<String, Entry> index(Context context, Source source) throws Exception {
+        ensureIndex(context, source);
+        synchronized (ENTRY_INDEX_CACHE) { return ENTRY_INDEX_CACHE.get(source.id); }
+    }
+
+    private static void ensureIndex(Context context, Source source) throws Exception {
+        synchronized (ENTRY_INDEX_CACHE) {
+            if (ENTRY_INDEX_CACHE.containsKey(source.id)) return;
         }
         int capacity = "rae_15".equals(source.id) ? 86_000 : 3_000;
-        List<Entry> result = new ArrayList<>(capacity);
+        List<Entry> list = new ArrayList<>(capacity);
+        Map<String, Entry> byTerm = new HashMap<>(Math.max(128, capacity * 4 / 3));
         try (InputStream input = context.getAssets().open(source.indexAsset);
              BufferedReader reader = new BufferedReader(new InputStreamReader(input, "UTF-8"))) {
             String line;
@@ -108,18 +125,23 @@ public final class BibleDictionaryRepository {
                 String term = parts[0].trim();
                 String filePath = parts[1].trim();
                 String fragment = parts.length > 2 ? parts[2].trim() : "";
-                if (!term.isEmpty() && !filePath.isEmpty()) {
-                    result.add(new Entry(term, filePath, fragment));
-                }
+                if (term.isEmpty() || filePath.isEmpty()) continue;
+                Entry entry = new Entry(term, filePath, fragment);
+                list.add(entry);
+                if (!byTerm.containsKey(entry.normalizedTerm)) byTerm.put(entry.normalizedTerm, entry);
             }
         }
-        result = Collections.unmodifiableList(result);
-        synchronized (ENTRY_CACHE) { ENTRY_CACHE.put(source.id, result); }
-        return result;
+        List<Entry> safeList = Collections.unmodifiableList(list);
+        Map<String, Entry> safeIndex = Collections.unmodifiableMap(byTerm);
+        synchronized (ENTRY_INDEX_CACHE) {
+            if (!ENTRY_INDEX_CACHE.containsKey(source.id)) {
+                ENTRY_INDEX_CACHE.put(source.id, safeIndex);
+                synchronized (ENTRY_CACHE) { ENTRY_CACHE.put(source.id, safeList); }
+            }
+        }
     }
 
-    public static List<QuickResult> quickLookup(Context context, String selectedWord)
-            throws Exception {
+    public static List<QuickResult> quickLookup(Context context, String selectedWord) throws Exception {
         String word = selectedWord == null ? "" : selectedWord
                 .replaceAll("^[^\\p{L}]+|[^\\p{L}]+$", "").trim();
         if (word.isEmpty() || word.contains(" ")) return Collections.emptyList();
@@ -143,10 +165,10 @@ public final class BibleDictionaryRepository {
 
     private static Entry bestMatch(Context context, Source source,
                                    LinkedHashSet<String> candidates) throws Exception {
+        Map<String, Entry> byTerm = index(context, source);
         for (String candidate : candidates) {
-            for (Entry entry : entries(context, source)) {
-                if (entry.normalizedTerm.equals(candidate)) return entry;
-            }
+            Entry match = byTerm.get(candidate);
+            if (match != null) return match;
         }
         return null;
     }
@@ -155,21 +177,34 @@ public final class BibleDictionaryRepository {
         LinkedHashSet<String> result = new LinkedHashSet<>();
         String normalized = normalize(word);
         result.add(normalized);
-        if (normalized.endsWith("ces") && normalized.length() > 4) {
+        if (normalized.endsWith("ces") && normalized.length() > 4)
             result.add(normalized.substring(0, normalized.length() - 3) + "z");
-        }
-        if (normalized.endsWith("es") && normalized.length() > 4) {
+        if (normalized.endsWith("es") && normalized.length() > 4)
             result.add(normalized.substring(0, normalized.length() - 2));
-        }
-        if (normalized.endsWith("s") && normalized.length() > 3) {
+        if (normalized.endsWith("s") && normalized.length() > 3)
             result.add(normalized.substring(0, normalized.length() - 1));
-        }
         return result;
     }
 
     private static String article(Context context, Source source, Entry entry) throws Exception {
-        File root = EpubUtils.ensureExtracted(context, source.volume);
+        String key = source.id + "|" + entry.filePath + "|" + entry.fragment + "|" + entry.normalizedTerm;
+        synchronized (ARTICLE_CACHE) {
+            String cached = ARTICLE_CACHE.get(key);
+            if (cached != null) return cached;
+        }
+        File root;
+        synchronized (ROOT_CACHE) { root = ROOT_CACHE.get(source.id); }
+        if (root == null) {
+            root = EpubUtils.ensureExtracted(context, source.volume);
+            synchronized (ROOT_CACHE) { ROOT_CACHE.put(source.id, root); }
+        }
         String document = read(new File(root, entry.filePath));
+        String value = extractArticle(document, entry);
+        synchronized (ARTICLE_CACHE) { ARTICLE_CACHE.put(key, value); }
+        return value;
+    }
+
+    private static String extractArticle(String document, Entry entry) {
         if (!entry.fragment.isEmpty()) {
             int marker = document.indexOf("id=\"" + entry.fragment + "\"");
             if (marker < 0) marker = document.indexOf("id='" + entry.fragment + "'");
@@ -190,9 +225,8 @@ public final class BibleDictionaryRepository {
             if (normalize(term).equals(entry.normalizedTerm)) {
                 int start = document.lastIndexOf("<p", position);
                 int end = document.indexOf("</p>", close);
-                if (start >= 0 && end >= 0) {
+                if (start >= 0 && end >= 0)
                     return document.substring(start, end + 4).replaceFirst("-&gt;", "");
-                }
             }
             position = close + 7;
         }
@@ -202,7 +236,7 @@ public final class BibleDictionaryRepository {
     private static String read(File file) throws Exception {
         try (InputStream input = new FileInputStream(file);
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[8192];
+            byte[] buffer = new byte[16384];
             int count;
             while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
             return new String(output.toByteArray(), StandardCharsets.UTF_8);
