@@ -3,6 +3,8 @@ package com.fabri.ministerium;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.webkit.WebView;
@@ -11,13 +13,15 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONTokener;
+import org.json.JSONObject;
+
 import java.io.File;
 
 /**
- * ES/LAT reader. Wide screens keep synchronized parallel panes. Phones deliberately avoid
- * artificial alignment spacers: each language gets the full width (ES above, LAT below), which
- * prevents the large empty gaps produced when two independently flowing documents are forced to
- * share pixel positions.
+ * ES/LAT reader. Wide screens synchronize by shared semantic anchors and fall
+ * back to proportional progress when one side lacks an equivalent block.
+ * Phones keep each language full-width and do not force pixel alignment.
  */
 public class BilingualHoursReaderActivity extends ThemedActivity {
     public static final String EXTRA_SPANISH_VOLUME = "spanish_volume";
@@ -45,6 +49,8 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
     private String spanishScroll;
     private boolean syncingScroll;
     private boolean wideParallel;
+    private final Handler syncHandler = new Handler(Looper.getMainLooper());
+    private Runnable pendingSync;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         ThemeUtils.apply(this);
@@ -52,7 +58,8 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
         setContentView(R.layout.activity_bilingual_reader);
 
         wideParallel = getResources().getConfiguration().screenWidthDp >= 700;
-        ((TextView) findViewById(R.id.txtReaderTitle)).setText(value(getIntent().getStringExtra(EXTRA_TITLE)));
+        ((TextView) findViewById(R.id.txtReaderTitle)).setText(
+                value(getIntent().getStringExtra(EXTRA_TITLE)));
         ((TextView) findViewById(R.id.txtReaderSubtitle)).setText(wideParallel
                 ? "Español · Latín · lectura paralela"
                 : "Español arriba · Latín abajo · ancho completo");
@@ -78,7 +85,7 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
                 "Español · Latín", "Liturgia", true);
         ReaderContext latinContext = new ReaderContext("Liturgia en Latín",
                 sourceKey("la"), value(getIntent().getStringExtra(EXTRA_TITLE)),
-                "Latín", "Liturgia", true);
+                "Latín", "Liturgia", true, false);
         UniversalSelectionMenu.attach(this, spanish, spanishContext);
         UniversalSelectionMenu.attach(this, latin, latinContext);
         ReaderChrome.bindMore(this, findViewById(R.id.btnReaderMore), spanish, spanishContext);
@@ -92,7 +99,8 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
                     value(getIntent().getStringExtra(EXTRA_LATIN_PATH)));
             latin.loadUrl(Uri.fromFile(latinFile).toString());
         } catch (Exception error) {
-            Toast.makeText(this, "No se pudo preparar esta Hora bilingüe.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "No se pudo preparar esta Hora bilingüe.",
+                    Toast.LENGTH_LONG).show();
             finish();
         }
     }
@@ -103,22 +111,72 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
     }
 
     private void configureSynchronizedScroll() {
-        spanish.setOnScrollChangeListener((view, x, y, oldX, oldY) -> synchronize(spanish, latin, y));
-        latin.setOnScrollChangeListener((view, x, y, oldX, oldY) -> synchronize(latin, spanish, y));
+        spanish.setOnScrollChangeListener((view, x, y, oldX, oldY) ->
+                scheduleSynchronize(spanish, latin, y));
+        latin.setOnScrollChangeListener((view, x, y, oldX, oldY) ->
+                scheduleSynchronize(latin, spanish, y));
     }
 
-    private void synchronize(WebView source, WebView target, int sourceY) {
-        // On phones the languages are full-width stacked documents. Do not force one to chase the
-        // other's geometry; that was the source of visible gaps and jumping.
+    private void scheduleSynchronize(WebView source, WebView target, int sourceY) {
         if (!wideParallel || syncingScroll || source.getVisibility() != View.VISIBLE
                 || target.getVisibility() != View.VISIBLE) return;
+        if (pendingSync != null) syncHandler.removeCallbacks(pendingSync);
+        pendingSync = () -> semanticSynchronize(source, target, sourceY);
+        syncHandler.postDelayed(pendingSync, 75L);
+    }
+
+    private void semanticSynchronize(WebView source, WebView target, int sourceY) {
+        if (!wideParallel || syncingScroll) return;
+        String probe = "(function(){var es=document.querySelectorAll('[data-ministerium-align-key]');"
+                + "if(!es.length)return '';var y=window.scrollY+28,b=es[0],d=1e12;"
+                + "for(var i=0;i<es.length;i++){var r=es[i].getBoundingClientRect(),top=r.top+window.scrollY;"
+                + "var x=Math.abs(top-y);if(top<=y+24&&x<d){b=es[i];d=x;}}"
+                + "var rr=b.getBoundingClientRect(),h=Math.max(1,rr.height),top=rr.top+window.scrollY;"
+                + "var p=Math.max(0,Math.min(1,(y-top)/h));return JSON.stringify({k:b.getAttribute('data-ministerium-align-key'),p:p});})()";
+        source.evaluateJavascript(probe, raw -> {
+            try {
+                Object decoded = new JSONTokener(raw).nextValue();
+                if (decoded == null || decoded.toString().isEmpty()) {
+                    proportionalSynchronize(source, target, sourceY);
+                    return;
+                }
+                JSONObject anchor = new JSONObject(decoded.toString());
+                String key = anchor.optString("k");
+                double progress = anchor.optDouble("p", 0d);
+                if (key.isEmpty()) {
+                    proportionalSynchronize(source, target, sourceY);
+                    return;
+                }
+                String apply = "(function(k,p){var es=document.querySelectorAll('[data-ministerium-align-key]'),e=null;"
+                        + "for(var i=0;i<es.length;i++){if(es[i].getAttribute('data-ministerium-align-key')===k){e=es[i];break;}}"
+                        + "if(!e)return false;var r=e.getBoundingClientRect(),top=r.top+window.scrollY;"
+                        + "window.scrollTo(0,Math.max(0,Math.round(top+p*Math.max(1,r.height)-28)));return true;})("
+                        + JSONObject.quote(key) + "," + progress + ")";
+                syncingScroll = true;
+                target.evaluateJavascript(apply, result -> {
+                    boolean aligned = "true".equalsIgnoreCase(result);
+                    if (!aligned) proportionalSynchronizeInternal(source, target, sourceY);
+                    target.postDelayed(() -> syncingScroll = false, 75L);
+                });
+            } catch (Exception error) {
+                proportionalSynchronize(source, target, sourceY);
+            }
+        });
+    }
+
+    private void proportionalSynchronize(WebView source, WebView target, int sourceY) {
+        if (syncingScroll) return;
+        syncingScroll = true;
+        proportionalSynchronizeInternal(source, target, sourceY);
+        target.postDelayed(() -> syncingScroll = false, 60L);
+    }
+
+    private void proportionalSynchronizeInternal(WebView source, WebView target, int sourceY) {
         int sourceRange = Math.round(source.getContentHeight() * source.getScale()) - source.getHeight();
         int targetRange = Math.round(target.getContentHeight() * target.getScale()) - target.getHeight();
         if (sourceRange <= 0 || targetRange <= 0) return;
         float progress = Math.max(0f, Math.min(1f, sourceY / (float) sourceRange));
-        syncingScroll = true;
         target.scrollTo(target.getScrollX(), Math.round(progress * targetRange));
-        target.postDelayed(() -> syncingScroll = false, 60L);
     }
 
     private void configure(WebView view, boolean isSpanish) {
@@ -138,7 +196,8 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
     }
 
     private void loadSpanish() throws Exception {
-        HoursVolume volume = HoursRepository.find(value(getIntent().getStringExtra(EXTRA_SPANISH_VOLUME)));
+        HoursVolume volume = HoursRepository.find(
+                value(getIntent().getStringExtra(EXTRA_SPANISH_VOLUME)));
         if (volume == null) throw new IllegalStateException("Volumen español no válido.");
         String filePath = value(getIntent().getStringExtra(EXTRA_SPANISH_PATH));
         String fragment = value(getIntent().getStringExtra(EXTRA_SPANISH_FRAGMENT));
@@ -150,7 +209,9 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
         String memoryHour = value(getIntent().getStringExtra(EXTRA_MEMORY_HOUR));
         if (!memoryVolumeId.isEmpty() && !memoryHour.isEmpty()) {
             HoursVolume memoryVolume = HoursRepository.find(memoryVolumeId);
-            if (memoryVolume == null) throw new IllegalStateException("Volumen propio de la celebración no válido.");
+            if (memoryVolume == null) {
+                throw new IllegalStateException("Volumen propio de la celebración no válido.");
+            }
             HoursLink saint = new HoursLink(memoryVolume,
                     getIntent().getIntExtra(EXTRA_MEMORY_INDEX, -1),
                     value(getIntent().getStringExtra(EXTRA_MEMORY_TITLE)), "Celebración", "",
@@ -167,7 +228,8 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
                     value(getIntent().getStringExtra(EXTRA_CYCLE)),
                     getIntent().getIntExtra(EXTRA_READINGS_YEAR, 0));
             if (office != null) {
-                spanish.loadDataWithBaseURL(office.baseUrl, office.html, "text/html", "UTF-8", null);
+                spanish.loadDataWithBaseURL(office.baseUrl, office.html,
+                        "text/html", "UTF-8", null);
                 return;
             }
         }
@@ -177,7 +239,8 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
             String html = OrdinaryReferenceResolver.resolve(root, filePath, ordinaryWeek,
                     value(getIntent().getStringExtra(EXTRA_CYCLE)),
                     getIntent().getIntExtra(EXTRA_READINGS_YEAR, 0));
-            spanish.loadDataWithBaseURL(Uri.fromFile(target).toString(), html, "text/html", "UTF-8", null);
+            spanish.loadDataWithBaseURL(Uri.fromFile(target).toString(), html,
+                    "text/html", "UTF-8", null);
             return;
         }
         String url = Uri.fromFile(target).toString();
@@ -201,13 +264,14 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
         if (view.getVisibility() == View.GONE) return;
         LinearLayout.LayoutParams params;
         if (wideParallel && both) {
-            params = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
+            params = new LinearLayout.LayoutParams(0,
+                    LinearLayout.LayoutParams.MATCH_PARENT, 1f);
         } else if (!wideParallel && both) {
-            // Each language has full width. The screen is split vertically only at the container
-            // level, never by artificial HTML spacers.
-            params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f);
+            params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f);
         } else {
-            params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
+            params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.MATCH_PARENT, 0f);
         }
         params.setMargins(5, 5, 5, 5);
@@ -230,7 +294,9 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
                         }
                         return true;
                     }
-                    @Override public void onScaleEnd(ScaleGestureDetector scale) { accumulated[0] = 1f; }
+                    @Override public void onScaleEnd(ScaleGestureDetector scale) {
+                        accumulated[0] = 1f;
+                    }
                 });
         view.setOnTouchListener((target, event) -> {
             detector.onTouchEvent(event);
@@ -275,14 +341,16 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
     }
 
     @Override protected void onDestroy() {
+        if (pendingSync != null) syncHandler.removeCallbacks(pendingSync);
         if (spanish != null) spanish.destroy();
         if (latin != null) latin.destroy();
         super.onDestroy();
     }
 
     private String sourceKey(String language) {
-        return "bilingual:" + language + ":" + value(getIntent().getStringExtra(EXTRA_SPANISH_VOLUME))
-                + ":" + value(getIntent().getStringExtra(EXTRA_SPANISH_PATH)) + ":"
+        return "bilingual:" + language + ":"
+                + value(getIntent().getStringExtra(EXTRA_SPANISH_VOLUME)) + ":"
+                + value(getIntent().getStringExtra(EXTRA_SPANISH_PATH)) + ":"
                 + value(getIntent().getStringExtra(EXTRA_TITLE));
     }
 
