@@ -172,6 +172,7 @@ public final class ReaderPreferences {
                 + "document.head.appendChild(s);}s.innerHTML=" + JSONObject.quote(css)
                 + ";})()";
         webView.evaluateJavascript(script, null);
+        HoursSeasonFilter.apply(context, webView);
     }
 
     private static String sanitizeFamily(String value) {
