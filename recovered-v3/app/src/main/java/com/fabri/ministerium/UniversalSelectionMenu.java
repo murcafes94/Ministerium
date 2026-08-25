@@ -36,42 +36,27 @@ public final class UniversalSelectionMenu {
                 add(menu, NOTE, "Nota");
                 add(menu, MEDITATION, "Reflexión");
                 add(menu, DICTIONARY, "Diccionario");
-                if ("Biblia".equalsIgnoreCase(context.category)) {
-                    add(menu, COMMENTARY, "Comentario");
-                }
+                if ("Biblia".equalsIgnoreCase(context.category)) add(menu, COMMENTARY, "Comentario");
                 add(menu, TRANSLATE, "Traducir");
                 add(menu, READ_ALOUD, "Leer");
-                // Copiar/Compartir se conservan del ActionMode nativo de Android.
             }
 
             @Override public boolean handle(ActionMode mode, MenuItem item) {
                 int id = item.getItemId();
                 if (id == HIGHLIGHT) {
-                    capture(webView, selection -> {
-                        mode.finish();
-                        chooseHighlight(activity, webView, context, selection);
-                    });
+                    capture(webView, selection -> { mode.finish(); chooseHighlight(activity, webView, context, selection); });
                     return true;
                 }
                 if (id == NOTE) {
-                    capture(webView, selection -> {
-                        mode.finish();
-                        openEditor(activity, context, selection, StudyEntry.NOTE);
-                    });
+                    capture(webView, selection -> { mode.finish(); openEditor(activity, context, selection, StudyEntry.NOTE); });
                     return true;
                 }
                 if (id == MEDITATION) {
-                    capture(webView, selection -> {
-                        mode.finish();
-                        openEditor(activity, context, selection, StudyEntry.MEDITATION);
-                    });
+                    capture(webView, selection -> { mode.finish(); openEditor(activity, context, selection, StudyEntry.MEDITATION); });
                     return true;
                 }
                 if (id == DICTIONARY) {
-                    capture(webView, selection -> {
-                        mode.finish();
-                        openDictionary(activity, selection.text);
-                    });
+                    capture(webView, selection -> { mode.finish(); openDictionary(activity, selection.text); });
                     return true;
                 }
                 if (id == COMMENTARY) {
@@ -79,17 +64,11 @@ public final class UniversalSelectionMenu {
                     return true;
                 }
                 if (id == TRANSLATE) {
-                    capture(webView, selection -> {
-                        mode.finish();
-                        openTranslation(activity, selection.text);
-                    });
+                    capture(webView, selection -> { mode.finish(); openTranslation(activity, selection.text); });
                     return true;
                 }
                 if (id == READ_ALOUD) {
-                    capture(webView, selection -> {
-                        mode.finish();
-                        ReaderTtsController.speakSelection(activity, selection.text);
-                    });
+                    capture(webView, selection -> { mode.finish(); ReaderTtsController.speakSelection(activity, selection.text); });
                     return true;
                 }
                 return false;
@@ -103,12 +82,6 @@ public final class UniversalSelectionMenu {
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
     }
 
-    /**
-     * Captura el texto y, cuando el renderizador expone una unidad semántica,
-     * también la unidad estable y los offsets dentro de ella. En la celebración
-     * combinada, cada section.ministerium-section se identifica por su encabezado.
-     * Los lectores antiguos siguen funcionando con quote como fallback.
-     */
     private static void capture(WebView webView, SelectionCallback callback) {
         String script = "(function(){var s=window.getSelection&&window.getSelection();"
                 + "if(!s||!s.rangeCount||!s.toString().trim())return '';var r=s.getRangeAt(0);"
@@ -128,9 +101,7 @@ public final class UniversalSelectionMenu {
         webView.evaluateJavascript(script, raw -> {
             SelectionSnapshot selection = decodeSelection(raw);
             if (selection.text.isEmpty()) {
-                Toast.makeText(webView.getContext(),
-                        "Selecciona primero una palabra o un fragmento.",
-                        Toast.LENGTH_SHORT).show();
+                Toast.makeText(webView.getContext(), "Selecciona primero una palabra o un fragmento.", Toast.LENGTH_SHORT).show();
                 return;
             }
             callback.onSelection(selection);
@@ -149,8 +120,7 @@ public final class UniversalSelectionMenu {
                     entry.color = colors[which];
                     StudyStore.save(activity, entry);
                     injectHighlight(webView, entry);
-                    Toast.makeText(activity, "Subrayado guardado en Mi estudio.",
-                            Toast.LENGTH_SHORT).show();
+                    Toast.makeText(activity, "Subrayado guardado en Mi estudio.", Toast.LENGTH_SHORT).show();
                 }).setNegativeButton("Cancelar", null).show();
     }
 
@@ -180,19 +150,19 @@ public final class UniversalSelectionMenu {
                     List<BibleDictionaryRepository.QuickResult> results =
                             BibleDictionaryRepository.quickLookup(activity, finalQuery);
                     activity.runOnUiThread(() -> {
-                        if (results.isEmpty()) {
-                            openDictionaryChooser(activity, finalQuery);
-                            return;
-                        }
                         StringBuilder html = new StringBuilder();
-                        for (BibleDictionaryRepository.QuickResult result : results) {
-                            html.append(result.html);
+                        for (BibleDictionaryRepository.QuickResult result : results) html.append(result.html);
+                        html.append(RaeOnlineRepository.actionCard(finalQuery));
+                        if (results.isEmpty()) {
+                            html.insert(0, "<article class=\"dictionary-card\"><h2>Diccionarios offline</h2>"
+                                    + "<p>No hubo coincidencia exacta. Puedes abrir el catálogo completo desde Diccionarios o consultar RAE en línea.</p></article>");
                         }
-                        ReaderOverlayDialog.show(activity,
-                                "Diccionario · " + finalQuery, html.toString());
+                        ReaderOverlayDialog.show(activity, "Diccionario · " + finalQuery, html.toString());
                     });
                 } catch (Exception error) {
-                    activity.runOnUiThread(() -> openDictionaryChooser(activity, finalQuery));
+                    activity.runOnUiThread(() -> ReaderOverlayDialog.show(activity,
+                            "Diccionario · " + finalQuery,
+                            RaeOnlineRepository.actionCard(finalQuery)));
                 }
             }).start();
             return;
@@ -203,8 +173,7 @@ public final class UniversalSelectionMenu {
     private static void openDictionaryChooser(Activity activity, String query) {
         List<BibleDictionaryRepository.Source> sources = BibleDictionaryRepository.sources();
         if (sources.isEmpty()) {
-            Toast.makeText(activity, "No hay diccionarios disponibles.",
-                    Toast.LENGTH_SHORT).show();
+            Toast.makeText(activity, "No hay diccionarios disponibles.", Toast.LENGTH_SHORT).show();
             return;
         }
         String[] labels = new String[sources.size()];
@@ -231,9 +200,7 @@ public final class UniversalSelectionMenu {
         webView.evaluateJavascript(script, raw -> {
             String href = decode(raw);
             if (href.isEmpty()) {
-                Toast.makeText(activity,
-                        "No hay un comentario o nota enlazado a esta selección.",
-                        Toast.LENGTH_SHORT).show();
+                Toast.makeText(activity, "No hay un comentario o nota enlazado a esta selección.", Toast.LENGTH_SHORT).show();
                 return;
             }
             mode.finish();
@@ -243,17 +210,14 @@ public final class UniversalSelectionMenu {
 
     private static void openTranslation(Activity activity, String selected) {
         try {
-            Uri uri = Uri.parse("https://translate.google.com/?sl=auto&tl=es&op=translate&text="
-                    + Uri.encode(selected));
+            Uri uri = Uri.parse("https://translate.google.com/?sl=auto&tl=es&op=translate&text=" + Uri.encode(selected));
             activity.startActivity(new Intent(Intent.ACTION_VIEW, uri));
         } catch (Exception error) {
-            Toast.makeText(activity, "No se pudo abrir el traductor.",
-                    Toast.LENGTH_SHORT).show();
+            Toast.makeText(activity, "No se pudo abrir el traductor.", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private static StudyEntry base(ReaderContext context, SelectionSnapshot selection,
-                                   String type) {
+    private static StudyEntry base(ReaderContext context, SelectionSnapshot selection, String type) {
         StudyEntry entry = new StudyEntry();
         entry.type = type;
         entry.category = context.category.isEmpty() ? "Documentos/libros" : context.category;
@@ -267,8 +231,7 @@ public final class UniversalSelectionMenu {
         return entry;
     }
 
-    public static void restoreHighlights(Activity activity, WebView webView,
-                                         String sourceKey) {
+    public static void restoreHighlights(Activity activity, WebView webView, String sourceKey) {
         for (StudyEntry entry : StudyStore.forSource(activity, sourceKey)) {
             if (StudyEntry.HIGHLIGHT.equals(entry.type)) injectHighlight(webView, entry);
         }
@@ -314,8 +277,7 @@ public final class UniversalSelectionMenu {
         try {
             Object value = new org.json.JSONTokener(raw).nextValue();
             if (value == null) return SelectionSnapshot.EMPTY;
-            JSONObject json = value instanceof JSONObject
-                    ? (JSONObject) value : new JSONObject(value.toString());
+            JSONObject json = value instanceof JSONObject ? (JSONObject) value : new JSONObject(value.toString());
             String text = json.optString("text").replaceAll("\\s+", " ").trim();
             if (text.isEmpty()) return SelectionSnapshot.EMPTY;
             return new SelectionSnapshot(text, json.optString("semanticUnitId"),
