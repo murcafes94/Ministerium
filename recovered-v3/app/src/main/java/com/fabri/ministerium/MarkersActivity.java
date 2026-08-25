@@ -5,12 +5,14 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ListView;
 import android.widget.TextView;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/** Saved highlights are now backed by the same StudyStore used by the reader. */
 public class MarkersActivity extends ThemedActivity {
-    private List<ReadingMarker> entries;
+    private List<StudyEntry> entries;
     private ListView list;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -18,8 +20,7 @@ public class MarkersActivity extends ThemedActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_simple_list);
         ((TextView) findViewById(R.id.txtTitle)).setText("Subrayados");
-        ((TextView) findViewById(R.id.txtSubtitle)).setText(
-                "Biblia y lecturas de la Misa");
+        ((TextView) findViewById(R.id.txtSubtitle)).setText("Biblia, lecturas y estudio");
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         list = findViewById(R.id.listItems);
         list.setOnItemClickListener((parent, view, position, id) -> open(entries.get(position)));
@@ -35,40 +36,72 @@ public class MarkersActivity extends ThemedActivity {
     }
 
     private void reload() {
-        entries = ReadingMarkerStore.all(this);
+        entries = StudyStore.ofType(this, StudyEntry.HIGHLIGHT);
         List<Map<String, String>> rows = new ArrayList<>();
-        for (ReadingMarker marker : entries) {
-            rows.add(Rows.row(marker.citation, "“" + marker.quote + "”\n" + marker.subtitle));
+        for (StudyEntry entry : entries) {
+            String citation = !entry.reference.isEmpty() ? entry.reference
+                    : !entry.title.isEmpty() ? entry.title : entry.category;
+            String detail = "“" + entry.quote + "”";
+            if (!entry.category.isEmpty()) detail += "\n" + entry.category;
+            rows.add(Rows.row(citation, detail));
         }
         ((TextView) findViewById(R.id.txtIntro)).setText(entries.isEmpty()
-                ? "Todavía no hay subrayados. Selecciona una frase en la Biblia o en las lecturas del día y toca «Subrayar»."
-                : "Toca una cita para volver al texto. Mantén pulsado para eliminarla.");
+                ? "Todavía no hay subrayados. Selecciona una frase y toca «Subrayar»."
+                : "Aquí aparecen los mismos subrayados de Mi estudio. Toca uno para volver al texto; mantén pulsado para eliminarlo.");
         list.setAdapter(Rows.adapter(this, rows));
     }
 
-    private void open(ReadingMarker marker) {
-        if ("bible".equals(marker.source)) {
-            Intent intent = new Intent(this, BibleReaderActivity.class);
-            intent.putExtra(BibleReaderActivity.EXTRA_BOOK_INDEX, marker.bookIndex);
-            intent.putExtra(BibleReaderActivity.EXTRA_CHAPTER_INDEX, marker.chapterIndex);
-            intent.putExtra(BibleReaderActivity.EXTRA_SCROLL_QUOTE, marker.quote);
-            startActivity(intent);
-        } else {
-            Intent intent = new Intent(this, MassReadingReaderActivity.class);
-            intent.putExtra(MassReadingReaderActivity.EXTRA_YEAR, marker.year);
-            intent.putExtra(MassReadingReaderActivity.EXTRA_MONTH, marker.month);
-            intent.putExtra(MassReadingReaderActivity.EXTRA_DAY, marker.day);
-            intent.putExtra(MassReadingReaderActivity.EXTRA_SCROLL_QUOTE, marker.quote);
-            startActivity(intent);
+    private void open(StudyEntry entry) {
+        String key = entry.sourceKey == null ? "" : entry.sourceKey;
+        if (key.startsWith("bible:")) {
+            String[] parts = key.split(":");
+            if (parts.length >= 3) {
+                try {
+                    int bookIndex = Integer.parseInt(parts[1]);
+                    int chapterNumber = Integer.parseInt(parts[2]);
+                    int chapterIndex = findChapterIndex(bookIndex, chapterNumber);
+                    startActivity(new Intent(this, BibleReaderActivity.class)
+                            .putExtra(BibleReaderActivity.EXTRA_BOOK_INDEX, bookIndex)
+                            .putExtra(BibleReaderActivity.EXTRA_CHAPTER_INDEX, chapterIndex)
+                            .putExtra(BibleReaderActivity.EXTRA_SCROLL_QUOTE, entry.quote));
+                    return;
+                } catch (Exception ignored) {}
+            }
         }
+        if (key.startsWith("mass:")) {
+            String[] parts = key.split(":");
+            if (parts.length >= 4) {
+                try {
+                    startActivity(new Intent(this, MassReadingReaderActivity.class)
+                            .putExtra(MassReadingReaderActivity.EXTRA_YEAR, Integer.parseInt(parts[1]))
+                            .putExtra(MassReadingReaderActivity.EXTRA_MONTH, Integer.parseInt(parts[2]))
+                            .putExtra(MassReadingReaderActivity.EXTRA_DAY, Integer.parseInt(parts[3]))
+                            .putExtra(MassReadingReaderActivity.EXTRA_SCROLL_QUOTE, entry.quote));
+                    return;
+                } catch (Exception ignored) {}
+            }
+        }
+        new AlertDialog.Builder(this).setTitle(entry.reference.isEmpty() ? "Subrayado" : entry.reference)
+                .setMessage(entry.quote).setPositiveButton("Cerrar", null).show();
     }
 
-    private void confirmDelete(ReadingMarker marker) {
+    private int findChapterIndex(int bookIndex, int chapterNumber) throws Exception {
+        List<BibleRepository.Book> books = BibleRepository.books(this);
+        if (bookIndex < 0 || bookIndex >= books.size()) return 0;
+        List<BibleRepository.Chapter> chapters = books.get(bookIndex).chapters;
+        for (int i = 0; i < chapters.size(); i++) {
+            if (chapters.get(i).number == chapterNumber) return i;
+        }
+        return Math.max(0, Math.min(chapters.size() - 1, chapterNumber - 1));
+    }
+
+    private void confirmDelete(StudyEntry entry) {
+        String label = !entry.reference.isEmpty() ? entry.reference : entry.title;
         new AlertDialog.Builder(this).setTitle("Eliminar subrayado")
-                .setMessage(marker.citation + "\n\n“" + marker.quote + "”")
+                .setMessage(label + "\n\n“" + entry.quote + "”")
                 .setNegativeButton("Cancelar", null)
                 .setPositiveButton("Eliminar", (dialog, which) -> {
-                    ReadingMarkerStore.delete(this, marker.id);
+                    StudyStore.delete(this, entry.id);
                     reload();
                 }).show();
     }
