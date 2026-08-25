@@ -6,8 +6,8 @@ import org.json.JSONObject;
 
 /**
  * Turns Liturgia Papal source text into a practical celebration view without
- * changing the underlying text. Optional editorial rubrics are hidden by
- * default and can be restored with one button.
+ * changing the underlying liturgical text. Optional editorial rubrics and
+ * technical implementation notes are hidden from the celebrative reader.
  */
 public final class MissalCompactView {
     private MissalCompactView() {}
@@ -26,6 +26,10 @@ public final class MissalCompactView {
                 + "if(rubric(t)){p.classList.add('ministerium-source-rubric');"
                 + "if(essential(t))p.classList.add('ministerium-essential-rubric');"
                 + "else p.classList.add('ministerium-optional-rubric');}}"
+                + "var notes=document.querySelectorAll('.source,.source-banner,.reference-source,.source-warning,.pending');"
+                + "for(var j=0;j<notes.length;j++){var nt=n(notes[j].textContent);"
+                + "if(notes[j].matches('.source,.source-banner,.reference-source')||/(paquete|epub|fallback|catalogo estructural|fuente textual|normalizad|implementacion)/.test(nt))"
+                + "notes[j].classList.add('ministerium-technical-note');}"
                 + "var host=document.body;var bar=document.createElement('div');bar.id='ministerium-rubric-controls';"
                 + "var button=document.createElement('button');button.type='button';button.id='ministerium-rubric-toggle';"
                 + "button.textContent='Mostrar todas las rúbricas';button.setAttribute('aria-pressed','false');"
@@ -38,6 +42,7 @@ public final class MissalCompactView {
                 + JSONObject.quote(
                 "#ministerium-rubric-controls{display:flex;justify-content:flex-end;margin:0 0 14px}" +
                 "#ministerium-rubric-toggle{border:1px solid currentColor;border-radius:18px;background:transparent;padding:7px 12px;font:inherit;font-size:.82em;opacity:.82}" +
+                ".ministerium-technical-note,.source,.source-banner,.reference-source{display:none!important}" +
                 ".ministerium-source-rubric{font-size:.88em;font-style:italic;opacity:.78;margin:.55em 0}" +
                 ".ministerium-optional-rubric{display:none}" +
                 ".ministerium-show-all-rubrics .ministerium-optional-rubric{display:block}" +
