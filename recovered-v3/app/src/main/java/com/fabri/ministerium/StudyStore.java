@@ -61,7 +61,8 @@ public final class StudyStore {
         entry.updatedAt = now;
         if (entry.contentId == null || entry.contentId.isEmpty()
                 || entry.contentId.equals(entry.sourceKey)) {
-            entry.contentId = ContentReference.infer(entry.sourceKey, entry.reference);
+            String canonical = ContentReference.infer(entry.sourceKey, entry.reference);
+            entry.contentId = canonical.isEmpty() ? entry.sourceKey : canonical;
         }
         if (entry.anchorText == null || entry.anchorText.isEmpty()) entry.anchorText = entry.quote;
         if (entry.semanticUnitId != null && !entry.semanticUnitId.isEmpty()) {
@@ -121,8 +122,10 @@ public final class StudyStore {
         boolean changed = false;
         for (StudyEntry entry : entries) {
             String canonical = ContentReference.infer(entry.sourceKey, entry.reference);
-            if (entry.contentId == null || entry.contentId.isEmpty()
-                    || entry.contentId.equals(entry.sourceKey)) {
+            if (canonical == null || canonical.isEmpty()) canonical = entry.sourceKey;
+            if ((entry.contentId == null || entry.contentId.isEmpty()
+                    || entry.contentId.equals(entry.sourceKey))
+                    && !canonical.equals(entry.contentId)) {
                 entry.contentId = canonical;
                 changed = true;
             }
