@@ -8,7 +8,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-/** Installs the build-generated Latin 2026 package; readiness is marked after validation. */
+/** Installs the build-generated Latin package; its source EPUB is not used at runtime. */
 public final class CleanLatinHoursAssets {
     private static final String BASE = "hours-clean/latin/";
 
@@ -24,12 +24,14 @@ public final class CleanLatinHoursAssets {
 
     public static File install(Context context, int year, File targetRoot) throws Exception {
         String base = BASE + year + "/";
-        if (new File(targetRoot, ".ready").isFile()) return targetRoot;
+        File ready = new File(targetRoot, ".ready");
+        if (ready.isFile()) return targetRoot;
         deleteTree(targetRoot);
         if (!targetRoot.mkdirs() && !targetRoot.isDirectory()) {
             throw new IllegalStateException("No se pudo preparar la Liturgia Horarum limpia.");
         }
         String canonicalRoot = targetRoot.getCanonicalPath() + File.separator;
+        int copied = 0;
         try (InputStream input = context.getAssets().open(base + "files.txt");
              BufferedReader reader = new BufferedReader(new InputStreamReader(input, "UTF-8"))) {
             String line;
@@ -45,7 +47,12 @@ public final class CleanLatinHoursAssets {
                     throw new IllegalStateException("No se pudo crear una carpeta de Liturgia Horarum.");
                 }
                 copy(context, base + relative, target);
+                copied++;
             }
+        }
+        if (copied < 365) throw new IllegalStateException("El paquete latino limpio está incompleto.");
+        try (FileOutputStream output = new FileOutputStream(ready)) {
+            output.write(("clean-latin-" + year).getBytes("UTF-8"));
         }
         return targetRoot;
     }
