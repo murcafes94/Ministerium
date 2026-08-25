@@ -34,10 +34,7 @@ public final class DailyHoursRepository {
         if (office.tocIndex < 0 || office.tocIndex >= toc.size()) return result;
         EpubTocEntry day = toc.get(office.tocIndex);
 
-        File root = EpubUtils.ensureExtracted(context, office.volume);
-        File dayFile = new File(root, day.filePath);
-        String html = read(dayFile);
-        Map<String, Target> links = links(day.filePath, html);
+        Map<String, Target> links = links(context, office.volume, day.filePath);
 
         result.add(new HourEntry("invitatory", "Invitatorio",
                 "Comienzo de la oración del día", office.volume,
@@ -72,9 +69,6 @@ public final class DailyHoursRepository {
         add(result, "vespers", vespersTitle, vespersSubtitle,
                 vespersVolume, vespers, "", true);
 
-        // Completas ya no se localiza dentro del EPUB. La tarjeta diaria funciona
-        // aunque los archivos Co1…Co7 no estén empaquetados: el lector semántico
-        // resuelve el formulario directamente por fecha.
         String complineSubtitle = "Oración antes del descanso";
         if (selectedDate != null
                 && selectedDate.get(Calendar.DAY_OF_WEEK) == Calendar.SATURDAY) {
@@ -95,9 +89,7 @@ public final class DailyHoursRepository {
         List<EpubTocEntry> toc = EpubUtils.tableOfContents(context, sundayOffice.volume);
         if (sundayOffice.tocIndex < 0 || sundayOffice.tocIndex >= toc.size()) return null;
         EpubTocEntry day = toc.get(sundayOffice.tocIndex);
-        File root = EpubUtils.ensureExtracted(context, sundayOffice.volume);
-        Map<String, Target> targets = links(day.filePath,
-                read(new File(root, day.filePath)));
+        Map<String, Target> targets = links(context, sundayOffice.volume, day.filePath);
         return targets.containsKey("1V") ? targets.get("1V") : targets.get("V");
     }
 
@@ -109,13 +101,35 @@ public final class DailyHoursRepository {
                 target.fragment, scrollText, showIntentions));
     }
 
-    private static Map<String, Target> links(String sourcePath, String html)
+    private static Map<String, Target> links(Context context, HoursVolume volume,
+                                             String sourcePath) throws Exception {
+        if (CleanHoursAssets.isAvailable(context, volume.id)) {
+            Map<String, CleanHoursAssets.NavigationTarget> clean =
+                    CleanHoursAssets.navigation(context, volume.id, sourcePath);
+            Map<String, Target> result = new LinkedHashMap<>();
+            for (Map.Entry<String, CleanHoursAssets.NavigationTarget> entry : clean.entrySet()) {
+                CleanHoursAssets.NavigationTarget target = entry.getValue();
+                result.put(entry.getKey(), new Target(target.path, target.fragment));
+            }
+            if (result.containsKey("1V") && !result.containsKey("V")) {
+                result.put("V", result.get("1V"));
+            }
+            return result;
+        }
+
+        File root = EpubUtils.ensureExtracted(context, volume);
+        File dayFile = new File(root, sourcePath);
+        return legacyLinks(sourcePath, read(dayFile));
+    }
+
+    private static Map<String, Target> legacyLinks(String sourcePath, String html)
             throws Exception {
         Map<String, Target> result = new LinkedHashMap<>();
         Matcher matcher = ANCHOR.matcher(html);
         while (matcher.find()) {
             String label = matcher.group(2).replaceAll("<[^>]+>", "")
-                    .replace("&nbsp;", " ").trim().toUpperCase(Locale.ROOT);
+                    .replace("&nbsp;", " ").trim().toUpperCase(Locale.ROOT)
+                    .replace("[", "").replace("]", "").trim();
             if (!("O".equals(label) || "L".equals(label) || "M".equals(label)
                     || "V".equals(label) || "1V".equals(label)
                     || "2V".equals(label) || "C".equals(label))) {
