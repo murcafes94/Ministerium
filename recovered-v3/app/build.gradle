@@ -12,6 +12,13 @@ android {
     }
 
     buildTypes {
+        debug {
+            // GitHub-hosted runners create a new debug signing key on fresh machines.
+            // Keep CI/test APKs separate from the installed stable package so they can
+            // always be installed side-by-side without signature conflicts.
+            applicationIdSuffix '.test'
+            versionNameSuffix '-test'
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
