@@ -68,8 +68,8 @@ public class MassReadingsActivity extends ThemedActivity {
                 startActivity(new Intent(this, LiturgicalCalendarActivity.class)));
 
         showDate();
-        // Do not block the reader by downloading 28–31 pages on entry. If today's
-        // reading is missing, fetch that date only; the full month remains explicit.
+        // Fetch only the selected date on entry. The full month remains an
+        // explicit optional action and never blocks reading today's texts.
         if (!MassReadingsRepository.has(this, selectedDate)
                 && MassReadingsRepository.isCurrentMonth(selectedDate)) {
             syncSelectedDay(false);
@@ -83,13 +83,14 @@ public class MassReadingsActivity extends ThemedActivity {
         try {
             LiturgicalDay liturgicalDay = LiturgicalResolver.resolve(this, selectedDate);
             celebrationLabel.setText(liturgicalDay.celebration);
+            // The psalter week belongs to the Liturgy of the Hours, not to the
+            // Mass Lectionary, so do not display it in this module.
             String detail = liturgicalDay.liturgicalColor;
-            if (!liturgicalDay.psalterWeek.isEmpty()) {
+            if (!liturgicalDay.sourceNote.isEmpty()) {
                 if (!detail.isEmpty()) detail += " · ";
-                detail += "Semana " + liturgicalDay.psalterWeek + " del salterio";
+                detail += liturgicalDay.sourceNote;
             }
-            liturgicalDetails.setText(detail.isEmpty() ? liturgicalDay.sourceNote
-                    : detail + " · " + liturgicalDay.sourceNote);
+            liturgicalDetails.setText(detail.isEmpty() ? "Leccionario" : detail);
         } catch (Exception error) {
             celebrationLabel.setText("Lecturas de la celebración del día");
             liturgicalDetails.setText("Leccionario");
@@ -134,7 +135,7 @@ public class MassReadingsActivity extends ThemedActivity {
                     progress.setVisibility(View.GONE);
                     readButton.setEnabled(true);
                     showDate();
-                    if (openAfter || sameDay(requested, selectedDate)) openLocalReading();
+                    if (openAfter && sameDay(requested, selectedDate)) openLocalReading();
                 });
             } catch (Exception error) {
                 runOnUiThread(() -> {
@@ -161,8 +162,6 @@ public class MassReadingsActivity extends ThemedActivity {
         final Calendar requested = (Calendar) selectedDate.clone();
         executor.submit(() -> {
             try {
-                // Ensure the selected day is useful immediately even if a later date
-                // in the monthly source fails or times out.
                 if (!MassReadingsRepository.has(getApplicationContext(), requested)) {
                     try { MassReadingsRepository.syncDay(getApplicationContext(), requested); }
                     catch (Exception ignored) {}
