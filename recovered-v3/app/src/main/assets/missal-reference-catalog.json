@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "sources": {
+    "primaryText": "Liturgia Papal - Misal Romano, versión de México",
+    "primaryStructure": "Liturgia Papal - Propio de los Santos / calendario litúrgico",
+    "secondaryStructure": "Curas.com.ar - Misal Romano 3a edición argentina",
+    "secondaryCalendar": "Ciudad Redonda - calendario/lecturas"
+  },
+  "policy": "El catálogo contiene únicamente metadatos estructurales. No copia las oraciones de Curas.com.ar ni de Ciudad Redonda.",
+  "saints": [
+    {
+      "month": 8,
+      "day": 22,
+      "title": "Bienaventurada Virgen María, Reina",
+      "rank": "Memoria",
+      "color": "blanco",
+      "proper": "propio",
+      "gloria": false,
+      "creed": false,
+      "preface": "",
+      "commons": ["Bienaventurada Virgen María"]
+    },
+    {
+      "month": 8,
+      "day": 24,
+      "title": "San Bartolomé, apóstol",
+      "rank": "Fiesta",
+      "color": "rojo",
+      "proper": "propio",
+      "gloria": true,
+      "creed": false,
+      "preface": "Prefacio I de los Apóstoles",
+      "solemnBlessing": "Apóstoles",
+      "commons": ["Apóstoles"],
+      "readings": "propias"
+    }
+  ],
+  "groups": {
+    "commons": [
+      {"title":"Dedicación de una iglesia","items":["En la misma iglesia dedicada","Fuera de la iglesia dedicada"]},
+      {"title":"Santísima Virgen María","items":["Tiempo ordinario","Adviento","Navidad","Pascua"]},
+      {"title":"Mártires","items":["Varios mártires fuera de Pascua","Un mártir fuera de Pascua","Varios mártires en Pascua","Un mártir en Pascua","Varios misioneros mártires","Un misionero mártir","Una virgen mártir","Una santa mujer mártir"]},
+      {"title":"Pastores","items":["Un Papa o un obispo","Un obispo","Varios pastores","Un pastor","Un fundador","Varios fundadores","Misioneros"]},
+      {"title":"Doctores de la Iglesia","items":["Doctores de la Iglesia"]},
+      {"title":"Vírgenes","items":["Varias vírgenes","Una virgen"]},
+      {"title":"Santos y santas","items":["Varios santos","Un santo","Un abad","Un monje","Una monja","Religiosos","Obras de misericordia","Un santo educador","Santas mujeres"]}
+    ],
+    "needs": [
+      {"title":"Por la Santa Iglesia","items":["Por la Iglesia","Por el Papa","Por el Obispo","Para la elección del Papa o del Obispo","Por un concilio o por un sínodo","Por los sacerdotes","Por el propio sacerdote","Por los ministros de la Iglesia","Por las vocaciones a las Sagradas Órdenes","Por los laicos","Para aniversarios matrimoniales","Por la familia","Por los religiosos","Por las vocaciones religiosas","Para promover la concordia","Para pedir la reconciliación","Por la unidad de los cristianos","Por la evangelización de los pueblos","Por los cristianos que sufren persecución","En reuniones espirituales o pastorales"]},
+      {"title":"Por las necesidades públicas","items":["Por la patria o por la ciudad","Por las autoridades públicas","Para reuniones de gobernantes de naciones","Por el Presidente de la República o Gobernador","Al comienzo de actividades civiles, laborales o escolares","Por la santificación del trabajo humano","En la siembra del campo","Después de la cosecha","Por el progreso de los pueblos","Por la paz y la justicia","En tiempo de guerra o de desorden público","Por los refugiados y exiliados","En tiempo de hambre o por los que padecen hambre","En caso de terremoto","Para pedir la lluvia","Para pedir buen tiempo","Para alejar las tempestades"]},
+      {"title":"En diversas circunstancias","items":["Por el perdón de los pecados","Para pedir la castidad","Para pedir la caridad","Por los familiares y amigos","Por los que nos hacen sufrir","Por quienes están privados injustamente de su libertad","Por los encarcelados","Por los enfermos","Por los moribundos","Para pedir la gracia de una buena muerte","Para cualquier necesidad","Para dar gracias a Dios"]}
+    ],
+    "votive": [
+      {"title":"Misas votivas","items":["Santísima Trinidad","Misericordia de Dios","Nuestro Señor Jesucristo, Sumo y Eterno Sacerdote","Misterio de la Santa Cruz","Santísima Eucaristía","Santísimo Nombre de Jesús","Preciosísima Sangre de Nuestro Señor Jesucristo","Sagrado Corazón de Jesús","Espíritu Santo","Santa María Virgen","Santos Ángeles","San Juan Bautista","San José","Todos los Santos Apóstoles","Santos Apóstoles Pedro y Pablo","San Pedro, Apóstol","San Pablo, Apóstol","Un santo Apóstol","Todos los Santos"]}
+    ],
+    "dead": [
+      {"title":"En las exequias","items":["Fuera del tiempo pascual","Durante el tiempo pascual","Niño bautizado","Niño no bautizado"]},
+      {"title":"En el aniversario","items":["Fuera del tiempo pascual","Durante el tiempo pascual"]},
+      {"title":"En otras conmemoraciones","items":["Por un difunto","Por varios o por todos los difuntos"]},
+      {"title":"Otras oraciones por los difuntos","items":["Por el Papa","Por un Obispo","Por un sacerdote","Por un diácono","Por un religioso","Por un difunto que trabajó al servicio del Evangelio","Por un joven difunto","Por un difunto que padeció una larga enfermedad","Por un difunto muerto repentinamente","Por esposos difuntos","Por los padres","Por hermanos, parientes y bienhechores difuntos"]}
+    ]
+  }
+}
