@@ -11,11 +11,10 @@ import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
-/** Archivo personal local con escritura atómica y migración no destructiva de 2.3.2. */
+/** Archivo personal local con escritura atómica y migración no destructiva. */
 public final class StudyStore {
     private static final String FILE = "ministerium-study-v3.json";
     private static final String PREFS = "ministerium_study_migration";
@@ -25,7 +24,9 @@ public final class StudyStore {
 
     public static synchronized List<StudyEntry> all(Context context) {
         List<StudyEntry> entries = read(context);
-        migrateLegacy(context, entries);
+        boolean changed = migrateLegacy(context, entries);
+        changed |= upgradeEntries(entries);
+        if (changed) write(context, entries);
         Collections.sort(entries, (left, right) -> Long.compare(right.updatedAt, left.updatedAt));
         return entries;
     }
@@ -44,12 +45,28 @@ public final class StudyStore {
         return result;
     }
 
+    public static List<StudyEntry> forContentId(Context context, String contentId) {
+        List<StudyEntry> result = new ArrayList<>();
+        for (StudyEntry entry : all(context)) {
+            if (contentId != null && contentId.equals(entry.contentId)) result.add(entry);
+        }
+        return result;
+    }
+
     public static synchronized void save(Context context, StudyEntry entry) {
         List<StudyEntry> entries = read(context);
         long now = System.currentTimeMillis();
         if (entry.id == null || entry.id.isEmpty()) entry.id = UUID.randomUUID().toString();
         if (entry.createdAt <= 0) entry.createdAt = now;
         entry.updatedAt = now;
+        if (entry.contentId == null || entry.contentId.isEmpty()
+                || entry.contentId.equals(entry.sourceKey)) {
+            entry.contentId = ContentReference.infer(entry.sourceKey, entry.reference);
+        }
+        if (entry.anchorText == null || entry.anchorText.isEmpty()) entry.anchorText = entry.quote;
+        if (entry.semanticUnitId != null && !entry.semanticUnitId.isEmpty()) {
+            entry.anchorVersion = StudyEntry.CURRENT_ANCHOR_VERSION;
+        }
         for (int i = entries.size() - 1; i >= 0; i--) {
             if (entry.id.equals(entries.get(i).id)) entries.remove(i);
         }
@@ -100,9 +117,31 @@ public final class StudyStore {
         } catch (Exception ignored) {}
     }
 
-    private static void migrateLegacy(Context context, List<StudyEntry> target) {
+    private static boolean upgradeEntries(List<StudyEntry> entries) {
+        boolean changed = false;
+        for (StudyEntry entry : entries) {
+            String canonical = ContentReference.infer(entry.sourceKey, entry.reference);
+            if (entry.contentId == null || entry.contentId.isEmpty()
+                    || entry.contentId.equals(entry.sourceKey)) {
+                entry.contentId = canonical;
+                changed = true;
+            }
+            if (entry.anchorText == null || entry.anchorText.isEmpty()) {
+                entry.anchorText = entry.quote;
+                changed = true;
+            }
+            if (entry.anchorVersion <= 0) {
+                entry.anchorVersion = entry.semanticUnitId == null || entry.semanticUnitId.isEmpty()
+                        ? 1 : StudyEntry.CURRENT_ANCHOR_VERSION;
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    private static boolean migrateLegacy(Context context, List<StudyEntry> target) {
         if (context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                .getBoolean(MIGRATED, false)) return;
+                .getBoolean(MIGRATED, false)) return false;
         for (ReadingMarker marker : ReadingMarkerStore.all(context)) {
             StudyEntry entry = new StudyEntry();
             entry.id = "marker:" + marker.id;
@@ -110,10 +149,13 @@ public final class StudyStore {
             entry.category = category(marker.source);
             entry.source = marker.source;
             entry.sourceKey = marker.sourceKey;
+            entry.contentId = ContentReference.infer(marker.sourceKey, marker.citation);
             entry.reference = marker.citation;
             entry.title = marker.citation;
             entry.quote = marker.quote;
+            entry.anchorText = marker.quote;
             entry.color = "gold".equals(marker.color) ? "yellow" : marker.color;
+            entry.anchorVersion = 1;
             entry.createdAt = marker.createdAt > 0 ? marker.createdAt : System.currentTimeMillis();
             entry.updatedAt = entry.createdAt;
             target.add(entry);
@@ -125,17 +167,20 @@ public final class StudyStore {
             entry.category = category(reflection.source);
             entry.source = reflection.source;
             entry.sourceKey = reflection.sourceKey;
+            entry.contentId = ContentReference.infer(reflection.sourceKey, reflection.subtitle);
             entry.title = reflection.title;
             entry.reference = reflection.subtitle;
             entry.quote = reflection.quote;
+            entry.anchorText = reflection.quote;
             entry.body = reflection.reflection;
+            entry.anchorVersion = 1;
             entry.createdAt = System.currentTimeMillis();
             entry.updatedAt = entry.createdAt;
             target.add(entry);
         }
-        write(context, target);
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
                 .putBoolean(MIGRATED, true).apply();
+        return true;
     }
 
     private static String category(String source) {
