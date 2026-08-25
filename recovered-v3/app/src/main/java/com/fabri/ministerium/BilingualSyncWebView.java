@@ -3,14 +3,17 @@ package com.fabri.ministerium;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.View;
+import android.webkit.ValueCallback;
 import android.webkit.WebView;
 
 import org.json.JSONArray;
 
 /**
  * Bilingual reader WebView that synchronizes to the equivalent liturgical
- * anchor instead of copying a global scroll percentage. The reader activity
- * already tags hymn/psalm/reading/responsory/etc. with data-ministerium-align-key.
+ * block instead of copying a global scroll percentage.
+ *
+ * Clean ES/LAT packages already expose data-ministerium-block. Older pages
+ * can still use data-ministerium-align-key as a compatibility fallback.
  */
 public class BilingualSyncWebView extends MinisteriumWebView {
     private boolean receivingSync;
@@ -26,6 +29,22 @@ public class BilingualSyncWebView extends MinisteriumWebView {
     @Override
     public void setOnScrollChangeListener(View.OnScrollChangeListener listener) {
         // Intentionally ignored only for this dedicated bilingual WebView.
+    }
+
+    /**
+     * 3.1.1 used temporary spacer DIVs to force both documents to the same
+     * vertical coordinates. On real devices those spacers produced large blank
+     * areas whenever ES and LAT paragraphs had different lengths. Keep the
+     * measurement pass for backward-compatible anchors, but never insert the
+     * artificial blank space. Semantic block sync below handles correspondence.
+     */
+    @Override
+    public void evaluateJavascript(String script, ValueCallback<String> resultCallback) {
+        if (script != null && script.contains("d.className='ministerium-align-spacer'")) {
+            if (resultCallback != null) resultCallback.onReceiveValue("null");
+            return;
+        }
+        super.evaluateJavascript(script, resultCallback);
     }
 
     @Override
@@ -68,21 +87,23 @@ public class BilingualSyncWebView extends MinisteriumWebView {
     private static String sourceStateScript() {
         return "(function(){var max=Math.max(1,document.documentElement.scrollHeight-innerHeight);"
                 + "var global=Math.max(0,Math.min(1,scrollY/max));"
-                + "var a=[].slice.call(document.querySelectorAll('[data-ministerium-align-key]'));"
+                + "var a=[].slice.call(document.querySelectorAll('[data-ministerium-block],[data-ministerium-align-key]'));"
                 + "if(!a.length)return ['',0,global];var y=scrollY+Math.min(80,innerHeight*.16);"
                 + "var index=0;for(var i=0;i<a.length;i++){var top=a[i].getBoundingClientRect().top+scrollY;"
                 + "if(top<=y)index=i;else break;}var current=a[index];var top=current.getBoundingClientRect().top+scrollY;"
                 + "var next=index+1<a.length?a[index+1].getBoundingClientRect().top+scrollY:document.documentElement.scrollHeight;"
                 + "var within=next>top?Math.max(0,Math.min(1,(y-top)/(next-top))):0;"
-                + "return [current.getAttribute('data-ministerium-align-key')||'',within,global];})()";
+                + "var key=current.getAttribute('data-ministerium-block')||current.getAttribute('data-ministerium-align-key')||'';"
+                + "return [key,within,global];})()";
     }
 
     private static String targetPositionScript(String key, double within, double global) {
         String safeKey = org.json.JSONObject.quote(key == null ? "" : key);
         return "(function(key,within,global){var max=Math.max(0,document.documentElement.scrollHeight-innerHeight);"
-                + "var e=key?document.querySelector('[data-ministerium-align-key=\\\"'+key+'\\\"]'):null;"
-                + "if(!e)return Math.round(global*max);var a=[].slice.call(document.querySelectorAll('[data-ministerium-align-key]'));"
-                + "var index=a.indexOf(e);var top=e.getBoundingClientRect().top+scrollY;"
+                + "var a=[].slice.call(document.querySelectorAll('[data-ministerium-block],[data-ministerium-align-key]'));"
+                + "var e=null,index=-1;for(var i=0;i<a.length;i++){var k=a[i].getAttribute('data-ministerium-block')"
+                + "||a[i].getAttribute('data-ministerium-align-key')||'';if(k===key){e=a[i];index=i;break;}}"
+                + "if(!e)return Math.round(global*max);var top=e.getBoundingClientRect().top+scrollY;"
                 + "var next=index>=0&&index+1<a.length?a[index+1].getBoundingClientRect().top+scrollY:document.documentElement.scrollHeight;"
                 + "var y=top+Math.max(0,Math.min(1,within))*Math.max(0,next-top)-Math.min(80,innerHeight*.16);"
                 + "return Math.round(Math.max(0,Math.min(max,y)));})("
