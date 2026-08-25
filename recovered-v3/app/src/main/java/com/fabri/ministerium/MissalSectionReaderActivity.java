@@ -49,6 +49,10 @@ public class MissalSectionReaderActivity extends ThemedActivity {
                 ReaderPreferences.apply(MissalSectionReaderActivity.this, webView, false);
                 LiturgicalWebStyle.apply(MissalSectionReaderActivity.this, webView);
                 MissalCompactView.inject(webView);
+                if ("es".equals(language)) {
+                    MissalInteractiveOptions.inject(MissalSectionReaderActivity.this,
+                            webView, true);
+                }
                 ReaderContext context = readerContext();
                 UniversalSelectionMenu.restoreHighlights(MissalSectionReaderActivity.this, webView, context.sourceKey);
             }
