@@ -9,7 +9,7 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.webkit.WebView;
 
-/** Gestos, cabecera fija y herramientas comunes del lector. */
+/** Gestos, cabecera autoocultable y herramientas comunes del lector. */
 public final class ReaderChrome {
     public interface Navigator {
         boolean canPrevious();
@@ -26,13 +26,37 @@ public final class ReaderChrome {
         UniversalSelectionMenu.attach(activity, webView, context);
         ReaderPreferences.apply(activity, webView, preserveBibleTypeface);
         attachGestures(activity, webView, navigator);
-        // La cabecera forma parte del layout superior y permanece fija. No se traslada ni
-        // se desvanece durante el scroll para evitar saltos visuales y mantener siempre
-        // accesibles Volver, búsqueda, tema y menú.
-        if (header != null) {
-            header.setTranslationY(0f);
-            header.setAlpha(1f);
-        }
+        attachAutoHideHeader(webView, header);
+    }
+
+    private static void attachAutoHideHeader(WebView webView, View header) {
+        if (header == null || webView == null) return;
+        header.setVisibility(View.VISIBLE);
+        header.setAlpha(1f);
+        final boolean[] hidden = {false};
+        webView.setOnScrollChangeListener((view, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+            if (scrollY <= 8) {
+                if (hidden[0]) {
+                    hidden[0] = false;
+                    header.setVisibility(View.VISIBLE);
+                    header.setAlpha(0f);
+                    header.animate().alpha(1f).setDuration(120).start();
+                }
+                return;
+            }
+            if (scrollY > oldScrollY + 2 && !hidden[0]) {
+                hidden[0] = true;
+                header.animate().alpha(0f).setDuration(100).withEndAction(() -> {
+                    if (hidden[0]) header.setVisibility(View.GONE);
+                }).start();
+            } else if (scrollY < oldScrollY - 2 && hidden[0]) {
+                hidden[0] = false;
+                header.animate().cancel();
+                header.setVisibility(View.VISIBLE);
+                header.setAlpha(0f);
+                header.animate().alpha(1f).setDuration(120).start();
+            }
+        });
     }
 
     public static void bindTheme(Activity activity, View button) {
