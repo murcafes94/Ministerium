@@ -86,7 +86,11 @@ public class LiturgicalCalendarActivity extends ThemedActivity {
                 Toast.makeText(this, "Calendario litúrgico de " + year + " actualizado.",
                         Toast.LENGTH_SHORT).show();
                 showMonth();
-            } else if (!updated && !LiturgicalCalendarRepository.hasCalendar(this, year)) {
+            } else if (!updated && LiturgicalCalendarRepository.hasCalendar(this, year)) {
+                Toast.makeText(this,
+                        "Calendario " + year + " disponible sin conexión. No se pudo comprobar una versión más reciente en Internet.",
+                        Toast.LENGTH_LONG).show();
+            } else if (!updated) {
                 Toast.makeText(this, "Sin conexión: se usará el cálculo romano general para "
                         + year + ".", Toast.LENGTH_LONG).show();
             }
