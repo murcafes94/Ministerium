@@ -7,13 +7,17 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class RitualReaderActivity extends ThemedActivity {
     public static final String EXTRA_DOCUMENT_ID = "ritual_document_id";
     public static final String EXTRA_ENTRY_INDEX = "ritual_entry_index";
 
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private RitualDocument document;
     private int position;
+    private int loadGeneration;
     private TextView content;
     private Button favorite;
 
@@ -45,30 +49,49 @@ public class RitualReaderActivity extends ThemedActivity {
     }
 
     private void showEntry() {
-        RitualEntry entry = document.entries.get(position);
+        final int requestedPosition = position;
+        final int generation = ++loadGeneration;
+        RitualEntry entry = document.entries.get(requestedPosition);
         ((TextView) findViewById(R.id.txtReaderTitle)).setText(entry.title);
         ((TextView) findViewById(R.id.txtReaderSubtitle)).setText(
                 document.title + " · " + entry.category);
         ((TextView) findViewById(R.id.txtSource)).setText(
                 document.sourceName + " · texto estructurado para consulta offline");
-        try {
-            String source = RitualRepository.readSection(this, document, position);
-            content.setText(RitualTextFormatter.format(this, source));
-        } catch (IOException error) {
-            Toast.makeText(this, "No se pudo abrir este texto.", Toast.LENGTH_LONG).show();
-            finish();
-            return;
-        }
-        ReaderContext context = context();
-        TextViewReaderChrome.attach(this, content, findViewById(R.id.readerScroll),
-                findViewById(R.id.readerHeader), context, new ReaderChrome.Navigator() {
-                    @Override public boolean canPrevious() { return position > 0; }
-                    @Override public boolean canNext() { return position < document.entries.size() - 1; }
-                    @Override public void previous() { move(-1); }
-                    @Override public void next() { move(1); }
-                });
-        TextViewReaderChrome.bindMore(this, findViewById(R.id.btnReaderMore), content, context);
+        content.setText("Cargando ritual…");
         updateFavorite();
+
+        executor.submit(() -> {
+            try {
+                String source = RitualRepository.readSection(
+                        getApplicationContext(), document, requestedPosition);
+                CharSequence formatted = RitualTextFormatter.format(
+                        getApplicationContext(), source);
+                runOnUiThread(() -> {
+                    if (generation != loadGeneration || isFinishing()) return;
+                    content.setText(formatted);
+                    ReaderContext context = context();
+                    TextViewReaderChrome.attach(this, content, findViewById(R.id.readerScroll),
+                            findViewById(R.id.readerHeader), context, new ReaderChrome.Navigator() {
+                                @Override public boolean canPrevious() { return position > 0; }
+                                @Override public boolean canNext() {
+                                    return position < document.entries.size() - 1;
+                                }
+                                @Override public void previous() { move(-1); }
+                                @Override public void next() { move(1); }
+                            });
+                    TextViewReaderChrome.bindMore(this, findViewById(R.id.btnReaderMore),
+                            content, context);
+                    updateFavorite();
+                });
+            } catch (IOException error) {
+                runOnUiThread(() -> {
+                    if (generation != loadGeneration || isFinishing()) return;
+                    content.setText("No se pudo abrir este texto.");
+                    Toast.makeText(this, "No se pudo abrir este texto.",
+                            Toast.LENGTH_LONG).show();
+                });
+            }
+        });
     }
 
     private void move(int delta) {
@@ -91,5 +114,12 @@ public class RitualReaderActivity extends ThemedActivity {
         RitualEntry entry = document.entries.get(position);
         return new ReaderContext(document.title, "ritual:" + document.id + ":" + position,
                 entry.title, entry.category, "Rituales", true);
+    }
+
+    @Override
+    protected void onDestroy() {
+        loadGeneration++;
+        executor.shutdownNow();
+        super.onDestroy();
     }
 }
