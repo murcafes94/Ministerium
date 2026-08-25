@@ -28,7 +28,6 @@ public class MissalSectionReaderActivity extends ThemedActivity {
         ThemeUtils.apply(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_hours_reader);
-
         Calendar now = Calendar.getInstance();
         date = Calendar.getInstance();
         date.clear();
@@ -37,26 +36,23 @@ public class MissalSectionReaderActivity extends ThemedActivity {
                 getIntent().getIntExtra(EXTRA_DAY, now.get(Calendar.DAY_OF_MONTH)), 12, 0, 0);
         section = value(getIntent().getStringExtra(EXTRA_SECTION), "day");
         language = "lat_es".equals(getIntent().getStringExtra(EXTRA_LANGUAGE)) ? "lat_es" : "es";
-
         webView = findViewById(R.id.hoursWebView);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         findViewById(R.id.btnReaderSearch).setVisibility(View.GONE);
         ReaderChrome.bindTheme(this, findViewById(R.id.btnReaderTheme));
         ReaderChrome.bindGlobalMenu(this, findViewById(R.id.btnGlobalMenu));
-
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setTextZoom(ReaderPreferences.textZoom(this));
         webView.setBackgroundColor(Color.TRANSPARENT);
         webView.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
-                ReaderPreferences.applyPalatino(MissalSectionReaderActivity.this, webView);
+                ReaderPreferences.apply(MissalSectionReaderActivity.this, webView, false);
+                LiturgicalWebStyle.apply(MissalSectionReaderActivity.this, webView);
                 MissalCompactView.inject(webView);
                 ReaderContext context = readerContext();
-                UniversalSelectionMenu.restoreHighlights(MissalSectionReaderActivity.this,
-                        webView, context.sourceKey);
+                UniversalSelectionMenu.restoreHighlights(MissalSectionReaderActivity.this, webView, context.sourceKey);
             }
         });
-
         load();
     }
 
@@ -68,12 +64,9 @@ public class MissalSectionReaderActivity extends ThemedActivity {
             ReaderContext context = readerContext();
             UniversalSelectionMenu.attach(this, webView, context);
             ReaderChrome.bindMore(this, findViewById(R.id.btnReaderMore), webView, context);
-            webView.loadDataWithBaseURL("file:///android_asset/", result.html,
-                    "text/html", "UTF-8", null);
+            webView.loadDataWithBaseURL("file:///android_asset/", result.html, "text/html", "UTF-8", null);
         } catch (Exception error) {
-            Toast.makeText(this, error.getMessage() == null
-                    ? "No se pudo abrir esta sección del Misal."
-                    : error.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, error.getMessage() == null ? "No se pudo abrir esta sección del Misal." : error.getMessage(), Toast.LENGTH_LONG).show();
             finish();
         }
     }
@@ -81,11 +74,9 @@ public class MissalSectionReaderActivity extends ThemedActivity {
     private ReaderContext readerContext() {
         String title = result == null ? "Misal Romano" : result.title;
         String subtitle = result == null ? LiturgicalCalendarRepository.dateLabel(date) : result.subtitle;
-        String source = "missal31:" + date.get(Calendar.YEAR) + ":"
-                + (date.get(Calendar.MONTH) + 1) + ":" + date.get(Calendar.DAY_OF_MONTH)
-                + ":" + section + ":" + language;
-        return new ReaderContext("Misal Romano · Liturgia Papal México",
-                source, title, subtitle, "Liturgia", true);
+        String source = "missal31:" + date.get(Calendar.YEAR) + ":" + (date.get(Calendar.MONTH) + 1)
+                + ":" + date.get(Calendar.DAY_OF_MONTH) + ":" + section + ":" + language;
+        return new ReaderContext("Misal Romano · Liturgia Papal México", source, title, subtitle, "Liturgia", true);
     }
 
     private static String value(String value, String fallback) {
