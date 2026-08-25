@@ -31,6 +31,16 @@
       "runtimeFormat": "clean-html"
     },
     {
+      "id": "hours-la-2026-clean",
+      "title": "Liturgia Horarum · latín 2026",
+      "version": "2026.1",
+      "updated": "2026-08-24",
+      "asset": "hours-clean/latin/2026/manifest.json",
+      "verification": "generated-build",
+      "delivery": "bundled",
+      "runtimeFormat": "clean-html"
+    },
+    {
       "id": "missal-liturgiapapal",
       "title": "Misal · Liturgia Papal México",
       "version": "3.1.1",
@@ -51,14 +61,14 @@
   ],
   "optionalUpdates": [
     {
-      "id": "latin-year",
-      "title": "Liturgia Horarum · año latino",
+      "id": "latin-future-year",
+      "title": "Liturgia Horarum · años latinos futuros",
       "delivery": "downloadable",
       "source": "breviar.sk"
     },
     {
       "id": "lectionary-month",
-      "title": "Leccionario · lecturas",
+      "title": "Leccionario · lecturas futuras",
       "delivery": "downloadable-when-available"
     }
   ]
