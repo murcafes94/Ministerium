@@ -33,9 +33,7 @@ public final class ComplineContentRepository {
         if (forms == null) return null;
         for (int i = 0; i < forms.length(); i++) {
             JSONObject form = forms.optJSONObject(i);
-            if (form != null && form.optInt("calendarDayOfWeek", -1) == calendarDayOfWeek) {
-                return form;
-            }
+            if (form != null && form.optInt("calendarDayOfWeek", -1) == calendarDayOfWeek) return form;
         }
         return null;
     }
@@ -44,16 +42,31 @@ public final class ComplineContentRepository {
         return array(data.optJSONArray("penitentialFormulas"));
     }
 
+    /** Physical Spanish Liturgia de las Horas volume used for the date. */
+    public static String liturgicalVolume(String season, int ordinaryWeek) {
+        String normalized = normalizeSeason(season);
+        if ("advent".equals(normalized) || "christmas".equals(normalized)) return "I";
+        if ("lent".equals(normalized) || "easter".equals(normalized)) return "II";
+        if (ordinaryWeek >= 18) return "IV";
+        return "III";
+    }
+
     /**
-     * Devuelve los himnos propios del tiempo cuando el tomo local los contiene.
-     * Adviento/Navidad reutilizan la colección que esos mismos tomos enlazan.
-     * El paquete pascual actual no contiene Completas; hasta incorporar una fuente
-     * española verificada conserva el conjunto base en vez de inventar textos.
+     * Hymns are selected using both season and the physical four-volume split.
+     * If a verified III/IV-specific set is not yet present in the semantic asset,
+     * it falls back to the verified ordinary set rather than inventing text.
      */
     public static JSONArray hymnsForSeason(JSONObject data, String season) {
         JSONObject sets = data.optJSONObject("hymnSets");
         if (sets == null) return new JSONArray();
-        String key = normalizeSeason(season);
+        String normalized = normalizeSeason(season);
+        int ordinaryWeek = data.optInt("_ordinaryWeek", -1);
+        String key = normalized;
+        if ("ordinary".equals(normalized)) {
+            String volume = liturgicalVolume(normalized, ordinaryWeek);
+            String volumeKey = "IV".equals(volume) ? "ordinary_iv" : "ordinary_iii";
+            if (sets.optJSONObject(volumeKey) != null) key = volumeKey;
+        }
         JSONObject selected = sets.optJSONObject(key);
         if (selected == null) selected = sets.optJSONObject("ordinary");
         return resolveItems(sets, selected, 0);
@@ -77,9 +90,7 @@ public final class ComplineContentRepository {
         return result;
     }
 
-    public static String examinationRubric(JSONObject data) {
-        return data.optString("examinationRubric", "");
-    }
+    public static String examinationRubric(JSONObject data) { return data.optString("examinationRubric", ""); }
 
     public static JSONObject invocation(JSONObject data) {
         JSONObject result = data.optJSONObject("invocation");
