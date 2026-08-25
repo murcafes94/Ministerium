@@ -35,10 +35,13 @@ jobs:
       - name: Install content preprocessing dependencies
         run: python -m pip install --disable-pip-version-check pypdf beautifulsoup4
 
-      - name: Build clean Liturgy of the Hours package
+      - name: Build clean Liturgy of the Hours packages
         run: |
           python tools/build_clean_hours_31.py --volume all
+          python tools/build_clean_latin_hours_31.py
           test -s app/src/main/assets/hours-clean/manifest.json
+          test -s app/src/main/assets/hours-clean/latin/2026/manifest.json
+          test -s app/src/main/assets/hours-clean/latin/2026/files.txt
           for v in advent christmas lent easter ordinary sanctoral; do
             test -s "app/src/main/assets/hours-clean/$v/toc.tsv"
             test -s "app/src/main/assets/hours-clean/$v/files.txt"
@@ -69,6 +72,19 @@ jobs:
           node tools/validate_stabilization_31.mjs
           node tools/validate_calendar_31.mjs
 
+      - name: Remove Liturgy source EPUBs from runtime APK assets
+        run: |
+          rm -f \
+            'app/src/main/assets/epubs/LH - 1. ADVIENTO.epub' \
+            'app/src/main/assets/epubs/LH - 2. NAVIDAD.epub' \
+            'app/src/main/assets/epubs/LH - 3. CUARESMA.epub' \
+            'app/src/main/assets/epubs/LH - 4. PASCUA.epub' \
+            'app/src/main/assets/epubs/LH - 5. TIEMPO ORDINARIO.epub' \
+            'app/src/main/assets/epubs/LH - 6. SANTORAL.epub' \
+            'app/src/main/assets/epubs/Liturgia-horarum-2026-latin.epub'
+          test ! -f 'app/src/main/assets/epubs/LH - 5. TIEMPO ORDINARIO.epub'
+          test ! -f 'app/src/main/assets/epubs/Liturgia-horarum-2026-latin.epub'
+
       - name: Set up JDK 11
         uses: actions/setup-java@v4
         with:
@@ -93,6 +109,7 @@ jobs:
             recovered-v3/app/build/outputs/apk/debug/app-debug.apk
             recovered-v3/app/build/outputs/apk/debug/app-debug.apk.sha256
             recovered-v3/app/src/main/assets/hours-clean/manifest.json
+            recovered-v3/app/src/main/assets/hours-clean/latin/2026/manifest.json
             recovered-v3/app/src/main/assets/missal/manifest.json
             recovered-v3/app/src/main/assets/rituals/liturgiapapal/manifest.json
           if-no-files-found: error
