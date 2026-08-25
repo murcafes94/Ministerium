@@ -16,7 +16,7 @@ import java.util.Map;
 /** Runtime access to the build-generated, EPUB-free Liturgy of the Hours package. */
 public final class CleanHoursAssets {
     private static final String BASE = "hours-clean/";
-    private static final String VERSION_MARKER = ".ready-3.1.1-nav3";
+    private static final String VERSION_MARKER = ".ready-3.1.1-align4";
 
     private CleanHoursAssets() {}
 
