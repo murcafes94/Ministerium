@@ -1,6 +1,5 @@
 package com.fabri.ministerium;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ListView;
@@ -34,16 +33,14 @@ public class PastoralActivity extends ThemedActivity {
         list.setAdapter(Rows.adapter(this, rows));
         list.setOnItemClickListener((parent, view, position, id) -> {
             RitualDocument selected = documents.get(position);
-            Intent intent;
-            if (RitualRepository.BAPTISM_ID.equals(selected.id)) {
-                intent = new Intent(this, RitualReaderActivity.class);
-                intent.putExtra(RitualReaderActivity.EXTRA_DOCUMENT_ID, selected.id);
-                intent.putExtra(RitualReaderActivity.EXTRA_ENTRY_INDEX, 0);
-            } else {
-                intent = new Intent(this, RitualCatalogActivity.class);
-                intent.putExtra(RitualCatalogActivity.EXTRA_DOCUMENT_ID, selected.id);
+            if (selected.entries.size() == 1) {
+                startActivity(new Intent(this, RitualReaderActivity.class)
+                        .putExtra(RitualReaderActivity.EXTRA_DOCUMENT_ID, selected.id)
+                        .putExtra(RitualReaderActivity.EXTRA_ENTRY_INDEX, 0));
+                return;
             }
-            startActivity(intent);
+            startActivity(new Intent(this, RitualCatalogActivity.class)
+                    .putExtra(RitualCatalogActivity.EXTRA_DOCUMENT_ID, selected.id));
         });
     }
 }
