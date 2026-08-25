@@ -14,6 +14,9 @@ public final class LiturgicalDay {
     public final String liturgicalColor;
     public final HoursLink temporalOffice;
     public final List<HoursLink> saintOffices;
+    public final LiturgicalIdentity identity;
+    public final String celebrationId;
+    public final String missalFormId;
 
     public LiturgicalDay(int year, int month, int day, String dateLabel,
                          String celebration, String sourceNote,
@@ -29,5 +32,8 @@ public final class LiturgicalDay {
         this.liturgicalColor = liturgicalColor;
         this.temporalOffice = temporalOffice;
         this.saintOffices = Collections.unmodifiableList(saintOffices);
+        this.identity = LiturgicalIdentity.internal(year, month, day, celebration, temporalOffice);
+        this.celebrationId = identity.celebrationId;
+        this.missalFormId = identity.missalFormId;
     }
 }
