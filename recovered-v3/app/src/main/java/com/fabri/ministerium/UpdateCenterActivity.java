@@ -46,13 +46,24 @@ public class UpdateCenterActivity extends ThemedActivity {
                     .append(BuildConfig.VERSION_NAME).append(" · canal ")
                     .append(manifest.optString("channel", "testing"))
                     .append("\nCalendario ").append(year).append(calendarAvailable
-                            ? " · disponible localmente" : " · pendiente");
+                            ? " · instalado y disponible" : " · no encontrado localmente");
             for (int i = 0; i < packages.length(); i++) {
                 JSONObject item = packages.getJSONObject(i);
                 if ("calendar-ec".equals(item.optString("id"))) continue;
+                String delivery = item.optString("delivery", "bundled");
                 value.append("\n").append(item.getString("title")).append(" · ")
-                        .append(item.getString("version")).append(" · ")
-                        .append(item.getString("updated"));
+                        .append(item.optString("version", "incluido"))
+                        .append(" · ").append("bundled".equals(delivery)
+                                ? "incluido en la APK" : "actualizable");
+            }
+            JSONArray optional = manifest.optJSONArray("optionalUpdates");
+            if (optional != null && optional.length() > 0) {
+                value.append("\n\nOpcional:");
+                for (int i = 0; i < optional.length(); i++) {
+                    JSONObject item = optional.getJSONObject(i);
+                    value.append("\n• ").append(item.optString("title", item.optString("id")))
+                            .append(" · se descarga solo cuando lo solicites");
+                }
             }
             status.setText(value.toString());
         } catch (Exception error) {
@@ -61,7 +72,7 @@ public class UpdateCenterActivity extends ThemedActivity {
     }
 
     private void verifyAll() {
-        status.setText("Verificando los paquetes instalados…");
+        status.setText("Verificando el contenido incluido en esta APK…");
         new Thread(() -> {
             try {
                 JSONObject manifest = new JSONObject(readAsset("package-manifest.json"));
@@ -69,18 +80,19 @@ public class UpdateCenterActivity extends ThemedActivity {
                 int verified = 0;
                 for (int i = 0; i < packages.length(); i++) {
                     JSONObject item = packages.getJSONObject(i);
+                    if (!"bundled".equals(item.optString("delivery", "bundled"))) continue;
                     String asset = item.getString("asset");
                     byte[] bytes = readAssetBytes(asset);
                     String mode = item.optString("verification", "sha256");
                     if ("generated-build".equals(mode)) {
                         if (bytes.length < 20) {
-                            throw new IllegalStateException("El paquete generado «"
+                            throw new IllegalStateException("El contenido incluido «"
                                     + item.getString("title") + "» está incompleto.");
                         }
                     } else {
                         String expected = item.optString("sha256", "");
                         if (expected.isEmpty() || !expected.equalsIgnoreCase(sha256(bytes))) {
-                            throw new IllegalStateException("Falló la verificación de "
+                            throw new IllegalStateException("Falló la verificación local de "
                                     + item.getString("title") + ".");
                         }
                     }
@@ -90,11 +102,11 @@ public class UpdateCenterActivity extends ThemedActivity {
                 final int year = Calendar.getInstance().get(Calendar.YEAR);
                 final boolean calendarAvailable = LiturgicalCalendarRepository.hasCalendar(this, year);
                 runOnUiThread(() -> status.setText(count
-                        + " paquetes locales verificados correctamente.\n"
+                        + " componentes incluidos verificados correctamente.\n"
                         + (calendarAvailable
-                        ? "Calendario " + year + " disponible en el dispositivo. "
-                        : "Calendario " + year + " no encontrado. ")
-                        + "La comprobación de una actualización por Internet es independiente de que el calendario local funcione."));
+                        ? "Calendario " + year + " instalado y disponible. "
+                        : "No se encontró el calendario local de " + year + ". ")
+                        + "Un fallo de Internet al buscar una revisión futura no significa que el calendario o los libros instalados hayan dejado de funcionar."));
             } catch (Exception error) {
                 runOnUiThread(() -> status.setText(error.getMessage() == null
                         ? "No se pudo completar la verificación local." : error.getMessage()));
@@ -108,8 +120,7 @@ public class UpdateCenterActivity extends ThemedActivity {
                     .setMessage(readAsset("changelog-3.1.1.txt"))
                     .setPositiveButton("Cerrar", null).show();
         } catch (Exception error) {
-            Toast.makeText(this, "No se pudo abrir el historial de cambios.",
-                    Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "No se pudo abrir el historial de cambios.", Toast.LENGTH_SHORT).show();
         }
     }
 
