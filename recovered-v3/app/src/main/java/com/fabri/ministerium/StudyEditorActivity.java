@@ -14,22 +14,27 @@ import android.widget.Toast;
 
 import org.json.JSONObject;
 
-/** Editor de notas/meditaciones con autosave real, no solo borrador. */
+/** Editor de notas/meditaciones con autosave real, ancla portable y etiquetas. */
 public class StudyEditorActivity extends ThemedActivity {
     public static final String EXTRA_TYPE = "study_type";
     public static final String EXTRA_CATEGORY = "study_category";
     public static final String EXTRA_SOURCE = "study_source";
     public static final String EXTRA_SOURCE_KEY = "study_source_key";
+    public static final String EXTRA_CONTENT_ID = "study_content_id";
     public static final String EXTRA_REFERENCE = "study_reference";
     public static final String EXTRA_QUOTE = "study_quote";
+    public static final String EXTRA_ANCHOR_TEXT = "study_anchor_text";
     public static final String EXTRA_SEMANTIC_UNIT_ID = "study_semantic_unit_id";
     public static final String EXTRA_START_OFFSET = "study_start_offset";
     public static final String EXTRA_END_OFFSET = "study_end_offset";
+    public static final String EXTRA_PREFIX = "study_prefix";
+    public static final String EXTRA_SUFFIX = "study_suffix";
     private static final String DRAFTS = "study_editor_drafts";
     private static final long AUTOSAVE_DELAY_MS = 500L;
 
     private EditText title;
     private EditText body;
+    private EditText tags;
     private StudyEntry entry;
     private String draftKey;
     private final Handler autosaveHandler = new Handler(Looper.getMainLooper());
@@ -42,16 +47,23 @@ public class StudyEditorActivity extends ThemedActivity {
         setContentView(R.layout.activity_study_editor);
         title = findViewById(R.id.inputStudyTitle);
         body = findViewById(R.id.inputStudyBody);
+        tags = findViewById(R.id.inputStudyTags);
         entry = new StudyEntry();
         entry.type = value(getIntent().getStringExtra(EXTRA_TYPE), StudyEntry.MEDITATION);
         entry.category = value(getIntent().getStringExtra(EXTRA_CATEGORY), "Libres");
         entry.source = value(getIntent().getStringExtra(EXTRA_SOURCE), "");
         entry.sourceKey = value(getIntent().getStringExtra(EXTRA_SOURCE_KEY), "");
+        entry.contentId = value(getIntent().getStringExtra(EXTRA_CONTENT_ID),
+                ContentReference.infer(entry.sourceKey, getIntent().getStringExtra(EXTRA_REFERENCE)));
         entry.reference = value(getIntent().getStringExtra(EXTRA_REFERENCE), "");
         entry.quote = value(getIntent().getStringExtra(EXTRA_QUOTE), "");
+        entry.anchorText = value(getIntent().getStringExtra(EXTRA_ANCHOR_TEXT), entry.quote);
         entry.semanticUnitId = value(getIntent().getStringExtra(EXTRA_SEMANTIC_UNIT_ID), "");
         entry.startOffset = getIntent().getIntExtra(EXTRA_START_OFFSET, -1);
         entry.endOffset = getIntent().getIntExtra(EXTRA_END_OFFSET, -1);
+        entry.prefix = value(getIntent().getStringExtra(EXTRA_PREFIX), "");
+        entry.suffix = value(getIntent().getStringExtra(EXTRA_SUFFIX), "");
+        entry.anchorVersion = StudyEntry.CURRENT_ANCHOR_VERSION;
         draftKey = entry.type + ":" + entry.sourceKey + ":" + entry.semanticUnitId
                 + ":" + entry.startOffset + ":" + entry.endOffset + ":"
                 + Integer.toHexString(entry.quote.hashCode());
@@ -78,6 +90,7 @@ public class StudyEditorActivity extends ThemedActivity {
         };
         title.addTextChangedListener(autosave);
         body.addTextChangedListener(autosave);
+        tags.addTextChangedListener(autosave);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> {
             autosaveHandler.removeCallbacks(autosaveTask);
@@ -88,8 +101,6 @@ public class StudyEditorActivity extends ThemedActivity {
     }
 
     @Override protected void onPause() {
-        // Si el usuario sale con Atrás, Inicio, cambia de app o recibe una llamada,
-        // no dejamos una nota escrita únicamente en el almacén de borradores.
         autosaveHandler.removeCallbacks(autosaveTask);
         if (!finishingExplicitly) persist(false, false);
         super.onPause();
@@ -109,6 +120,7 @@ public class StudyEditorActivity extends ThemedActivity {
             if (!draftId.isEmpty()) entry.id = draftId;
             title.setText(draft.optString("title"));
             body.setText(draft.optString("body"));
+            tags.setText(draft.optString("tags"));
             Toast.makeText(this, "Se recuperó el borrador guardado automáticamente.",
                     Toast.LENGTH_SHORT).show();
         } catch (Exception ignored) {}
@@ -120,7 +132,8 @@ public class StudyEditorActivity extends ThemedActivity {
             drafts().edit().putString(draftKey, new JSONObject()
                     .put("entryId", entry.id == null ? "" : entry.id)
                     .put("title", title.getText().toString())
-                    .put("body", body.getText().toString()).toString()).apply();
+                    .put("body", body.getText().toString())
+                    .put("tags", tags.getText().toString()).toString()).apply();
         } catch (Exception ignored) {}
     }
 
@@ -129,12 +142,8 @@ public class StudyEditorActivity extends ThemedActivity {
         autosaveHandler.postDelayed(autosaveTask, AUTOSAVE_DELAY_MS);
     }
 
-    /**
-     * Guarda en StudyStore. El propio StudyStore asigna el UUID la primera vez;
-     * las siguientes escrituras reutilizan entry.id y actualizan la misma nota.
-     */
     private void persist(boolean requireContent, boolean finishAfter) {
-        if (title == null || body == null || entry == null) return;
+        if (title == null || body == null || tags == null || entry == null) return;
         String content = body.getText().toString().trim();
         if (content.isEmpty()) {
             if (requireContent) body.setError("Escribe el contenido");
@@ -145,11 +154,12 @@ public class StudyEditorActivity extends ThemedActivity {
         if (entry.title.isEmpty()) entry.title = StudyEntry.NOTE.equals(entry.type)
                 ? "Nota" : "Meditación";
         entry.body = content;
+        entry.tags.clear();
+        for (String raw : tags.getText().toString().split("[,;]")) {
+            String tag = raw.trim();
+            if (!tag.isEmpty() && !entry.tags.contains(tag)) entry.tags.add(tag);
+        }
         StudyStore.save(this, entry);
-
-        // Después de StudyStore.save entry.id ya es estable. Eliminamos el borrador
-        // que acaba de quedar persistido; si el usuario vuelve a escribir, se crea
-        // otro borrador con ese mismo id hasta el siguiente autosave.
         drafts().edit().remove(draftKey).apply();
 
         if (finishAfter) {
