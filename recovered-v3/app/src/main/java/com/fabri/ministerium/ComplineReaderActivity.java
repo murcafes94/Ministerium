@@ -22,6 +22,7 @@ public class ComplineReaderActivity extends ThemedActivity {
     private MinisteriumWebView webView;
     private Calendar selectedDate;
     private ReaderContext readerContext;
+    private boolean easterSeason;
 
     @Override protected boolean usesPrayerFocus() { return true; }
 
@@ -51,6 +52,7 @@ public class ComplineReaderActivity extends ThemedActivity {
         webView.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
                 ReaderPreferences.apply(ComplineReaderActivity.this, webView, false);
+                ComplineMarianLanguage.inject(ComplineReaderActivity.this, webView, easterSeason);
                 UniversalSelectionMenu.restoreHighlights(ComplineReaderActivity.this, webView, sourceKey());
             }
         });
@@ -74,6 +76,7 @@ public class ComplineReaderActivity extends ThemedActivity {
             LiturgicalDay day = LiturgicalResolver.resolve(this, selectedDate);
             String season = day.temporalOffice == null || day.temporalOffice.volume == null
                     ? "ordinary" : day.temporalOffice.volume.id;
+            easterSeason = "easter".equals(ComplineContentRepository.normalizeSeason(season));
             int ordinaryWeek = LiturgicalResolver.ordinaryWeekNumber(selectedDate);
             data.put("_ordinaryWeek", ordinaryWeek);
             String volume = ComplineContentRepository.liturgicalVolume(season, ordinaryWeek);
