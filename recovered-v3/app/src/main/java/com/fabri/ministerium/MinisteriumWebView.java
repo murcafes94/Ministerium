@@ -1,7 +1,6 @@
 package com.fabri.ministerium;
 
 import android.content.Context;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.view.ActionMode;
 import android.view.Menu;
@@ -9,8 +8,9 @@ import android.view.MenuItem;
 import android.webkit.WebView;
 
 /**
- * WebView de lectura que conserva los tiradores nativos de selección y añade
- * las acciones de Ministerium al toolbar flotante de Android.
+ * WebView de lectura que conserva los tiradores y la geometría nativa de
+ * selección. Ministerium añade acciones, pero Android/WebView decide dónde
+ * situar el toolbar contextual para que no quede fuera del texto en tablets.
  */
 public class MinisteriumWebView extends WebView {
     public interface SelectionActionHandler {
@@ -32,21 +32,12 @@ public class MinisteriumWebView extends WebView {
 
     @Override
     public ActionMode startActionMode(ActionMode.Callback callback) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // Fuerza el mismo patrón visual de los lectores modernos: menú
-            // contextual junto a la selección, no una barra fija arriba.
-            return super.startActionMode(wrap(callback), ActionMode.TYPE_FLOATING);
-        }
         return super.startActionMode(wrap(callback));
     }
 
     @Override
     public ActionMode startActionMode(ActionMode.Callback callback, int type) {
-        int resolvedType = type;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            resolvedType = ActionMode.TYPE_FLOATING;
-        }
-        return super.startActionMode(wrap(callback), resolvedType);
+        return super.startActionMode(wrap(callback), type);
     }
 
     private ActionMode.Callback wrap(ActionMode.Callback original) {
@@ -54,11 +45,6 @@ public class MinisteriumWebView extends WebView {
         return new SelectionCallback(original);
     }
 
-    /**
-     * Mantiene visibles las herramientas esenciales. Las secundarias quedan en
-     * el desbordamiento «Más», de modo que el popup no se convierta en una fila
-     * interminable. Los iconos se dejan al sistema para que respeten tema y escala.
-     */
     private void promoteCoreActions(Menu menu) {
         if (menu == null) return;
         for (int i = 0; i < menu.size(); i++) {
