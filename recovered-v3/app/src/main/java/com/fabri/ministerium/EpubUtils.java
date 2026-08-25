@@ -31,10 +31,20 @@ public final class EpubUtils {
 
     private EpubUtils() {}
 
+    /**
+     * For the six Spanish Liturgy of the Hours volumes, the EPUB is a build-time
+     * input only. Runtime reads the generated clean TOC and HTML package.
+     */
     public static List<EpubTocEntry> tableOfContents(Context context, HoursVolume volume)
             throws Exception {
         List<EpubTocEntry> cached = TOC_CACHE.get(volume.id);
         if (cached != null) return cached;
+
+        if (isCleanHoursVolume(volume) && CleanHoursAssets.isAvailable(context, volume.id)) {
+            List<EpubTocEntry> clean = CleanHoursAssets.tableOfContents(context, volume.id);
+            TOC_CACHE.put(volume.id, clean);
+            return clean;
+        }
 
         byte[] tocBytes = null;
         String tocPath = null;
@@ -49,7 +59,7 @@ public final class EpubUtils {
                 }
             }
         }
-        if (tocBytes == null || tocPath == null) throw new IOException("El EPUB no contiene índice.");
+        if (tocBytes == null || tocPath == null) throw new IOException("El libro no contiene índice.");
 
         String base = tocPath.contains("/")
                 ? tocPath.substring(0, tocPath.lastIndexOf('/') + 1) : "";
@@ -88,6 +98,16 @@ public final class EpubUtils {
     }
 
     public static File ensureExtracted(Context context, HoursVolume volume) throws IOException {
+        if (isCleanHoursVolume(volume) && CleanHoursAssets.isAvailable(context, volume.id)) {
+            try {
+                return CleanHoursAssets.ensureExtracted(context, volume.id);
+            } catch (IOException error) {
+                throw error;
+            } catch (Exception error) {
+                throw new IOException("No se pudo preparar el texto limpio de la Liturgia de las Horas.", error);
+            }
+        }
+
         File root = new File(context.getFilesDir(), "liturgy_hours/" + volume.id);
         File marker = new File(root, ".ready");
         if (marker.exists()) return root;
@@ -101,16 +121,16 @@ public final class EpubUtils {
             while ((entry = zip.getNextEntry()) != null) {
                 File target = new File(root, entry.getName());
                 String targetPath = target.getCanonicalPath();
-                if (!targetPath.startsWith(rootPath)) throw new IOException("Ruta EPUB no válida.");
+                if (!targetPath.startsWith(rootPath)) throw new IOException("Ruta del libro no válida.");
                 if (entry.isDirectory()) {
                     if (!target.exists() && !target.mkdirs()) {
-                        throw new IOException("No se pudo crear una carpeta del EPUB.");
+                        throw new IOException("No se pudo crear una carpeta del libro.");
                     }
                     continue;
                 }
                 File parent = target.getParentFile();
                 if (parent != null && !parent.exists() && !parent.mkdirs()) {
-                    throw new IOException("No se pudo preparar una carpeta del EPUB.");
+                    throw new IOException("No se pudo preparar una carpeta del libro.");
                 }
                 try (FileOutputStream output = new FileOutputStream(target)) {
                     int count;
@@ -164,6 +184,13 @@ public final class EpubUtils {
             }
         }
         return result;
+    }
+
+    private static boolean isCleanHoursVolume(HoursVolume volume) {
+        if (volume == null) return false;
+        String id = volume.id;
+        return "advent".equals(id) || "christmas".equals(id) || "lent".equals(id)
+                || "easter".equals(id) || "ordinary".equals(id) || "sanctoral".equals(id);
     }
 
     private static byte[] readCurrentEntry(ZipInputStream input) throws IOException {
