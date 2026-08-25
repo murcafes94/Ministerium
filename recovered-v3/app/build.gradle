@@ -3,6 +3,15 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 30
 
+    signingConfigs {
+        testStable {
+            storeFile file('../test-signing/ministerium-test.keystore')
+            storePassword 'ministerium-test'
+            keyAlias 'ministerium-test'
+            keyPassword 'ministerium-test'
+        }
+    }
+
     defaultConfig {
         applicationId 'com.fabri.ministerium'
         minSdkVersion 23
@@ -13,11 +22,12 @@ android {
 
     buildTypes {
         debug {
-            // GitHub-hosted runners create a new debug signing key on fresh machines.
-            // Keep CI/test APKs separate from the installed stable package so they can
-            // always be installed side-by-side without signature conflicts.
+            // Test builds intentionally use a separate package and a public,
+            // non-production signing key so consecutive CI APKs can update the
+            // installed Ministerium Test app without touching stable data.
             applicationIdSuffix '.test'
             versionNameSuffix '-test'
+            signingConfig signingConfigs.testStable
         }
         release {
             minifyEnabled false
