@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 3,
   "channel": "testing",
   "app": {
     "versionName": "3.1.1",
@@ -17,16 +17,18 @@
       "updated": "2026-01-01",
       "asset": "calendar/gcatholic-2026-es-EC.ics",
       "verification": "sha256",
-      "sha256": "d0036e5b93b6ebf5c83776ff79d30671bdc616ec09ce668dee9ae25fd15c6264"
+      "sha256": "d0036e5b93b6ebf5c83776ff79d30671bdc616ec09ce668dee9ae25fd15c6264",
+      "delivery": "bundled"
     },
     {
-      "id": "breviary-es",
-      "title": "Liturgia de las Horas en español",
+      "id": "hours-es-clean",
+      "title": "Liturgia de las Horas · español",
       "version": "3.1.1",
       "updated": "2026-08-24",
-      "asset": "epubs/LH - 5. TIEMPO ORDINARIO.epub",
-      "verification": "sha256",
-      "sha256": "0ab18d080257e708a8bc809d426110a8fad770840e0b90e1c84a5e4b67ce8d14"
+      "asset": "hours-clean/manifest.json",
+      "verification": "generated-build",
+      "delivery": "bundled",
+      "runtimeFormat": "clean-html"
     },
     {
       "id": "missal-liturgiapapal",
@@ -34,7 +36,8 @@
       "version": "3.1.1",
       "updated": "2026-08-24",
       "asset": "missal/manifest.json",
-      "verification": "generated-build"
+      "verification": "generated-build",
+      "delivery": "bundled"
     },
     {
       "id": "rituals-liturgiapapal",
@@ -42,7 +45,21 @@
       "version": "3.1.1",
       "updated": "2026-08-24",
       "asset": "rituals/liturgiapapal/manifest.json",
-      "verification": "generated-build"
+      "verification": "generated-build",
+      "delivery": "bundled"
+    }
+  ],
+  "optionalUpdates": [
+    {
+      "id": "latin-year",
+      "title": "Liturgia Horarum · año latino",
+      "delivery": "downloadable",
+      "source": "breviar.sk"
+    },
+    {
+      "id": "lectionary-month",
+      "title": "Leccionario · lecturas",
+      "delivery": "downloadable-when-available"
     }
   ]
 }
