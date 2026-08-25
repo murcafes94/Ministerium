@@ -84,6 +84,10 @@ jobs:
           print(f"Missal structural catalog OK: {len(data.get('saints', []))} saint metadata entries")
           PY
 
+      - name: Secondary calendar cross-check
+        continue-on-error: true
+        run: python tools/check_secondary_liturgy_sources.py
+
       - name: Build fast Bible search index
         run: |
           python tools/build_bible_search_index.py
