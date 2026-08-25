@@ -23,9 +23,7 @@ public class ComplineReaderActivity extends ThemedActivity {
     private Calendar selectedDate;
     private ReaderContext readerContext;
 
-    @Override protected boolean usesPrayerFocus() {
-        return true;
-    }
+    @Override protected boolean usesPrayerFocus() { return true; }
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         ThemeUtils.apply(this);
@@ -37,8 +35,7 @@ public class ComplineReaderActivity extends ThemedActivity {
         selectedDate.clear();
         selectedDate.set(getIntent().getIntExtra(EXTRA_YEAR, now.get(Calendar.YEAR)),
                 getIntent().getIntExtra(EXTRA_MONTH, now.get(Calendar.MONTH)),
-                getIntent().getIntExtra(EXTRA_DAY, now.get(Calendar.DAY_OF_MONTH)),
-                12, 0, 0);
+                getIntent().getIntExtra(EXTRA_DAY, now.get(Calendar.DAY_OF_MONTH)), 12, 0, 0);
 
         ((TextView) findViewById(R.id.txtReaderTitle)).setText("Completas");
         ((TextView) findViewById(R.id.txtReaderSubtitle)).setText(dateLabel());
@@ -54,8 +51,7 @@ public class ComplineReaderActivity extends ThemedActivity {
         webView.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
                 ReaderPreferences.apply(ComplineReaderActivity.this, webView, false);
-                UniversalSelectionMenu.restoreHighlights(ComplineReaderActivity.this,
-                        webView, sourceKey());
+                UniversalSelectionMenu.restoreHighlights(ComplineReaderActivity.this, webView, sourceKey());
             }
         });
 
@@ -65,23 +61,27 @@ public class ComplineReaderActivity extends ThemedActivity {
         ReaderChrome.bindTheme(this, findViewById(R.id.btnReaderTheme));
         ReaderChrome.bindGlobalMenu(this, findViewById(R.id.btnGlobalMenu));
         ReaderChrome.bindMore(this, findViewById(R.id.btnReaderMore), webView, readerContext);
-        ReaderChrome.attach(this, webView, findViewById(R.id.readerHeader),
-                readerContext, null, false);
+        ReaderChrome.attach(this, webView, findViewById(R.id.readerHeader), readerContext, null, false);
         loadSemanticCompline();
     }
 
     private void loadSemanticCompline() {
         try {
             JSONObject data = ComplineContentRepository.load(this);
-            JSONObject form = ComplineContentRepository.formForDay(data,
-                    selectedDate.get(Calendar.DAY_OF_WEEK));
+            JSONObject form = ComplineContentRepository.formForDay(data, selectedDate.get(Calendar.DAY_OF_WEEK));
             if (form == null) throw new IllegalStateException("Formulario de Completas ausente");
 
             LiturgicalDay day = LiturgicalResolver.resolve(this, selectedDate);
             String season = day.temporalOffice == null || day.temporalOffice.volume == null
                     ? "ordinary" : day.temporalOffice.volume.id;
+            int ordinaryWeek = LiturgicalResolver.ordinaryWeekNumber(selectedDate);
+            data.put("_ordinaryWeek", ordinaryWeek);
+            String volume = ComplineContentRepository.liturgicalVolume(season, ordinaryWeek);
+            String week = "ordinary".equals(ComplineContentRepository.normalizeSeason(season))
+                    && ordinaryWeek > 0 ? " · semana " + roman(ordinaryWeek) : "";
             ((TextView) findViewById(R.id.txtReaderSubtitle)).setText(
-                    day.celebration + " · " + form.optString("title", dateLabel()));
+                    day.celebration + " · Tomo " + volume + week + " · "
+                            + form.optString("title", dateLabel()));
             String html = ComplineSemanticRenderer.render(this, data, form, season);
             webView.loadDataWithBaseURL("https://ministerium.local/compline/",
                     html, "text/html", "UTF-8", null);
@@ -90,6 +90,17 @@ public class ComplineReaderActivity extends ThemedActivity {
                     Toast.LENGTH_LONG).show();
             finish();
         }
+    }
+
+    private static String roman(int value) {
+        final int[] numbers = {10, 9, 5, 4, 1};
+        final String[] symbols = {"X", "IX", "V", "IV", "I"};
+        StringBuilder result = new StringBuilder();
+        int left = value;
+        for (int i = 0; i < numbers.length; i++) {
+            while (left >= numbers[i]) { result.append(symbols[i]); left -= numbers[i]; }
+        }
+        return result.toString();
     }
 
     private String dateLabel() {
