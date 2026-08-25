@@ -1,7 +1,5 @@
 package com.fabri.ministerium;
 
-import android.app.Activity;
-import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -52,9 +50,10 @@ public class RitualReaderActivity extends ThemedActivity {
         ((TextView) findViewById(R.id.txtReaderSubtitle)).setText(
                 document.title + " · " + entry.category);
         ((TextView) findViewById(R.id.txtSource)).setText(
-                document.sourceName + " · texto guardado para consulta offline");
+                document.sourceName + " · texto estructurado para consulta offline");
         try {
-            content.setText(RitualRepository.readSectionStyled(this, document, position));
+            String source = RitualRepository.readSection(this, document, position);
+            content.setText(RitualTextFormatter.format(this, source));
         } catch (IOException error) {
             Toast.makeText(this, "No se pudo abrir este texto.", Toast.LENGTH_LONG).show();
             finish();
