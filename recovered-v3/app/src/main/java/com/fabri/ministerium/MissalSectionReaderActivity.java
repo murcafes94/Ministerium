@@ -53,6 +53,7 @@ public class MissalSectionReaderActivity extends ThemedActivity {
                     MissalInteractiveOptions.inject(MissalSectionReaderActivity.this,
                             webView, true);
                 }
+                MissalRuntimeFixes31.inject(webView);
                 ReaderContext context = readerContext();
                 UniversalSelectionMenu.restoreHighlights(MissalSectionReaderActivity.this, webView, context.sourceKey);
             }
