@@ -16,7 +16,7 @@ import java.util.Map;
 /** Runtime access to the build-generated, EPUB-free Liturgy of the Hours package. */
 public final class CleanHoursAssets {
     private static final String BASE = "hours-clean/";
-    private static final String VERSION_MARKER = ".ready-3.1.1-nav2";
+    private static final String VERSION_MARKER = ".ready-3.1.1-nav3";
 
     private CleanHoursAssets() {}
 
@@ -51,15 +51,16 @@ public final class CleanHoursAssets {
     public static Map<String, NavigationTarget> navigation(Context context, String volumeId,
                                                             String sourcePath) throws Exception {
         Map<String, NavigationTarget> result = new LinkedHashMap<>();
+        String wanted = normalizePath(sourcePath);
         try (InputStream input = context.getAssets().open(BASE + volumeId + "/navigation.tsv");
              BufferedReader reader = new BufferedReader(new InputStreamReader(input, "UTF-8"))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.isEmpty() || line.charAt(0) == '#') continue;
                 String[] parts = line.split("\\t", -1);
-                if (parts.length < 4 || !parts[0].equals(sourcePath)) continue;
+                if (parts.length < 4 || !samePath(normalizePath(parts[0]), wanted)) continue;
                 if (!result.containsKey(parts[1])) {
-                    result.put(parts[1], new NavigationTarget(parts[2], parts[3]));
+                    result.put(parts[1], new NavigationTarget(normalizePath(parts[2]), parts[3]));
                 }
             }
         }
@@ -110,6 +111,21 @@ public final class CleanHoursAssets {
             int count;
             while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
         }
+    }
+
+    private static String normalizePath(String value) {
+        if (value == null) return "";
+        String normalized = value.replace('\\', '/').trim();
+        while (normalized.startsWith("./")) normalized = normalized.substring(2);
+        while (normalized.startsWith("/")) normalized = normalized.substring(1);
+        while (normalized.contains("//")) normalized = normalized.replace("//", "/");
+        return normalized;
+    }
+
+    private static boolean samePath(String first, String second) {
+        if (first.equals(second)) return true;
+        if (first.isEmpty() || second.isEmpty()) return false;
+        return first.endsWith("/" + second) || second.endsWith("/" + first);
     }
 
     private static void deleteTree(File file) {
