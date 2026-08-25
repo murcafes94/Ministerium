@@ -127,6 +127,11 @@ jobs:
           test ! -f 'app/src/main/assets/epubs/LH - 5. TIEMPO ORDINARIO.epub'
           test ! -f 'app/src/main/assets/epubs/Liturgia-horarum-2026-latin.epub'
 
+      - name: Prepare stable Ministerium Test signing key
+        run: |
+          base64 -d test-signing/ministerium-test.keystore.b64 > test-signing/ministerium-test.keystore
+          test -s test-signing/ministerium-test.keystore
+
       - name: Set up JDK 11
         uses: actions/setup-java@v4
         with:
