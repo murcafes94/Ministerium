@@ -30,6 +30,13 @@ public class RitualCatalogActivity extends ThemedActivity {
             ((TextView) findViewById(R.id.txtIntro)).setText("No se encontró el ritual solicitado.");
             return;
         }
+        if (document.entries.size() == 1) {
+            startActivity(new Intent(this, RitualReaderActivity.class)
+                    .putExtra(RitualReaderActivity.EXTRA_DOCUMENT_ID, document.id)
+                    .putExtra(RitualReaderActivity.EXTRA_ENTRY_INDEX, 0));
+            finish();
+            return;
+        }
         showDocument(document);
     }
 
