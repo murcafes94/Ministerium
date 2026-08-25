@@ -44,10 +44,15 @@ jobs:
           test -s app/src/main/assets/hours-clean/latin/2026/files.txt
           for v in advent christmas lent easter ordinary sanctoral; do
             test -s "app/src/main/assets/hours-clean/$v/toc.tsv"
+            test -s "app/src/main/assets/hours-clean/$v/navigation.tsv"
             test -s "app/src/main/assets/hours-clean/$v/files.txt"
             test -s "app/src/main/assets/hours-clean/$v/manifest.json"
           done
-          ! grep -R -E '\[(1V|2V|C1|C2|IN|O|L|M)\]' app/src/main/assets/hours-clean/ordinary --include='*.htm' --include='*.html' --include='*.xhtml'
+          grep -q $'\tO\t' app/src/main/assets/hours-clean/ordinary/navigation.tsv
+          grep -q $'\tL\t' app/src/main/assets/hours-clean/ordinary/navigation.tsv
+          grep -q $'\tM\t' app/src/main/assets/hours-clean/ordinary/navigation.tsv
+          grep -qE $'\t(1V|2V|V)\t' app/src/main/assets/hours-clean/ordinary/navigation.tsv
+          ! grep -R -E '\[(1V|2V|V|C|C1|C2|IN|O|L|M)\]' app/src/main/assets/hours-clean/ordinary --include='*.htm' --include='*.html' --include='*.xhtml'
 
       - name: Build Liturgia Papal packages
         run: |
