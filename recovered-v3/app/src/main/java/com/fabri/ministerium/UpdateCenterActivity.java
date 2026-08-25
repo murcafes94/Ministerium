@@ -40,11 +40,16 @@ public class UpdateCenterActivity extends ThemedActivity {
         try {
             JSONObject manifest = new JSONObject(readAsset("package-manifest.json"));
             JSONArray packages = manifest.getJSONArray("packages");
+            int year = Calendar.getInstance().get(Calendar.YEAR);
+            boolean calendarAvailable = LiturgicalCalendarRepository.hasCalendar(this, year);
             StringBuilder value = new StringBuilder("App ")
                     .append(BuildConfig.VERSION_NAME).append(" · canal ")
-                    .append(manifest.optString("channel", "stable"));
+                    .append(manifest.optString("channel", "testing"))
+                    .append("\nCalendario ").append(year).append(calendarAvailable
+                            ? " · disponible localmente" : " · pendiente");
             for (int i = 0; i < packages.length(); i++) {
                 JSONObject item = packages.getJSONObject(i);
+                if ("calendar-ec".equals(item.optString("id"))) continue;
                 value.append("\n").append(item.getString("title")).append(" · ")
                         .append(item.getString("version")).append(" · ")
                         .append(item.getString("updated"));
@@ -56,7 +61,7 @@ public class UpdateCenterActivity extends ThemedActivity {
     }
 
     private void verifyAll() {
-        status.setText("Verificando esquema e integridad de los paquetes locales…");
+        status.setText("Verificando los paquetes instalados…");
         new Thread(() -> {
             try {
                 JSONObject manifest = new JSONObject(readAsset("package-manifest.json"));
@@ -64,28 +69,43 @@ public class UpdateCenterActivity extends ThemedActivity {
                 int verified = 0;
                 for (int i = 0; i < packages.length(); i++) {
                     JSONObject item = packages.getJSONObject(i);
-                    if (!item.getString("sha256").equalsIgnoreCase(
-                            sha256(readAssetBytes(item.getString("asset"))))) {
-                        throw new IllegalStateException("Falló la verificación de "
-                                + item.getString("title") + ".");
+                    String asset = item.getString("asset");
+                    byte[] bytes = readAssetBytes(asset);
+                    String mode = item.optString("verification", "sha256");
+                    if ("generated-build".equals(mode)) {
+                        if (bytes.length < 20) {
+                            throw new IllegalStateException("El paquete generado «"
+                                    + item.getString("title") + "» está incompleto.");
+                        }
+                    } else {
+                        String expected = item.optString("sha256", "");
+                        if (expected.isEmpty() || !expected.equalsIgnoreCase(sha256(bytes))) {
+                            throw new IllegalStateException("Falló la verificación de "
+                                    + item.getString("title") + ".");
+                        }
                     }
                     verified++;
                 }
                 final int count = verified;
+                final int year = Calendar.getInstance().get(Calendar.YEAR);
+                final boolean calendarAvailable = LiturgicalCalendarRepository.hasCalendar(this, year);
                 runOnUiThread(() -> status.setText(count
-                        + " paquetes verificados · esquema y SHA-256 correctos.\n"
-                        + "Las actualizaciones se instalan por módulo y conservan la versión anterior hasta validar la nueva."));
+                        + " paquetes locales verificados correctamente.\n"
+                        + (calendarAvailable
+                        ? "Calendario " + year + " disponible en el dispositivo. "
+                        : "Calendario " + year + " no encontrado. ")
+                        + "La comprobación de una actualización por Internet es independiente de que el calendario local funcione."));
             } catch (Exception error) {
                 runOnUiThread(() -> status.setText(error.getMessage() == null
-                        ? "No se pudo completar la verificación." : error.getMessage()));
+                        ? "No se pudo completar la verificación local." : error.getMessage()));
             }
         }).start();
     }
 
     private void showChangelog() {
         try {
-            new android.app.AlertDialog.Builder(this).setTitle("Ministerium 3.0.0")
-                    .setMessage(readAsset("changelog-3.0.0.txt"))
+            new android.app.AlertDialog.Builder(this).setTitle("Ministerium 3.1.1")
+                    .setMessage(readAsset("changelog-3.1.1.txt"))
                     .setPositiveButton("Cerrar", null).show();
         } catch (Exception error) {
             Toast.makeText(this, "No se pudo abrir el historial de cambios.",
