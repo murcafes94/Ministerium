@@ -243,8 +243,8 @@ if (-not $SkipContent) {
 if (-not $SkipValidation) {
     Write-Section 'Validaciones base y contrato 4.0'
     if (Get-Command node -ErrorAction SilentlyContinue) {
-        & node tools/validate_stabilization_31.mjs
-        Assert-Exit 'Validacion base 3.1.1'
+        & node tools/validate_stabilization_40.mjs
+        Assert-Exit 'Validacion base adaptada a 4.0'
         & node tools/validate_calendar_31.mjs
         Assert-Exit 'Validacion de calendario'
         & node tools/validate_lectionary_40.mjs
