@@ -21,8 +21,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Descarga una vez al mes las páginas textuales del Misal de Guadalajara y
- * conserva únicamente las lecturas. El lector diario funciona después sin red.
+ * Descarga una vez al mes las páginas textuales del Misal de Guadalajara,
+ * conserva las lecturas y reutiliza el mismo HTML para guardar los propios de
+ * la Misa. El lector diario funciona después sin red.
  */
 public final class MassReadingsRepository {
     public interface ProgressListener {
@@ -131,7 +132,6 @@ public final class MassReadingsRepository {
                 saved++;
                 consecutiveFailures = 0;
             } catch (Exception ignored) {
-                // Se continúa para que una sola fecha defectuosa no borre las demás.
                 consecutiveFailures++;
             }
             if (listener != null) listener.onProgress(day, total);
@@ -147,10 +147,16 @@ public final class MassReadingsRepository {
     public static synchronized void syncDay(Context context, Calendar date) throws Exception {
         if (!isCurrentMonth(date)) throw new IllegalArgumentException(
                 "La fuente diaria sólo corresponde al mes actual.");
-        ReadingPage page = extract(download(sourceUrl(date)), date);
+        String rawHtml = download(sourceUrl(date));
+        ReadingPage page = extract(rawHtml, date);
         writeAtomic(fileFor(context, date), page.html);
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
                 .putString("gospel_" + key(date), page.gospelSummary).apply();
+        try {
+            DailyMassProperRepository.cacheFromSourceHtml(context, date, rawHtml);
+        } catch (Exception ignored) {
+            // Una anomalía en los propios nunca invalida lecturas ya verificadas.
+        }
     }
 
     public static String read(Context context, Calendar date) throws Exception {
@@ -286,9 +292,8 @@ public final class MassReadingsRepository {
             html.append("</section>");
             return;
         }
-        String reference = responseAt < 0 ? "" : clean(value.substring(0, responseAt));
-        String responseAndVerses = responseAt < 0 ? value
-                : clean(value.substring(responseAt + 2));
+        String reference = clean(value.substring(0, responseAt));
+        String responseAndVerses = clean(value.substring(responseAt + 2));
         int responseEnd = sentenceEnd(responseAndVerses);
         String response = responseEnd < 0 ? responseAndVerses
                 : clean(responseAndVerses.substring(0, responseEnd));
@@ -431,7 +436,7 @@ public final class MassReadingsRepository {
         connection.setConnectTimeout(15000);
         connection.setReadTimeout(20000);
         connection.setInstanceFollowRedirects(true);
-        connection.setRequestProperty("User-Agent", "Ministerium/2.0 (lector liturgico personal)");
+        connection.setRequestProperty("User-Agent", "Ministerium/4.0 (lector liturgico personal)");
         int status = connection.getResponseCode();
         if (status < 200 || status >= 300) {
             connection.disconnect();
