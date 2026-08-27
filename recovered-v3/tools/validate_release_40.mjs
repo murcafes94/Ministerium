@@ -35,6 +35,7 @@ const workflow = read('../.github/workflows/android-debug.yml');
 expect(workflow.includes('feature/ministerium-4.0')
     && workflow.includes('Ministerium-4.0.0-debug')
     && workflow.includes('build_magisterium_index_40.py')
+    && workflow.includes('validate_stabilization_40.mjs')
     && workflow.includes('validate_release_40.mjs'),
   '4.0 debug workflow is incomplete.');
 expect(!workflow.includes('missal-reference-catalog.json\\n'),
@@ -45,6 +46,7 @@ expect(workflow.includes("ElementTree.parse('app/src/main/AndroidManifest.xml')"
 const local = read('tools/build_local_windows.ps1');
 expect(local.includes('Ministerium 4.0 - compilacion local Windows')
     && local.includes('build_magisterium_index_40.py')
+    && local.includes('validate_stabilization_40.mjs')
     && local.includes('validate_release_40.mjs'),
   'Windows 4.0 build contract is incomplete.');
 expect(local.includes('Test-PythonImports')
@@ -52,6 +54,22 @@ expect(local.includes('Test-PythonImports')
     && local.includes('Gradle/JVM 11: OK')
     && local.includes('android-studio-portable'),
   'Windows build must recover Python dependencies and support the tested portable SDK/JDK flow.');
+
+expect(fs.existsSync(path.join(root, 'tools/validate_stabilization_40.mjs')),
+  'Missing 4.0 adapter for the 3.1.1 stabilization baseline.');
+const baseline40 = read('tools/validate_stabilization_40.mjs');
+expect(baseline40.includes("versionCode 40")
+    && baseline40.includes("versionName '4.0.0'"),
+  '4.0 stabilization adapter does not rewrite the legacy version assertions.');
+
+const bilingualActivity = read('app/src/main/java/com/fabri/ministerium/BilingualHoursActivity.java');
+const intermediate = read('app/src/main/java/com/fabri/ministerium/IntermediateHourResolver.java');
+expect(bilingualActivity.includes('EXTRA_HOUR_KEY')
+    && bilingualActivity.includes('EXTRA_SUNDAY_OR_SOLEMNITY'),
+  'Bilingual Hours must pass the selected hour/date context to its reader.');
+expect(intermediate.includes('hymnRangeMatches')
+    && intermediate.includes('ordinaryWeek'),
+  'Intermediate Hours must resolve the I-XVII / XVIII-XXXIV hymn range.');
 
 const readme = read('README.md');
 expect(readme.includes('# Ministerium 4.0')
