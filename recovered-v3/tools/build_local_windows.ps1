@@ -44,11 +44,17 @@ function Invoke-Py([string[]]$PyArgs, [string]$Label = 'Python') {
 }
 
 function Test-Java11([string]$JavaExe) {
+    $previousErrorPreference = $ErrorActionPreference
     try {
-        $version = (& $JavaExe -version 2>&1 | Out-String)
-        return ($version -match 'version\s+"11(?:\.|\")' -or $version -match 'openjdk\s+11(?:\.|\s)')
+        # java -version writes to stderr on several Windows distributions.
+        # Relax the preference only while reading that diagnostic output.
+        $ErrorActionPreference = 'Continue'
+        $versionText = (& $JavaExe -version 2>&1 | Out-String)
+        return ($versionText -match '(?im)(?:java|openjdk) version\s+"?11(?:\.|\s|")')
     } catch {
         return $false
+    } finally {
+        $ErrorActionPreference = $previousErrorPreference
     }
 }
 
@@ -74,10 +80,10 @@ function Configure-Java11 {
     foreach ($candidate in ($candidates | Select-Object -Unique)) {
         if ((Test-Path $candidate) -and (Test-Java11 $candidate)) {
             $bin = Split-Path -Parent $candidate
-            $home = Split-Path -Parent $bin
-            $env:JAVA_HOME = $home
+            $jdkHome = Split-Path -Parent $bin
+            $env:JAVA_HOME = $jdkHome
             $env:Path = "$bin;$env:Path"
-            Write-Host "JDK 11: $home"
+            Write-Host "JDK 11: $jdkHome"
             return
         }
     }
@@ -109,7 +115,7 @@ function Configure-AndroidSdk {
     Write-Host "local.properties creado para: $sdk"
 }
 
-Write-Section 'Ministerium 3.1.1 - compilacion local Windows'
+Write-Section 'Ministerium 4.0 - compilacion local Windows'
 Configure-Java11
 Configure-AndroidSdk
 
@@ -150,10 +156,10 @@ if (-not $SkipContent) {
 }
 
 if (-not $SkipValidation) {
-    Write-Section 'Validaciones Ministerium 3.1.1'
+    Write-Section 'Validaciones base y contrato 4.0'
     if (Get-Command node -ErrorAction SilentlyContinue) {
         & node tools/validate_stabilization_31.mjs
-        Assert-Exit 'Validacion 3.1.1'
+        Assert-Exit 'Validacion base 3.1.1'
         & node tools/validate_calendar_31.mjs
         Assert-Exit 'Validacion de calendario'
     } else {
