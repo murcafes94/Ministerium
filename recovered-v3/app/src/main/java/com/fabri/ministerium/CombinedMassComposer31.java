@@ -45,9 +45,9 @@ public final class CombinedMassComposer31 {
         boolean requiredSaint = hasRequiredSaint(day);
         boolean ordinary = isOrdinary(day) && !requiredSaint;
 
-        ProperParts proper = ordinary
-                ? ordinaryProper(context, date)
-                : ProperParts.missing(day.celebration);
+        ProperParts proper = dailyProper(context, date);
+        if (!proper.complete && ordinary) proper = ordinaryProper(context, date);
+        if (!proper.complete) proper = ProperParts.missing(day.celebration);
 
         String start = proper.entrance + openingRite(context);
         String massStart = LiturgiaPapalMissalRepository.initialMassHtml(context, gloria);
@@ -62,7 +62,7 @@ public final class CombinedMassComposer31 {
                 context, "es", proper.communionAntiphon);
         String conclusion = LiturgiaPapalMissalRepository.conclusionHtml(context, "es");
 
-        StringBuilder body = new StringBuilder(48000);
+        StringBuilder body = new StringBuilder(52000);
         body.append(sectionHtml("combined:opening", "Inicio de la celebración", start));
         body.append(sectionHtml("combined:psalmody", "Salmodia de " + hourName(hourKey), psalmody));
         body.append(sectionHtml("combined:kyrie-gloria", "Kyrie y Gloria", massStart));
@@ -75,7 +75,7 @@ public final class CombinedMassComposer31 {
 
         body.append(sectionHtml("combined:intercessions", "Preces de " + hourName(hourKey),
                 intercessions.isEmpty()
-                        ? "<p class=\"rubric\">Se hacen las preces u oración universal.</p>"
+                        ? "<p class=\"rubric\">Se hacen las preces de la Hora como oración universal.</p>"
                         : intercessions));
         body.append(sectionHtml("combined:eucharist", "Liturgia eucarística",
                 preparation + preface + prayers));
@@ -90,6 +90,21 @@ public final class CombinedMassComposer31 {
         String html = document(context, body.toString());
         return new CombinedMassComposer.Result(title,
                 day.celebration + " · " + day.dateLabel, html);
+    }
+
+    private static ProperParts dailyProper(Context context, Calendar date) {
+        try {
+            DailyMassProperRepository.ProperDay day = DailyMassProperRepository.cached(context, date);
+            if (day == null || !day.isComplete()) return ProperParts.missing("Propio del día");
+            return new ProperParts(
+                    DailyMassProperRepository.render(day.entrance),
+                    DailyMassProperRepository.render(day.collect),
+                    DailyMassProperRepository.render(day.offerings),
+                    DailyMassProperRepository.render(day.communionAntiphon),
+                    DailyMassProperRepository.render(day.postCommunion), true);
+        } catch (Exception ignored) {
+            return ProperParts.missing("Propio del día");
+        }
     }
 
     private static ProperParts ordinaryProper(Context context, Calendar date) {
@@ -120,12 +135,12 @@ public final class CombinedMassComposer31 {
                 options = LiturgiaPapalMissalRepository.ordinarySundayPrefacesHtml(context);
             }
             if (options.isEmpty()) {
-                options = "<p class=\"source-warning\">" + escape(prefaceHint(day, primary)) + "</p>";
+                options = "<p class=\"rubric\">" + escape(prefaceHint(day, primary)) + "</p>";
             }
             return "<div id=\"prefaceBlock\" data-semantic-id=\"mass:preface\"><h3>Prefacio</h3>"
                     + dialogue + options + "</div>";
         } catch (Exception error) {
-            return "<div class=\"source-warning\">Prefacio pendiente de incorporar.</div>";
+            return "<p class=\"rubric\">Prefacio según el formulario de la celebración.</p>";
         }
     }
 
@@ -152,17 +167,13 @@ public final class CombinedMassComposer31 {
 
     private static String creedBlock(Context context) {
         try {
-            String nicene = LiturgiaPapalWordRepository.niceneCreedHtml(context);
-            String apostles = LiturgiaPapalWordRepository.apostlesCreedHtml(context);
             return "<section class=\"ministerium-section\" data-semantic-id=\"mass:creed\" id=\"creedBlock\">"
-                    + "<h2>Profesión de fe</h2><div class=\"choicebar\">"
-                    + "<button class=\"selected\" id=\"creedNiceneButton\" onclick=\"setCreed('nicene')\">Niceno</button>"
-                    + "<button id=\"creedApostlesButton\" onclick=\"setCreed('apostles')\">Apostólico</button>"
-                    + "</div><div id=\"creedNicene\">" + nicene + "</div>"
-                    + "<div id=\"creedApostles\" class=\"hidden\">" + apostles + "</div></section>";
+                    + "<h2>Profesión de fe</h2>"
+                    + LiturgiaPapalWordRepository.professionOfFaithHtml(context, "es")
+                    + "</section>";
         } catch (Exception error) {
             return sectionHtml("mass:creed", "Profesión de fe",
-                    "<p class=\"source-warning\">Profesión de fe pendiente de incorporar.</p>");
+                    "<p class=\"rubric\">Se hace la profesión de fe.</p>");
         }
     }
 
@@ -183,7 +194,7 @@ public final class CombinedMassComposer31 {
                         + "<p><b>" + escape(lines[response].trim()) + "</b></p></div>";
             }
         } catch (Exception ignored) {}
-        return "<p class=\"source-warning\">Rito inicial pendiente de incorporar.</p>";
+        return "<p class=\"rubric\">Se realizan los ritos iniciales.</p>";
     }
 
     private static HourEntry findHour(Context context, LiturgicalDay day, Calendar date,
@@ -227,14 +238,13 @@ public final class CombinedMassComposer31 {
         return readRequired(new File(root, hour.filePath));
     }
 
-    /** Opening a celebration never starts Lectionary synchronization. */
     private static String readings(Context context, Calendar date) {
         try {
             if (MassReadingsRepository.has(context, date)) {
                 return bodyContent(MassReadingsRepository.read(context, date));
             }
         } catch (Exception ignored) {}
-        return "<div class=\"source-warning\"><b>Lecturas no sincronizadas.</b> Sincroniza el Leccionario desde Ajustes → Actualizaciones.</div>";
+        return "<p class=\"rubric\"><b>Lecturas no guardadas.</b> Sincroniza el Leccionario desde Ajustes → Actualizaciones.</p>";
     }
 
     private static LiturgicalEvent primaryEvent(Context context, Calendar date) {
@@ -295,7 +305,8 @@ public final class CombinedMassComposer31 {
 
     private static String cleanIntercessions(String html) {
         if (html == null || html.isEmpty()) return "";
-        return html.replaceAll("(?is)<p\\b[^>]*>.*?(?:Padre nuestro|oración conclusiva).*?</p>", "");
+        String value = html.replaceAll("(?is)<p\\b[^>]*>.*?(?:Padre nuestro|oración conclusiva).*?</p>", "");
+        return value.replaceAll("(?is)<p\\b[^>]*>\\s*Contenido pendiente de incorporar\\.?\\s*</p>", "").trim();
     }
 
     private static String addCanticleIfNeeded(String section, String hourKey) {
@@ -321,7 +332,7 @@ public final class CombinedMassComposer31 {
 
     private static String sectionHtml(String id, String title, String content) {
         String value = content == null || content.trim().isEmpty()
-                ? "<p class=\"source-warning\">Contenido pendiente de incorporar.</p>"
+                ? "<p class=\"rubric\">No se encontró un texto adicional para esta parte.</p>"
                 : content;
         return "<section class=\"ministerium-section\" data-semantic-id=\"" + escape(id) + "\">"
                 + "<h2>" + escape(title) + "</h2>" + value + "</section>";
@@ -342,14 +353,16 @@ public final class CombinedMassComposer31 {
                 + ".ministerium-section{margin:0 0 18px;padding:16px;border:1px solid " + border + ";border-radius:12px;background:" + surface + ";overflow:hidden;}"
                 + "h2,h3,h4{color:" + wine + ";line-height:1.3}.rubric{color:" + muted + ";font-style:italic;}"
                 + ".source-warning{padding:10px 12px;border-left:3px solid " + wine + ";background:" + background + ";color:" + muted + ";}"
-                + ".choicebar{display:flex;gap:7px;overflow-x:auto;margin:8px 0 13px}.choicebar button{border:1px solid " + wine + ";background:transparent;color:" + wine + ";border-radius:18px;padding:8px 12px;font-weight:bold;}"
+                + ".choicebar{display:flex;gap:7px;overflow-x:auto;margin:8px 0 13px}.choicebar button{min-height:42px;border:1px solid " + wine + ";background:transparent;color:" + wine + ";border-radius:18px;padding:8px 12px;font-weight:bold;}"
                 + ".choicebar button.selected{background:" + wine + ";color:" + background + ";}.hidden{display:none!important;}"
                 + ".liturgia-papal p{margin:.7em 0}.ministerium-canticle{padding:10px;border-left:3px solid " + wine + ";}"
+                + "@media(max-width:599px){body{padding:10px 8px 56px;font-size:17px}.ministerium-section{padding:12px;border-radius:8px}.choicebar button{min-height:44px}}"
+                + "@media(min-width:600px){body{padding:24px 28px 80px;font-size:20px}.ministerium-section{padding:20px 24px}}"
                 + "</style></head><body>" + body
-                + "<script>function setCreed(w){var n=document.getElementById('creedNicene'),a=document.getElementById('creedApostles');"
-                + "var nb=document.getElementById('creedNiceneButton'),ab=document.getElementById('creedApostlesButton');var x=w==='nicene';"
-                + "if(n)n.classList.toggle('hidden',!x);if(a)a.classList.toggle('hidden',x);if(nb)nb.classList.toggle('selected',x);if(ab)ab.classList.toggle('selected',!x);}" 
-                + "function setPrayer(n){for(var i=1;i<=4;i++){var p=document.getElementById('prayer'+i),b=document.getElementById('prayerButton'+i);var x=i===n;if(p)p.classList.toggle('hidden',!x);if(b&&!b.disabled){b.classList.toggle('selected',x);b.setAttribute('aria-pressed',x?'true':'false');}}var pref=document.getElementById('prefaceBlock');if(pref)pref.style.display=n===4?'none':'';}"
+                + "<script>function setCreed(w){var n=document.getElementById('ministeriumCredoNicene'),a=document.getElementById('ministeriumCredoApostles');"
+                + "var nb=document.getElementById('ministeriumCredoNiceneButton'),ab=document.getElementById('ministeriumCredoApostlesButton');var x=w==='nicene';"
+                + "if(n)n.hidden=!x;if(a)a.hidden=x;if(nb)nb.classList.toggle('selected',x);if(ab)ab.classList.toggle('selected',!x);}" 
+                + "function setPrayer(n){for(var i=1;i<=4;i++){var p=document.getElementById('prayer'+i),b=document.getElementById('prayerButton'+i);var x=i===n;if(p){p.hidden=!x;p.classList.toggle('hidden',!x);}if(b&&!b.disabled){b.classList.toggle('selected',x);b.setAttribute('aria-pressed',x?'true':'false');}}var pref=document.getElementById('prefaceBlock');if(pref)pref.style.display=n===4?'none':'';}"
                 + "</script></body></html>";
     }
 
@@ -428,7 +441,7 @@ public final class CombinedMassComposer31 {
 
         static ProperParts missing(String celebration) {
             String note = "<p class=\"source-warning\"><b>" + escape(celebration)
-                    + ".</b> Texto propio pendiente de incorporar.</p>";
+                    + ".</b> Texto propio no disponible todavía en el paquete local.</p>";
             return new ProperParts(note, note, note, "", note, false);
         }
     }
