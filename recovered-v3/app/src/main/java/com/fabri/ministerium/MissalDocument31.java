@@ -2,11 +2,12 @@ package com.fabri.ministerium;
 
 import android.content.Context;
 
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
 
-/** Stand-alone Missal documents sourced from Liturgia Papal, never from the old Missal EPUB. */
+/**
+ * Stand-alone Missal document. Spanish and Latin are separate reading modes;
+ * the old side-by-side Missal is intentionally no longer generated.
+ */
 public final class MissalDocument31 {
     public static final class Result {
         public final String title;
@@ -23,8 +24,10 @@ public final class MissalDocument31 {
 
     public static Result build(Context context, Calendar date, String section, String language)
             throws Exception {
-        if (!LiturgiaPapalMissalRepository.isAvailable(context, "es")) {
-            throw new IllegalStateException("Falta el contenido local del Misal Romano.");
+        String lang = "la".equals(language) ? "la" : "es";
+        if (!LiturgiaPapalMissalRepository.isAvailable(context, lang)) {
+            throw new IllegalStateException("Falta el contenido local del Misal Romano en "
+                    + ("la".equals(lang) ? "latín" : "español") + ".");
         }
         LiturgicalDay day = LiturgicalResolver.resolve(context, date);
         String key = section == null ? "day" : section;
@@ -33,50 +36,50 @@ public final class MissalDocument31 {
 
         switch (key) {
             case "initial":
-                title = "Ritos iniciales";
-                content = component(context, "initial", language);
+                title = "la".equals(lang) ? "Ritus initiales" : "Ritos iniciales";
+                content = component(context, "initial", lang);
                 break;
             case "word":
-                title = "Liturgia de la Palabra";
-                content = wordWithReadings(context, date, language);
+                title = "la".equals(lang) ? "Liturgia Verbi" : "Liturgia de la Palabra";
+                content = word(context, date, day, lang);
                 break;
             case "collect":
-                title = "Oración colecta";
-                content = proper(context, date, day, LiturgiaPapalMissalRepository.COLLECT);
+                title = "la".equals(lang) ? "Oratio collecta" : "Oración colecta";
+                content = proper(context, date, day, LiturgiaPapalMissalRepository.COLLECT, lang);
                 break;
             case "eucharist":
-                title = "Liturgia eucarística";
-                content = eucharistic(context, date, day, language);
+                title = "la".equals(lang) ? "Liturgia eucharistica" : "Liturgia eucarística";
+                content = eucharistic(context, date, day, lang);
                 break;
             case "offerings":
-                title = "Oración sobre las ofrendas";
-                content = proper(context, date, day, LiturgiaPapalMissalRepository.OFFERINGS);
+                title = "la".equals(lang) ? "Oratio super oblata" : "Oración sobre las ofrendas";
+                content = proper(context, date, day, LiturgiaPapalMissalRepository.OFFERINGS, lang);
                 break;
             case "prefaces":
-                title = "Prefacios";
-                content = component(context, "prefaces", language);
+                title = "la".equals(lang) ? "Præfationes" : "Prefacios";
+                content = component(context, "prefaces", lang);
                 break;
             case "prayers":
-                title = "Plegarias eucarísticas";
-                content = prayers(context, language, false);
+                title = "la".equals(lang) ? "Preces eucharisticæ" : "Plegarias eucarísticas";
+                content = prayers(context, lang, false);
                 break;
             case "communion":
-                title = "Rito de la Comunión";
-                content = communion(context, date, day, language);
+                title = "la".equals(lang) ? "Ritus Communionis" : "Rito de la Comunión";
+                content = communion(context, date, day, lang);
                 break;
             case "communion_antiphon":
-                title = "Antífona de comunión";
+                title = "la".equals(lang) ? "Antiphona ad Communionem" : "Antífona de comunión";
                 content = proper(context, date, day,
-                        LiturgiaPapalMissalRepository.COMMUNION_ANTIPHON);
+                        LiturgiaPapalMissalRepository.COMMUNION_ANTIPHON, lang);
                 break;
             case "post_communion":
-                title = "Oración después de la Comunión";
+                title = "la".equals(lang) ? "Oratio post Communionem" : "Oración después de la Comunión";
                 content = proper(context, date, day,
-                        LiturgiaPapalMissalRepository.POST_COMMUNION);
+                        LiturgiaPapalMissalRepository.POST_COMMUNION, lang);
                 break;
             case "conclusion":
-                title = "Rito de conclusión";
-                content = component(context, "conclusion", language);
+                title = "la".equals(lang) ? "Ritus conclusionis" : "Rito de conclusión";
+                content = component(context, "conclusion", lang);
                 break;
             case "commons":
             case "needs":
@@ -88,92 +91,111 @@ public final class MissalDocument31 {
                 break;
             case "day":
             default:
-                title = "Misa del día";
-                content = daily(context, date, day, language);
+                title = "la".equals(lang) ? "Missa diei" : "Misa del día";
+                content = daily(context, date, day, lang);
                 break;
         }
-        return new Result(title, day.celebration + " · " + day.dateLabel,
-                document(context, title, content, language));
+        String languageLabel = "la".equals(lang) ? "Latín" : "Español";
+        return new Result(title, day.celebration + " · " + day.dateLabel + " · " + languageLabel,
+                document(context, title, content, lang));
     }
 
-    private static String daily(Context context, Calendar date, LiturgicalDay day, String language)
+    /** Correct liturgical order: readings precede homily and profession of faith. */
+    private static String daily(Context context, Calendar date, LiturgicalDay day, String lang)
             throws Exception {
         StringBuilder out = new StringBuilder(64000);
-        String dayHint = MissalReferenceCatalog.dayHintHtml(context, date,
-                day == null ? "" : day.celebration);
-        if (!dayHint.isEmpty()) out.append(dayHint);
-        out.append(block("Ritos iniciales", component(context, "initial", language)));
-        out.append(block("Oración colecta",
-                proper(context, date, day, LiturgiaPapalMissalRepository.COLLECT)));
-        out.append(block("Liturgia de la Palabra", wordWithReadings(context, date, language)));
-        out.append(block("Liturgia eucarística", eucharistic(context, date, day, language)));
-        out.append(block("Rito de la Comunión", communion(context, date, day, language)));
-        out.append(block("Oración después de la Comunión",
-                proper(context, date, day, LiturgiaPapalMissalRepository.POST_COMMUNION)));
-        out.append(block("Rito de conclusión", component(context, "conclusion", language)));
+        String entrance = proper(context, date, day, LiturgiaPapalMissalRepository.ENTRANCE, lang);
+        if (!isPending(entrance)) out.append(block("la".equals(lang)
+                ? "Antiphona ad introitum" : "Antífona de entrada", entrance, "mass:entrance"));
+        out.append(block("la".equals(lang) ? "Ritus initiales" : "Ritos iniciales",
+                component(context, "initial", lang), "mass:initial"));
+        out.append(block("la".equals(lang) ? "Oratio collecta" : "Oración colecta",
+                proper(context, date, day, LiturgiaPapalMissalRepository.COLLECT, lang), "mass:collect"));
+        out.append(block("la".equals(lang) ? "Liturgia Verbi" : "Liturgia de la Palabra",
+                word(context, date, day, lang), "mass:word"));
+        out.append(block("la".equals(lang) ? "Liturgia eucharistica" : "Liturgia eucarística",
+                eucharistic(context, date, day, lang), "mass:eucharist"));
+        out.append(block("la".equals(lang) ? "Ritus Communionis" : "Rito de la Comunión",
+                communion(context, date, day, lang), "mass:communion"));
+        out.append(block("la".equals(lang) ? "Oratio post Communionem" : "Oración después de la Comunión",
+                proper(context, date, day, LiturgiaPapalMissalRepository.POST_COMMUNION, lang),
+                "mass:post-communion"));
+        out.append(block("la".equals(lang) ? "Ritus conclusionis" : "Rito de conclusión",
+                LiturgiaPapalMissalRepository.conclusionHtml(context, lang), "mass:conclusion"));
         return out.toString();
     }
 
-    /** Opening the Missal never performs network synchronization. */
-    private static String wordWithReadings(Context context, Calendar date, String language)
+    private static String word(Context context, Calendar date, LiturgicalDay day, String lang)
             throws Exception {
-        String readings = "";
+        StringBuilder out = new StringBuilder(18000);
+        out.append("<div class=\"lectionary-insert\" data-semantic-id=\"mass:readings\"><h3>")
+                .append("la".equals(lang) ? "Lectiones diei" : "Lecturas del día")
+                .append("</h3>").append(readings(context, date)).append("</div>");
+        out.append("<section class=\"missal-inline-section\" data-semantic-id=\"mass:homily\"><h3>")
+                .append("la".equals(lang) ? "Homilia" : "Homilía").append("</h3></section>");
+        if (creedRequired(context, date, day)) {
+            out.append("<section class=\"missal-inline-section\" data-semantic-id=\"mass:creed\"><h3>")
+                    .append("la".equals(lang) ? "Professio fidei" : "Profesión de fe")
+                    .append("</h3>")
+                    .append(LiturgiaPapalWordRepository.professionOfFaithHtml(context, lang))
+                    .append("</section>");
+        }
+        out.append("<section class=\"missal-inline-section\" data-semantic-id=\"mass:universal-prayer\"><h3>")
+                .append("la".equals(lang) ? "Oratio universalis" : "Oración universal")
+                .append("</h3><p class=\"rubric\">")
+                .append("la".equals(lang)
+                        ? "Deinde fit oratio universalis, seu oratio fidelium."
+                        : "Después se hace la oración universal u oración de los fieles.")
+                .append("</p></section>");
+        return out.toString();
+    }
+
+    private static String readings(Context context, Calendar date) {
         try {
             if (MassReadingsRepository.has(context, date)) {
-                readings = body(MassReadingsRepository.read(context, date));
+                return body(MassReadingsRepository.read(context, date));
             }
         } catch (Exception ignored) {}
-        if (readings.isEmpty()) {
-            readings = pending("Las lecturas de esta fecha no están guardadas. Sincroniza el Leccionario desde Ajustes → Actualizaciones.");
-        }
-        return component(context, "word", language)
-                + "<div class=\"lectionary-insert\"><h3>Lecturas del día</h3>" + readings + "</div>";
+        return pending("Las lecturas de esta fecha no están guardadas. Sincroniza el Leccionario desde Ajustes → Actualizaciones.");
     }
 
     private static String eucharistic(Context context, Calendar date, LiturgicalDay day,
-                                      String language) throws Exception {
-        String offerings = proper(context, date, day, LiturgiaPapalMissalRepository.OFFERINGS);
-        StringBuilder out = new StringBuilder();
-        if ("lat_es".equals(language)) {
-            out.append(parallelHtml(
-                    LiturgiaPapalMissalRepository.preparationHtml(context, "es"),
-                    LiturgiaPapalMissalRepository.preparationHtml(context, "la")));
-        } else {
-            out.append(LiturgiaPapalMissalRepository.preparationHtml(context, "es"));
-        }
-        out.append(offerings);
-        out.append("<h3>Prefacio</h3>");
-        if ("lat_es".equals(language)) {
-            out.append(parallelHtml(
-                    LiturgiaPapalMissalRepository.prefaceDialogueHtml(context, "es"),
-                    LiturgiaPapalMissalRepository.prefaceDialogueHtml(context, "la")));
-        } else {
-            out.append(LiturgiaPapalMissalRepository.prefaceDialogueHtml(context, "es"));
-        }
+                                      String lang) throws Exception {
+        StringBuilder out = new StringBuilder(36000);
+        out.append(LiturgiaPapalMissalRepository.preparationHtml(context, lang));
+        out.append("<section class=\"missal-inline-section\" data-semantic-id=\"mass:offerings\"><h3>")
+                .append("la".equals(lang) ? "Oratio super oblata" : "Oración sobre las ofrendas")
+                .append("</h3>")
+                .append(proper(context, date, day, LiturgiaPapalMissalRepository.OFFERINGS, lang))
+                .append("</section>");
+        out.append("<section class=\"missal-inline-section\" data-semantic-id=\"mass:preface\"><h3>")
+                .append("la".equals(lang) ? "Præfatio" : "Prefacio").append("</h3>")
+                .append(LiturgiaPapalMissalRepository.prefaceDialogueHtml(context, lang));
 
         boolean properPrefaceRequired = false;
         if (isOrdinary(day) && !hasRequiredSaint(day)
-                && date.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
-            out.append(LiturgiaPapalMissalRepository.ordinarySundayPrefacesHtml(context));
+                && date.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY && "es".equals(lang)) {
+            String pref = LiturgiaPapalMissalRepository.ordinarySundayPrefacesHtml(context);
+            if (!pref.isEmpty()) out.append(pref);
         } else {
             MissalReferenceCatalog.SaintReference saint = MissalReferenceCatalog.findSaint(
                     context, date, day == null ? "" : day.celebration);
             if (saint != null && !saint.preface.isEmpty()) {
                 properPrefaceRequired = true;
-                out.append("<div class=\"reference-day-hint\"><b>Prefacio correspondiente:</b> ")
-                        .append(escape(saint.preface)).append(".</div>");
-            } else {
-                out.append(pending("Prefacio propio o común pendiente de incorporar."));
+                out.append("<p class=\"rubric preface-hint\">")
+                        .append("la".equals(lang) ? "Præfatio propria: " : "Prefacio correspondiente: ")
+                        .append(escape(saint.preface)).append(".</p>");
             }
         }
-        out.append(prayers(context, language, properPrefaceRequired));
+        out.append("</section>");
+        out.append(prayers(context, lang, properPrefaceRequired));
         return out.toString();
     }
 
-    /** Only one Eucharistic Prayer is visible at a time in both ES and ES/LAT. */
-    private static String prayers(Context context, String language,
+    /** Exactly one Eucharistic Prayer is visible; ES and Latin use their own source file. */
+    private static String prayers(Context context, String lang,
                                   boolean properPrefaceRequired) throws Exception {
-        if (!"lat_es".equals(language)) {
+        if ("es".equals(lang)) {
             return LiturgiaPapalMissalRepository.eucharisticPrayersHtml(context,
                     properPrefaceRequired);
         }
@@ -182,39 +204,41 @@ public final class MissalDocument31 {
         for (int i = 1; i <= 4; i++) {
             boolean disabled = i == 4 && properPrefaceRequired;
             buttons.append("<button type=\"button\" id=\"prayerButton").append(i).append("\"")
-                    .append(disabled ? " disabled aria-disabled=\"true\"" : " onclick=\"setPrayer(" + i + ")\"")
-                    .append(i == 2 ? " class=\"selected\" aria-pressed=\"true\"" : " aria-pressed=\"false\"")
+                    .append(disabled ? " disabled aria-disabled=\"true\""
+                            : " onclick=\"setPrayer(" + i + ")\"")
+                    .append(i == 2 ? " class=\"selected\" aria-pressed=\"true\""
+                            : " aria-pressed=\"false\"")
                     .append(">").append(roman(i)).append("</button>");
             bodies.append("<div id=\"prayer").append(i).append("\" class=\"eucharistic-prayer")
-                    .append(i == 2 ? "\"" : " hidden\"").append("><h4>Plegaria Eucarística ")
-                    .append(roman(i)).append("</h4>")
-                    .append(parallel(
-                            LiturgiaPapalMissalRepository.component(context, "es", "eucharistic_prayer_" + i),
-                            LiturgiaPapalMissalRepository.component(context, "la", "eucharistic_prayer_" + i)))
+                    .append(i == 2 ? "\"" : " hidden\"")
+                    .append("><h4>Prex Eucharistica ").append(roman(i)).append("</h4>")
+                    .append(LiturgiaPapalMissalRepository.eucharisticPrayerHtml(context, "la", i))
                     .append("</div>");
         }
-        String restriction = properPrefaceRequired
-                ? "<p class=\"rubric prayer-restriction\">La Plegaria IV no se usa cuando la celebración exige un prefacio propio.</p>"
-                : "";
-        return "<div class=\"eucharistic-prayers\"><h3>Plegaria eucarística</h3>"
+        return "<div class=\"eucharistic-prayers\"><h3>Prex Eucharistica</h3>"
                 + "<div class=\"choicebar prayer-choicebar\">" + buttons + "</div>"
-                + restriction + bodies + "</div>";
+                + bodies + "</div>";
     }
 
     private static String communion(Context context, Calendar date, LiturgicalDay day,
-                                    String language) throws Exception {
+                                    String lang) throws Exception {
         String antiphon = proper(context, date, day,
-                LiturgiaPapalMissalRepository.COMMUNION_ANTIPHON);
-        if (!"lat_es".equals(language)) {
-            return LiturgiaPapalMissalRepository.communionHtml(context, "es", antiphon);
-        }
-        return parallel(
-                LiturgiaPapalMissalRepository.component(context, "es", "communion"),
-                LiturgiaPapalMissalRepository.component(context, "la", "communion"))
-                + "<h3>Antífona propia</h3>" + antiphon;
+                LiturgiaPapalMissalRepository.COMMUNION_ANTIPHON, lang);
+        return LiturgiaPapalMissalRepository.communionHtml(context, lang, antiphon);
     }
 
-    private static String proper(Context context, Calendar date, LiturgicalDay day, String part) {
+    /** Daily GDL propers take precedence; the ordinary package is the offline fallback. */
+    private static String proper(Context context, Calendar date, LiturgicalDay day,
+                                 String part, String lang) {
+        DailyMassProperRepository.ProperDay daily = DailyMassProperRepository.cached(context, date);
+        String text = dailyText(daily, part);
+        if (!text.isEmpty()) {
+            String rendered = DailyMassProperRepository.render(text);
+            if ("la".equals(lang)) {
+                return "<div class=\"proper-language-note\">Propio del día · fuente española</div>" + rendered;
+            }
+            return rendered;
+        }
         if (isOrdinary(day) && !hasRequiredSaint(day)) {
             try {
                 String value = LiturgiaPapalMissalRepository.ordinaryProperPartHtml(context, date, part);
@@ -222,14 +246,35 @@ public final class MissalDocument31 {
             } catch (Exception ignored) {}
         }
         return pending("Texto propio de «" + escape(day == null ? "esta celebración" : day.celebration)
-                + "» pendiente de incorporar.");
+                + "» todavía no está guardado para esta fecha.");
     }
 
-    private static String component(Context context, String id, String language) throws Exception {
-        if (!"lat_es".equals(language)) return render(
-                LiturgiaPapalMissalRepository.component(context, "es", id));
-        return parallel(LiturgiaPapalMissalRepository.component(context, "es", id),
-                LiturgiaPapalMissalRepository.component(context, "la", id));
+    private static String dailyText(DailyMassProperRepository.ProperDay day, String part) {
+        if (day == null) return "";
+        if (LiturgiaPapalMissalRepository.ENTRANCE.equals(part)) return day.entrance;
+        if (LiturgiaPapalMissalRepository.COLLECT.equals(part)) return day.collect;
+        if (LiturgiaPapalMissalRepository.OFFERINGS.equals(part)) return day.offerings;
+        if (LiturgiaPapalMissalRepository.COMMUNION_ANTIPHON.equals(part)) return day.communionAntiphon;
+        if (LiturgiaPapalMissalRepository.POST_COMMUNION.equals(part)) return day.postCommunion;
+        return "";
+    }
+
+    private static String component(Context context, String id, String lang) throws Exception {
+        return render(LiturgiaPapalMissalRepository.component(context, lang, id));
+    }
+
+    private static boolean creedRequired(Context context, Calendar date, LiturgicalDay day) {
+        if (date.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) return true;
+        MissalReferenceCatalog.SaintReference saint = MissalReferenceCatalog.findSaint(
+                context, date, day == null ? "" : day.celebration);
+        if (saint != null && saint.creed) return true;
+        try {
+            LiturgicalEvent primary = LiturgicalResolver.primaryEvent(
+                    LiturgicalCalendarRepository.eventsFor(context, date));
+            return primary != null && primary.isSolemnity();
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     private static boolean isOrdinary(LiturgicalDay day) {
@@ -249,85 +294,65 @@ public final class MissalDocument31 {
         if (text == null || text.trim().isEmpty()) return "";
         String[] blocks = text.trim().split("\\n\\s*\\n");
         StringBuilder html = new StringBuilder("<div class=\"liturgia-papal\">");
-        for (String block : blocks) {
-            String value = escape(block.trim()).replace("\n", "<br>");
+        for (String item : blocks) {
+            String value = escape(item.trim()).replace("\n", "<br>");
             if (!value.isEmpty()) html.append("<p>").append(value).append("</p>");
         }
         return html.append("</div>").toString();
     }
 
-    /**
-     * ES/LAT is aligned by small semantic text units instead of two complete,
-     * independently-scrolling columns. This substantially reduces vertical drift.
-     */
-    private static String parallel(String spanish, String latin) {
-        List<String> es = textBlocks(spanish);
-        List<String> la = textBlocks(latin);
-        int count = Math.max(es.size(), la.size());
-        StringBuilder out = new StringBuilder("<div class=\"parallel-units\">");
-        for (int i = 0; i < count; i++) {
-            out.append("<div class=\"parallel-unit\"><div class=\"col\"><div class=\"lang\">ES</div>")
-                    .append(i < es.size() ? render(es.get(i)) : "")
-                    .append("</div><div class=\"col\"><div class=\"lang\">LA</div>")
-                    .append(i < la.size() ? render(la.get(i)) : "")
-                    .append("</div></div>");
-        }
-        return out.append("</div>").toString();
-    }
-
-    private static String parallelHtml(String spanishHtml, String latinHtml) {
-        return "<div class=\"parallel-unit\"><div class=\"col\"><div class=\"lang\">ES</div>"
-                + (spanishHtml == null ? "" : spanishHtml)
-                + "</div><div class=\"col\"><div class=\"lang\">LA</div>"
-                + (latinHtml == null ? "" : latinHtml) + "</div></div>";
-    }
-
-    private static List<String> textBlocks(String text) {
-        List<String> result = new ArrayList<>();
-        if (text == null || text.trim().isEmpty()) return result;
-        for (String block : text.trim().split("\\n\\s*\\n")) {
-            String value = block.trim();
-            if (!value.isEmpty()) result.add(value);
-        }
-        return result;
-    }
-
-    private static String block(String title, String content) {
-        return "<section><h2>" + escape(title) + "</h2>" + content + "</section>";
+    private static String block(String title, String content, String semanticId) {
+        return "<section class=\"ministerium-section\" data-semantic-id=\"" + escape(semanticId)
+                + "\"><h2>" + escape(title) + "</h2>" + content + "</section>";
     }
 
     private static String pending(String message) {
         return "<div class=\"pending\">" + message + "</div>";
     }
 
+    private static boolean isPending(String html) {
+        return html != null && html.contains("class=\"pending\"");
+    }
+
     private static String body(String html) {
         if (html == null) return "";
         String lower = html.toLowerCase(java.util.Locale.ROOT);
         int start = lower.indexOf("<body");
-        if (start >= 0) { start = lower.indexOf('>', start); start = start < 0 ? 0 : start + 1; }
-        else start = 0;
+        if (start >= 0) {
+            start = lower.indexOf('>', start);
+            start = start < 0 ? 0 : start + 1;
+        } else start = 0;
         int end = lower.lastIndexOf("</body>");
         if (end < start) end = html.length();
         return html.substring(start, end);
     }
 
-    private static String document(Context context, String title, String content, String language) {
+    private static String document(Context context, String title, String content, String lang) {
         boolean dark = ThemeUtils.isDark(context);
         String bg = dark ? "#26211E" : "#FFFDF7";
         String surface = dark ? "#332C28" : "#FFFFFF";
         String ink = dark ? "#F3EDE4" : "#2A2521";
         String wine = dark ? "#D9B96F" : "#6E1D2A";
         String muted = dark ? "#C8BDB0" : "#6F665E";
-        String border = dark ? "#665746" : "#E2D7C7";
-        return "<!doctype html><html lang=\"es\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
-                + "<style>html,body{margin:0;background:" + bg + ";color:" + ink + "}body{font-family:serif;line-height:1.62;padding:20px 18px 70px;box-sizing:border-box;max-width:1000px;margin:auto}"
-                + "section{margin:0 0 20px;padding:16px;border:1px solid " + border + ";border-radius:12px;background:" + surface + "}h1,h2,h3,h4,summary{color:" + wine + "}.pending{padding:12px;border-left:4px solid " + wine + ";background:" + bg + ";color:" + muted + "}.parallel-unit{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:0 0 12px;align-items:start}.col{min-width:0}.lang{font-weight:bold;color:" + wine + ";border-bottom:1px solid " + border + ";padding-bottom:4px;margin-bottom:5px}.lectionary-insert{margin:16px 0;padding:12px;border:1px solid " + border + ";border-radius:9px}"
-                + ".reference-source{display:none!important}.reference-day-hint{margin:0 0 16px;padding:12px 14px;border-left:4px solid " + wine + ";border-radius:8px;background:" + surface + ";color:" + ink + "}.reference-group{padding:14px}.reference-items{display:grid;gap:8px}.reference-item{display:flex;flex-direction:column;gap:3px;padding:10px 12px;border:1px solid " + border + ";border-radius:9px;background:" + bg + "}.reference-item small{color:" + muted + ";font-family:sans-serif;font-size:.78em}"
-                + ".hidden{display:none!important}.choicebar{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}.choicebar button{border:1px solid " + wine + ";border-radius:18px;background:transparent;color:" + wine + ";padding:7px 12px;font:inherit}.choicebar button.selected{font-weight:700;text-decoration:underline}"
-                + "@media(max-width:680px){.parallel-unit{grid-template-columns:1fr}.parallel-unit .col+.col{border-top:1px solid " + border + ";padding-top:12px}}"
-                + "</style></head><body><h1>" + escape(title) + "</h1>" + content
-                + "<script>function setPrayer(n){for(var i=1;i<=4;i++){var p=document.getElementById('prayer'+i),b=document.getElementById('prayerButton'+i);var x=i===n;if(p)p.classList.toggle('hidden',!x);if(b&&!b.disabled){b.classList.toggle('selected',x);b.setAttribute('aria-pressed',x?'true':'false');}}}</script>"
-                + "</body></html>";
+        String border = dark ? "#665746" : "#E2D8CB";
+        return "<!doctype html><html lang=\"" + lang + "\"><head><meta charset=\"utf-8\">"
+                + "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1,maximum-scale=3\">"
+                + "<style>html,body{margin:0;padding:0;background:" + bg + ";color:" + ink + ";}"
+                + "body{font-family:Georgia,serif;font-size:18px;line-height:1.58;padding:18px 20px 54px;}"
+                + ".document{max-width:900px;margin:0 auto;background:" + surface + ";padding:18px 22px;border-radius:10px;}"
+                + "h1,h2,h3,h4{color:" + wine + ";line-height:1.25}h1{font-size:1.55em;margin:.2em 0 .9em}"
+                + "h2{font-size:1.3em;margin:1.25em 0 .55em;border-bottom:1px solid " + border + ";padding-bottom:.28em}"
+                + "h3{font-size:1.14em;margin:1.05em 0 .45em}p{margin:.68em 0}.rubric{color:" + muted + ";font-style:italic}"
+                + ".ministerium-section{scroll-margin-top:12px}.missal-inline-section{margin:1em 0}"
+                + ".pending{border-left:3px solid " + wine + ";padding:9px 12px;color:" + muted + ";background:rgba(128,128,128,.08)}"
+                + ".daily-proper{border-left:3px solid " + wine + ";padding-left:12px}.proper-language-note{font:700 .76em sans-serif;color:" + muted + ";text-transform:uppercase;letter-spacing:.04em;margin:.5em 0}"
+                + ".choicebar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 16px}.choicebar button{min-height:42px;border:1px solid currentColor;border-radius:20px;background:transparent;color:inherit;padding:7px 14px;font:inherit}.choicebar button.selected{font-weight:700;outline:2px solid currentColor;outline-offset:1px}"
+                + ".eucharistic-prayer[hidden],[hidden]{display:none!important}.lectionary-insert article>h1,.lectionary-insert .source{display:none!important}"
+                + ".reading-section{margin:1.2em 0}.reading-summary{font-style:italic;font-weight:700}.reading-reference{font-weight:700}.psalm-response{font-weight:700}"
+                + "@media(max-width:599px){body{font-size:17px;padding:10px 8px 42px}.document{padding:14px 14px;border-radius:0}.choicebar button{min-height:44px;flex:1 1 auto}}"
+                + "@media(min-width:600px){body{font-size:20px;padding:22px 28px 70px}.document{padding:24px 34px}}"
+                + "</style></head><body><main class=\"document\"><h1>" + escape(title) + "</h1>"
+                + content + "</main></body></html>";
     }
 
     private static String label(String key) {
@@ -335,11 +360,22 @@ public final class MissalDocument31 {
         if ("needs".equals(key)) return "Por diversas necesidades";
         if ("votive".equals(key)) return "Misas votivas";
         if ("dead".equals(key)) return "Misas de difuntos";
-        return "Propio de los santos";
+        if ("saints".equals(key)) return "Propio de los santos";
+        return "Misal Romano";
     }
 
     private static String roman(int value) {
-        return value == 1 ? "I" : value == 2 ? "II" : value == 3 ? "III" : "IV";
+        int[] numbers = {10, 9, 5, 4, 1};
+        String[] symbols = {"X", "IX", "V", "IV", "I"};
+        StringBuilder result = new StringBuilder();
+        int remaining = value;
+        for (int i = 0; i < numbers.length; i++) {
+            while (remaining >= numbers[i]) {
+                result.append(symbols[i]);
+                remaining -= numbers[i];
+            }
+        }
+        return result.toString();
     }
 
     private static String escape(String value) {
