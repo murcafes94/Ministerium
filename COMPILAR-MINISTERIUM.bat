@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0"
 
 echo ============================================================
-echo Ministerium 3.1.1 - compilacion local
+echo Ministerium 4.0 - compilacion local
  echo ============================================================
 echo.
 
