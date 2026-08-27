@@ -51,6 +51,7 @@ node tools/validate_calendar_31.mjs
 node tools/validate_lectionary_40.mjs
 node tools/validate_magisterium_40.mjs
 node tools/validate_prayer_experience_40.mjs
+node tools/validate_release_40.mjs
 ```
 
 ## Distribución responsable
