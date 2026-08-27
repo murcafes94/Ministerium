@@ -13,10 +13,70 @@ on:
 
 permissions:
   contents: read
+  actions: write
 
 jobs:
+  cleanup-artifacts:
+    name: Keep latest previous artifact
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      actions: write
+
+    steps:
+      - name: Conservar solo el artifact anterior más reciente
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # GitHub entrega como máximo 100 artifacts por página. Leemos todas las
+          # páginas, ordenamos por created_at (ISO-8601) y conservamos solo el
+          # más reciente que ya existía antes de este build.
+          mapfile -t artifacts < <(
+            gh api --paginate \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "repos/${GITHUB_REPOSITORY}/actions/artifacts?per_page=100" \
+              --jq '.artifacts[] | [.created_at, (.id|tostring), .name] | @tsv' \
+              | sort -r -k1,1
+          )
+
+          echo "Artifacts encontrados: ${#artifacts[@]}"
+
+          if [ "${#artifacts[@]}" -eq 0 ]; then
+            echo "No hay artifacts que conservar ni eliminar."
+            exit 0
+          fi
+
+          IFS=$'\t' read -r keep_created keep_id keep_name <<< "${artifacts[0]}"
+          echo "Conservando artifact anterior más reciente: ${keep_name} (id=${keep_id}, created_at=${keep_created})"
+
+          if [ "${#artifacts[@]}" -eq 1 ]; then
+            echo "No hay artifacts antiguos que eliminar."
+            exit 0
+          fi
+
+          deleted=0
+          for row in "${artifacts[@]:1}"; do
+            IFS=$'\t' read -r created artifact_id artifact_name <<< "$row"
+            echo "Eliminando artifact ${artifact_name} (id=${artifact_id}, created_at=${created})"
+            gh api --method DELETE \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}"
+            deleted=$((deleted + 1))
+          done
+
+          echo "Limpieza terminada: ${deleted} artifact(s) eliminado(s); se conserva ${keep_id}."
+
   build-debug:
     name: Build debug APK
+    needs: cleanup-artifacts
+    if: ${{ always() && (needs.cleanup-artifacts.result == 'success' || needs.cleanup-artifacts.result == 'skipped') }}
     runs-on: ubuntu-latest
 
     defaults:
