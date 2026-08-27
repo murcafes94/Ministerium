@@ -4,13 +4,13 @@
   "generatedAt": null,
   "app": {
     "id": "ministerium-android",
-    "version": "3.0.0-dev",
+    "version": "4.0.0-test",
     "publishedAt": null,
     "minAppVersion": "2.3.2",
     "downloadUrl": null,
     "sha256": null,
     "sizeBytes": null,
-    "notes": "Canal de pruebas para la transición hacia Ministerium 3.0."
+    "notes": "Canal de pruebas de Ministerium 4.0.0. La URL, el hash y el tamaño se completan únicamente al publicar una APK verificada."
   },
   "content": []
 }
