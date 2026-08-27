@@ -2,9 +2,9 @@
   "schema": 3,
   "channel": "testing",
   "app": {
-    "versionName": "3.1.1",
-    "versionCode": 32,
-    "released": "2026-08-24",
+    "versionName": "4.0.0",
+    "versionCode": 40,
+    "released": "2026-08-27",
     "url": "",
     "sha256": "",
     "installation": "user-confirmed"
@@ -57,6 +57,16 @@
       "asset": "rituals/liturgiapapal/manifest.json",
       "verification": "generated-build",
       "delivery": "bundled"
+    },
+    {
+      "id": "magisterium-search",
+      "title": "Índice completo del Magisterio",
+      "version": "4.0.0",
+      "updated": "2026-08-27",
+      "asset": "magisterium-index.tsv",
+      "verification": "generated-build",
+      "delivery": "bundled",
+      "runtimeFormat": "ranked-full-text"
     }
   ],
   "optionalUpdates": [
