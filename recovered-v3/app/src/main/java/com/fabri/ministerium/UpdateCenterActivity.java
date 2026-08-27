@@ -192,8 +192,8 @@ public class UpdateCenterActivity extends ThemedActivity {
 
     private void showChangelog() {
         try {
-            new android.app.AlertDialog.Builder(this).setTitle("Ministerium 3.1.1")
-                    .setMessage(readAsset("changelog-3.1.1.txt"))
+            new android.app.AlertDialog.Builder(this).setTitle("Ministerium 4.0.0")
+                    .setMessage(readAsset("changelog-4.0.0.txt"))
                     .setPositiveButton("Cerrar", null).show();
         } catch (Exception error) {
             Toast.makeText(this, "No se pudo abrir el historial de cambios.", Toast.LENGTH_SHORT).show();
