@@ -9,19 +9,19 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.json.JSONTokener;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import java.io.File;
 
 /**
- * ES/LAT reader. Wide screens synchronize by shared semantic anchors and fall
- * back to proportional progress when one side lacks an equivalent block.
- * Phones keep each language full-width and do not force pixel alignment.
+ * ES/LAT Hours reader. Tablets align semantic paragraph cards. Phones keep one
+ * language full-width at a time so the text is never squeezed into columns.
  */
 public class BilingualHoursReaderActivity extends ThemedActivity {
     public static final String EXTRA_SPANISH_VOLUME = "spanish_volume";
@@ -61,13 +61,16 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
         ((TextView) findViewById(R.id.txtReaderTitle)).setText(
                 value(getIntent().getStringExtra(EXTRA_TITLE)));
         ((TextView) findViewById(R.id.txtReaderSubtitle)).setText(wideParallel
-                ? "Español · Latín · lectura paralela"
-                : "Español arriba · Latín abajo · ancho completo");
+                ? "Español · Latín · párrafos sincronizados"
+                : "Español / Latín · lectura a ancho completo");
 
         panes = findViewById(R.id.bilingualPanes);
         spanish = findViewById(R.id.spanishWebView);
         latin = findViewById(R.id.latinWebView);
         spanishScroll = value(getIntent().getStringExtra(EXTRA_SPANISH_SCROLL));
+
+        Button primaryMode = findViewById(R.id.btnBoth);
+        if (!wideParallel) primaryMode.setText("Español");
 
         configure(spanish, true);
         configure(latin, false);
@@ -75,7 +78,7 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
         configureSynchronizedScroll();
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
-        findViewById(R.id.btnBoth).setOnClickListener(v -> showMode(0));
+        primaryMode.setOnClickListener(v -> showMode(0));
         findViewById(R.id.btnLatin).setOnClickListener(v -> showMode(1));
         ReaderChrome.bindTheme(this, findViewById(R.id.btnReaderTheme));
         ReaderChrome.bindGlobalMenu(this, findViewById(R.id.btnGlobalMenu));
@@ -95,9 +98,11 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
         try {
             loadSpanish();
             int year = getIntent().getIntExtra(EXTRA_LATIN_YEAR, 2026);
+            // hourFile() resolves the clean installed HTML package; an EPUB is never rendered here.
             File latinFile = LatinContentManager.hourFile(this, year,
                     value(getIntent().getStringExtra(EXTRA_LATIN_PATH)));
             latin.loadUrl(Uri.fromFile(latinFile).toString());
+            if (!wideParallel) showMode(0);
         } catch (Exception error) {
             Toast.makeText(this, "No se pudo preparar esta Hora bilingüe.",
                     Toast.LENGTH_LONG).show();
@@ -106,77 +111,47 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
     }
 
     private void configureLayout() {
-        panes.setOrientation(wideParallel ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
+        panes.setOrientation(LinearLayout.HORIZONTAL);
         applyPaneWeights();
     }
 
     private void configureSynchronizedScroll() {
         spanish.setOnScrollChangeListener((view, x, y, oldX, oldY) ->
-                scheduleSynchronize(spanish, latin, y));
+                scheduleSynchronize(spanish, latin));
         latin.setOnScrollChangeListener((view, x, y, oldX, oldY) ->
-                scheduleSynchronize(latin, spanish, y));
+                scheduleSynchronize(latin, spanish));
     }
 
-    private void scheduleSynchronize(WebView source, WebView target, int sourceY) {
+    private void scheduleSynchronize(WebView source, WebView target) {
         if (!wideParallel || syncingScroll || source.getVisibility() != View.VISIBLE
                 || target.getVisibility() != View.VISIBLE) return;
         if (pendingSync != null) syncHandler.removeCallbacks(pendingSync);
-        pendingSync = () -> semanticSynchronize(source, target, sourceY);
-        syncHandler.postDelayed(pendingSync, 75L);
+        pendingSync = () -> semanticSynchronize(source, target);
+        syncHandler.postDelayed(pendingSync, 70L);
     }
 
-    private void semanticSynchronize(WebView source, WebView target, int sourceY) {
+    /** Syncs to the beginning of the matching paragraph card, not to a pixel percentage. */
+    private void semanticSynchronize(WebView source, WebView target) {
         if (!wideParallel || syncingScroll) return;
         String probe = "(function(){var es=document.querySelectorAll('[data-ministerium-align-key]');"
-                + "if(!es.length)return '';var y=window.scrollY+28,b=es[0],d=1e12;"
-                + "for(var i=0;i<es.length;i++){var r=es[i].getBoundingClientRect(),top=r.top+window.scrollY;"
-                + "var x=Math.abs(top-y);if(top<=y+24&&x<d){b=es[i];d=x;}}"
-                + "var rr=b.getBoundingClientRect(),h=Math.max(1,rr.height),top=rr.top+window.scrollY;"
-                + "var p=Math.max(0,Math.min(1,(y-top)/h));return JSON.stringify({k:b.getAttribute('data-ministerium-align-key'),p:p});})()";
+                + "if(!es.length)return '';var y=window.scrollY+34,b=es[0],d=1e12;"
+                + "for(var i=0;i<es.length;i++){var top=es[i].getBoundingClientRect().top+window.scrollY;"
+                + "if(top<=y+28&&Math.abs(top-y)<d){b=es[i];d=Math.abs(top-y);}}"
+                + "return b.getAttribute('data-ministerium-align-key')||'';})()";
         source.evaluateJavascript(probe, raw -> {
-            try {
-                Object decoded = new JSONTokener(raw).nextValue();
-                if (decoded == null || decoded.toString().isEmpty()) {
-                    proportionalSynchronize(source, target, sourceY);
-                    return;
-                }
-                JSONObject anchor = new JSONObject(decoded.toString());
-                String key = anchor.optString("k");
-                double progress = anchor.optDouble("p", 0d);
-                if (key.isEmpty()) {
-                    proportionalSynchronize(source, target, sourceY);
-                    return;
-                }
-                String apply = "(function(k,p){var es=document.querySelectorAll('[data-ministerium-align-key]'),e=null;"
-                        + "for(var i=0;i<es.length;i++){if(es[i].getAttribute('data-ministerium-align-key')===k){e=es[i];break;}}"
-                        + "if(!e)return false;var r=e.getBoundingClientRect(),top=r.top+window.scrollY;"
-                        + "window.scrollTo(0,Math.max(0,Math.round(top+p*Math.max(1,r.height)-28)));return true;})("
-                        + JSONObject.quote(key) + "," + progress + ")";
-                syncingScroll = true;
-                target.evaluateJavascript(apply, result -> {
-                    boolean aligned = "true".equalsIgnoreCase(result);
-                    if (!aligned) proportionalSynchronizeInternal(source, target, sourceY);
-                    target.postDelayed(() -> syncingScroll = false, 75L);
-                });
-            } catch (Exception error) {
-                proportionalSynchronize(source, target, sourceY);
-            }
+            String key = decode(raw);
+            if (key.isEmpty()) return;
+            String apply = "(function(k){var es=document.querySelectorAll('[data-ministerium-align-key]'),e=null;"
+                    + "for(var i=0;i<es.length;i++){if(es[i].getAttribute('data-ministerium-align-key')===k){e=es[i];break;}}"
+                    + "if(!e){var p=k.lastIndexOf(':'),prefix=p<0?k:k.substring(0,p+1),wanted=p<0?0:parseInt(k.substring(p+1),10),best=null,dist=1e9;"
+                    + "for(var j=0;j<es.length;j++){var q=es[j].getAttribute('data-ministerium-align-key')||'';if(q.indexOf(prefix)!==0)continue;"
+                    + "var n=parseInt(q.substring(prefix.length),10),dd=Math.abs(n-wanted);if(dd<dist){best=es[j];dist=dd;}}e=best;}"
+                    + "if(!e)return false;var top=e.getBoundingClientRect().top+window.scrollY;window.scrollTo(0,Math.max(0,Math.round(top-18)));return true;})("
+                    + JSONObject.quote(key) + ")";
+            syncingScroll = true;
+            target.evaluateJavascript(apply, result ->
+                    target.postDelayed(() -> syncingScroll = false, 70L));
         });
-    }
-
-    private void proportionalSynchronize(WebView source, WebView target, int sourceY) {
-        if (syncingScroll) return;
-        syncingScroll = true;
-        proportionalSynchronizeInternal(source, target, sourceY);
-        target.postDelayed(() -> syncingScroll = false, 60L);
-    }
-
-    private void proportionalSynchronizeInternal(WebView source, WebView target, int sourceY) {
-        int sourceRange = Math.round(source.getContentHeight() * source.getScale()) - source.getHeight();
-        int targetRange = Math.round(target.getContentHeight() * target.getScale()) - target.getHeight();
-        if (sourceRange <= 0 || targetRange <= 0) return;
-        float progress = Math.max(0f, Math.min(1f, sourceY / (float) sourceRange));
-        target.scrollTo(target.getScrollX(), Math.round(progress * targetRange));
     }
 
     private void configure(WebView view, boolean isSpanish) {
@@ -186,11 +161,12 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
         view.setBackgroundColor(Color.TRANSPARENT);
         view.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView webView, String url) {
-                applyStyle(webView);
+                applyStyle(webView, isSpanish);
                 ReaderPreferences.apply(BilingualHoursReaderActivity.this, webView, false);
+                if (isSpanish) filterIntermediateHour();
+                webView.postDelayed(() -> applyParagraphCards(webView, isSpanish), 80L);
                 UniversalSelectionMenu.restoreHighlights(BilingualHoursReaderActivity.this,
                         webView, sourceKey(isSpanish ? "es" : "la"));
-                if (isSpanish) filterIntermediateHour();
             }
         });
     }
@@ -249,8 +225,13 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
     }
 
     private void showMode(int mode) {
-        spanish.setVisibility(mode == 1 ? View.GONE : View.VISIBLE);
-        latin.setVisibility(View.VISIBLE);
+        if (wideParallel) {
+            spanish.setVisibility(mode == 1 ? View.GONE : View.VISIBLE);
+            latin.setVisibility(View.VISIBLE);
+        } else {
+            spanish.setVisibility(mode == 0 ? View.VISIBLE : View.GONE);
+            latin.setVisibility(mode == 1 ? View.VISIBLE : View.GONE);
+        }
         applyPaneWeights();
     }
 
@@ -266,15 +247,13 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
         if (wideParallel && both) {
             params = new LinearLayout.LayoutParams(0,
                     LinearLayout.LayoutParams.MATCH_PARENT, 1f);
-        } else if (!wideParallel && both) {
-            params = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f);
         } else {
             params = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.MATCH_PARENT, 0f);
         }
-        params.setMargins(5, 5, 5, 5);
+        int margin = Math.round(getResources().getDisplayMetrics().density * (wideParallel ? 4 : 2));
+        params.setMargins(margin, margin, margin, margin);
         view.setLayoutParams(params);
     }
 
@@ -304,27 +283,55 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
         });
     }
 
-    private void applyStyle(WebView view) {
+    private void applyStyle(WebView view, boolean isSpanish) {
         boolean dark = ThemeUtils.isDark(this);
         String bg = dark ? "#26211E" : "#FFFDF7";
         String ink = dark ? "#F3EDE4" : "#2A2521";
         String accent = dark ? "#D9B96F" : "#772233";
+        String border = dark ? "#5A4D43" : "#E1D7C8";
+        String card = dark ? "#302A26" : "#FFFFFF";
         String css = "html,body{background:" + bg + "!important;color:" + ink
                 + "!important;width:100%!important;max-width:none!important;box-sizing:border-box}"
-                + "body{font-family:serif!important;line-height:1.58!important;margin:0!important;"
-                + "padding:18px!important;box-sizing:border-box;overflow-wrap:break-word!important}"
+                + "body{font-family:serif!important;line-height:1.56!important;margin:0!important;"
+                + "padding:12px!important;box-sizing:border-box;overflow-wrap:break-word!important}"
                 + "body *{max-width:100%!important;box-sizing:border-box;color:" + ink
                 + "!important;-webkit-text-fill-color:" + ink + "!important;text-shadow:none!important}"
                 + "a,h1,h2,h3,h4,.redtitle,.redsmall1,.rojo,[style*=red],[style*=\"#CC0000\"],"
                 + "[style*=\"#cc0000\"]{color:" + accent + "!important;-webkit-text-fill-color:"
-                + accent + "!important}.patka{display:none!important}img,table{max-width:100%!important;height:auto!important}";
+                + accent + "!important}.patka{display:none!important}img,table{max-width:100%!important;height:auto!important}"
+                + ".ministerium-align-card{display:block!important;margin:0 0 8px!important;padding:10px 12px!important;"
+                + "border:1px solid " + border + "!important;border-radius:10px!important;background:" + card
+                + "!important;scroll-margin-top:16px!important}.ministerium-align-heading{scroll-margin-top:16px!important;margin-top:14px!important}"
+                + "@media(min-width:700px){body{padding:14px!important}.ministerium-align-card{padding:12px 14px!important}}";
         String script = "(function(){var old=document.getElementById('ministerium-bilingual-clean');if(old)old.remove();"
                 + "var s=document.createElement('style');s.id='ministerium-bilingual-clean';s.textContent='"
                 + css.replace("'", "\\'") + "';document.head.appendChild(s);"
-                + "var links=document.querySelectorAll('a');for(var i=0;i<links.length;i++){var t=(links[i].textContent||'').trim();"
-                + "if(t==='↑'||/^\\[[OLMVC123]+\\]$/.test(t))links[i].style.display='none';}"
-                + "var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),x;while((x=w.nextNode())){"
-                + "if(/^\\s*\\[[OLMVC123]+\\]\\s*$/.test(x.nodeValue||''))x.nodeValue='';}})()";
+                + "var links=document.querySelectorAll('a');for(var i=0;i<links.length;i++){var t=(links[i].textContent||'').replace(/\\s+/g,' ').trim().toLowerCase();"
+                + "if(t==='↑'||/^\\[[olmvc123]+\\]$/.test(t)||t.indexOf('officium lectionis')>=0||t==='tertia →'||t==='sexta →'||t==='nona →')links[i].style.display='none';}"
+                + "var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),x;while((x=w.nextNode())){if(/^\\s*\\[[OLMVC123]+\\]\\s*$/.test(x.nodeValue||''))x.nodeValue='';}"
+                + (isSpanish ? "" : "var els=[].slice.call(document.querySelectorAll('h1,h2,h3,h4,p,div'));var metadata=0;for(var j=0;j<els.length&&j<24;j++){var q=(els[j].textContent||'').replace(/\\s+/g,' ').trim();var low=q.toLowerCase();if(/^\\d{1,2}\\s+[a-zæ]+\\s+20\\d{2}$/.test(low)||low.indexOf('hebdomada ')>=0||low.indexOf('tempus per annum')>=0){els[j].style.display='none';metadata++;}if(low.indexOf('laudes matutin')>=0||low.indexOf('vesper')===0)break;}" )
+                + "})()";
+        view.evaluateJavascript(script, null);
+    }
+
+    /** Turns text into semantic cards and assigns equivalent ES/LAT paragraph keys. */
+    private void applyParagraphCards(WebView view, boolean spanishSide) {
+        String script = "(function(){if(document.body.getAttribute('data-ministerium-cards')==='1')return;"
+                + "document.body.setAttribute('data-ministerium-cards','1');function n(v){return(v||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/\\s+/g,' ').trim().toLowerCase();}"
+                + "function sec(t,current){t=n(t);if(t.indexOf('himno')>=0||t.indexOf('hymnus')>=0)return'hymn';"
+                + "if(t.indexOf('salmodia')>=0||t.indexOf('psalmodia')>=0)return'psalmody';"
+                + "if(t.indexOf('lectura breve')>=0||t.indexOf('lectio brevis')>=0)return'reading';"
+                + "if(t.indexOf('responsorio')>=0||t.indexOf('responsorium')>=0)return'responsory';"
+                + "if(t.indexOf('cantico evangelico')>=0||t.indexOf('canticum evangelicum')>=0)return'canticle';"
+                + "if(t==='preces'||t.indexOf('preces ')===0)return'intercessions';"
+                + "if(t.indexOf('padre nuestro')>=0||t.indexOf('pater noster')>=0)return'pater';"
+                + "if(t==='oracion'||t==='oratio'||t.indexOf('oracion conclusiva')>=0)return'prayer';return current;}"
+                + "var blocks=[].slice.call(document.querySelectorAll('h1,h2,h3,h4,p,li,blockquote'));var section='opening',counts={};"
+                + "for(var i=0;i<blocks.length;i++){var e=blocks[i];if(e.offsetParent===null)continue;var text=n(e.textContent);if(!text)continue;"
+                + "if(/^h[1-4]$/i.test(e.tagName)){section=sec(text,section);e.classList.add('ministerium-align-heading');continue;}"
+                + "if(e.closest&&e.closest('.ministerium-study-marker'))continue;section=sec(text,section);var k=counts[section]||0;counts[section]=k+1;"
+                + "e.classList.add('ministerium-align-card');e.setAttribute('data-ministerium-align-key',section+':'+k);}" 
+                + "})()";
         view.evaluateJavascript(script, null);
     }
 
@@ -352,6 +359,17 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
                 + value(getIntent().getStringExtra(EXTRA_SPANISH_VOLUME)) + ":"
                 + value(getIntent().getStringExtra(EXTRA_SPANISH_PATH)) + ":"
                 + value(getIntent().getStringExtra(EXTRA_TITLE));
+    }
+
+    private static String decode(String raw) {
+        if (raw == null || "null".equals(raw)) return "";
+        try {
+            Object value = new JSONTokener(raw).nextValue();
+            return value == null ? "" : value.toString();
+        } catch (Exception ignored) {
+            return raw.replaceFirst("^\\\"", "").replaceFirst("\\\"$", "")
+                    .replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
+        }
     }
 
     private static String value(String value) { return value == null ? "" : value; }
