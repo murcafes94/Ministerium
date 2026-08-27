@@ -37,7 +37,8 @@ def clean(value: str) -> str:
 
 
 def zip_path(base: str, relative: str) -> str:
-    return posixpath.normpath(posixpath.join(base, relative.split("#", 1)[0]))
+    decoded = unquote(relative.split("#", 1)[0])
+    return posixpath.normpath(posixpath.join(base, decoded))
 
 
 def opf_path(book: zipfile.ZipFile) -> str:
