@@ -151,8 +151,9 @@ if (-not $SkipContent) {
         Write-Warning 'La comprobacion secundaria fallo, pero no bloquea la compilacion.'
     }
 
-    Write-Section 'Indice de busqueda biblica'
+    Write-Section 'Indices de busqueda local'
     Invoke-Py -PyArgs @('tools/build_bible_search_index.py') -Label 'Indice biblico'
+    Invoke-Py -PyArgs @('tools/build_magisterium_index_40.py') -Label 'Indice completo del Magisterio'
 }
 
 if (-not $SkipValidation) {
@@ -164,6 +165,8 @@ if (-not $SkipValidation) {
         Assert-Exit 'Validacion de calendario'
         & node tools/validate_lectionary_40.mjs
         Assert-Exit 'Validacion OLM del Leccionario 4.0'
+        & node tools/validate_magisterium_40.mjs
+        Assert-Exit 'Validacion de Magisterio 4.0'
     } else {
         Write-Warning 'Node.js no esta instalado. Se omiten las validaciones .mjs; Gradle seguira compilando.'
     }
@@ -175,13 +178,22 @@ $requiredFiles = @(
     'app/src/main/assets/missal/es/initial.txt',
     'app/src/main/assets/missal/la/initial.txt',
     'app/src/main/assets/rituals/liturgiapapal/manifest.json',
-    'app/src/main/assets/bible-search-index.tsv'
+    'app/src/main/assets/bible-search-index.tsv',
+    'app/src/main/assets/magisterium-index.tsv'
 )
 foreach ($required in $requiredFiles) {
     if (-not (Test-Path (Join-Path $ProjectRoot $required))) {
         throw "Falta archivo generado requerido: $required"
     }
 }
+$magisteriumIndex = Join-Path $ProjectRoot 'app/src/main/assets/magisterium-index.tsv'
+$magisteriumRows = @(
+    Get-Content $magisteriumIndex | Where-Object { $_ -and -not $_.StartsWith('#') }
+).Count
+if ($magisteriumRows -lt 20) {
+    throw "El indice del Magisterio no fue generado correctamente ($magisteriumRows filas)."
+}
+Write-Host "Indice del Magisterio: $magisteriumRows fragmentos"
 
 Write-Section 'Preparando firma estable de pruebas'
 $b64Key = Join-Path $ProjectRoot 'test-signing\ministerium-test.keystore.b64'
