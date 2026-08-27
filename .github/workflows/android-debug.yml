@@ -4,9 +4,6 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - fix/combined-mass-single-flow
-      - feature/ministerium-3.1-stabilization
-      - feature/ministerium-3.1.1-final-fixes
       - feature/ministerium-4.0
   pull_request:
     branches:
@@ -21,11 +18,9 @@ jobs:
     name: Keep latest previous artifact
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
       actions: write
-
     steps:
       - name: Conservar solo el artifact anterior más reciente
         continue-on-error: true
@@ -34,10 +29,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
-          # GitHub entrega como máximo 100 artifacts por página. Leemos todas las
-          # páginas, ordenamos por created_at (ISO-8601) y conservamos solo el
-          # más reciente que ya existía antes de este build.
           mapfile -t artifacts < <(
             gh api --paginate \
               -H "Accept: application/vnd.github+json" \
@@ -46,41 +37,24 @@ jobs:
               --jq '.artifacts[] | [.created_at, (.id|tostring), .name] | @tsv' \
               | sort -r -k1,1
           )
-
           echo "Artifacts encontrados: ${#artifacts[@]}"
-
-          if [ "${#artifacts[@]}" -eq 0 ]; then
-            echo "No hay artifacts que conservar ni eliminar."
+          if [ "${#artifacts[@]}" -le 1 ]; then
             exit 0
           fi
-
           IFS=$'\t' read -r keep_created keep_id keep_name <<< "${artifacts[0]}"
-          echo "Conservando artifact anterior más reciente: ${keep_name} (id=${keep_id}, created_at=${keep_created})"
-
-          if [ "${#artifacts[@]}" -eq 1 ]; then
-            echo "No hay artifacts antiguos que eliminar."
-            exit 0
-          fi
-
-          deleted=0
+          echo "Conservando ${keep_name} (${keep_id}, ${keep_created})"
           for row in "${artifacts[@]:1}"; do
             IFS=$'\t' read -r created artifact_id artifact_name <<< "$row"
-            echo "Eliminando artifact ${artifact_name} (id=${artifact_id}, created_at=${created})"
+            echo "Eliminando ${artifact_name} (${artifact_id}, ${created})"
             gh api --method DELETE \
               -H "Accept: application/vnd.github+json" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
               "repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}"
-            deleted=$((deleted + 1))
           done
-
-          echo "Limpieza terminada: ${deleted} artifact(s) eliminado(s); se conserva ${keep_id}."
 
   build-debug:
     name: Build debug APK
-    # La compilación es independiente: una incidencia limpiando artifacts
-    # históricos nunca debe impedir generar y validar la APK actual.
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: recovered-v3
@@ -96,6 +70,18 @@ jobs:
 
       - name: Install content preprocessing dependencies
         run: python -m pip install --disable-pip-version-check pypdf beautifulsoup4
+
+      - name: Static preflight
+        run: |
+          python -m py_compile \
+            tools/build_magisterium_index_40.py \
+            tools/build_liturgiapapal_missal_31.py \
+            tools/build_liturgiapapal_rituals_31.py
+          python - <<'PY'
+          from xml.etree import ElementTree
+          ElementTree.parse('app/src/main/AndroidManifest.xml')
+          print('AndroidManifest.xml: XML OK')
+          PY
 
       - name: Build clean Liturgy of the Hours packages
         run: |
@@ -114,7 +100,9 @@ jobs:
           grep -q $'\tL\t' app/src/main/assets/hours-clean/ordinary/navigation.tsv
           grep -q $'\tM\t' app/src/main/assets/hours-clean/ordinary/navigation.tsv
           grep -qE $'\t(1V|2V|V)\t' app/src/main/assets/hours-clean/ordinary/navigation.tsv
-          ! grep -R -E '\[(1V|2V|V|C|C1|C2|IN|O|L|M)\]' app/src/main/assets/hours-clean/ordinary --include='*.htm' --include='*.html' --include='*.xhtml'
+          ! grep -R -E '\[(1V|2V|V|C|C1|C2|IN|O|L|M)\]' \
+            app/src/main/assets/hours-clean/ordinary \
+            --include='*.htm' --include='*.html' --include='*.xhtml'
 
       - name: Build Liturgia Papal packages
         run: |
@@ -140,29 +128,31 @@ jobs:
           for required in ('commons', 'needs', 'votive', 'dead'):
               if not groups.get(required):
                   raise SystemExit(f'Missing Missal structural group: {required}')
-          def fold(v):
-              return ''.join(c for c in unicodedata.normalize('NFD', v or '') if unicodedata.category(c) != 'Mn').lower()
-          bart = [x for x in data.get('saints', []) if x.get('month') == 8 and x.get('day') == 24 and 'bartolome' in fold(x.get('title'))]
+          def fold(value):
+              return ''.join(c for c in unicodedata.normalize('NFD', value or '')
+                             if unicodedata.category(c) != 'Mn').lower()
+          bart = [x for x in data.get('saints', [])
+                  if x.get('month') == 8 and x.get('day') == 24
+                  and 'bartolome' in fold(x.get('title'))]
           if not bart:
               raise SystemExit('Missing 24 Aug San Bartolome structural reference')
-          valid = [x for x in bart if x.get('gloria') and 'apostol' in fold(x.get('preface', '') + ' ' + x.get('descriptor', '') + ' ' + ' '.join(x.get('commons', [])))]
+          valid = [x for x in bart if x.get('gloria') and 'apostol' in fold(
+              x.get('preface', '') + ' ' + x.get('descriptor', '') + ' '
+              + ' '.join(x.get('commons', [])))]
           if not valid:
               raise SystemExit('San Bartolome structure lost Gloria/Apostles reference')
-          print(f"Missal structural catalog OK: {len(data.get('saints', []))} saint metadata entries; Bartolome references={len(bart)}")
+          print(f"Missal structural catalog OK: {len(data.get('saints', []))} saint metadata entries")
           PY
 
       - name: Secondary calendar cross-check
         continue-on-error: true
         run: python tools/check_secondary_liturgy_sources.py
 
-      - name: Build fast Bible search index
+      - name: Build local search indexes
         run: |
           python tools/build_bible_search_index.py
-          test -s app/src/main/assets/bible-search-index.tsv
-
-      - name: Build offline Magisterium full-text index
-        run: |
           python tools/build_magisterium_index_40.py
+          test -s app/src/main/assets/bible-search-index.tsv
           test -s app/src/main/assets/magisterium-index.tsv
           test "$(grep -vc '^#' app/src/main/assets/magisterium-index.tsv)" -gt 20
 
@@ -230,7 +220,8 @@ jobs:
             recovered-v3/app/src/main/assets/hours-clean/manifest.json
             recovered-v3/app/src/main/assets/hours-clean/latin/2026/manifest.json
             recovered-v3/app/src/main/assets/missal/manifest.json
-            recovered-v3/app/src/main/assets/missal-reference-catalog.json\n            recovered-v3/app/src/main/assets/magisterium-index.tsv
+            recovered-v3/app/src/main/assets/missal-reference-catalog.json
+            recovered-v3/app/src/main/assets/magisterium-index.tsv
             recovered-v3/app/src/main/assets/rituals/liturgiapapal/manifest.json
           if-no-files-found: error
           retention-days: 14
