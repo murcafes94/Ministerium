@@ -26,20 +26,36 @@ public final class ReaderChrome {
         UniversalSelectionMenu.attach(activity, webView, context);
         ReaderPreferences.apply(activity, webView, preserveBibleTypeface);
         attachGestures(activity, webView, navigator);
-        keepHeaderFixed(header);
+        attachAutoHideHeader(webView, header);
     }
 
     /**
-     * La cabecera forma parte del chrome de la Activity y no del documento.
-     * No se anima ni se oculta al hacer scroll: esto evita saltos de layout,
-     * parpadeos y el bug observado al cambiar rápidamente la dirección del gesto.
+     * Oculta la cabecera con histéresis al avanzar y la recupera en cuanto el
+     * lector vuelve hacia arriba. La vista conserva su espacio, evitando saltos
+     * de paginación o cambios en la posición del texto.
      */
-    private static void keepHeaderFixed(View header) {
-        if (header == null) return;
+    private static void attachAutoHideHeader(WebView webView, View header) {
+        if (webView == null || header == null) return;
         header.animate().cancel();
         header.setVisibility(View.VISIBLE);
         header.setAlpha(1f);
         header.setTranslationY(0f);
+        final boolean[] hidden = {false};
+        webView.setOnScrollChangeListener((view, x, y, oldX, oldY) -> {
+            int delta = y - oldY;
+            int height = Math.max(1, header.getHeight());
+            if (!hidden[0] && delta > 18 && y > height * 2) {
+                hidden[0] = true;
+                header.animate().cancel();
+                header.animate().translationY(-height).alpha(.12f)
+                        .setDuration(180).start();
+            } else if (hidden[0] && (delta < -12 || y < height)) {
+                hidden[0] = false;
+                header.animate().cancel();
+                header.animate().translationY(0f).alpha(1f)
+                        .setDuration(150).start();
+            }
+        });
     }
 
     public static void bindTheme(Activity activity, View button) {
@@ -73,7 +89,7 @@ public final class ReaderChrome {
                                     .setTitle("Información del texto")
                                     .setMessage(context.source + (context.reference.isEmpty()
                                             ? "" : "\n" + context.reference)
-                                            + "\nContenido local de Ministerium 3.1")
+                                            + "\nContenido local de Ministerium 4.0")
                                     .setPositiveButton("Cerrar", null).show();
                         }).show());
     }
