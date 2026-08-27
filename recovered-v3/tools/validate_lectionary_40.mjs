@@ -57,7 +57,7 @@ for (const marker of [
   "Ordenación de las Lecturas de la Misa",
   "OLM 65, 66, 79 y 89",\n  "OLM 69",
   "lecturas del día salvo lectura propia expresamente indicada",\n  "date.get(Calendar.YEAR) % 2",
-  "Propio o Común; ordinariamente tres lecturas",
+  "lecturas asignadas; ordinariamente tres lecturas",
   "firstSundayOfAdvent",
 ]) requireText(engine, marker, "LectionaryRuleEngine");
 
