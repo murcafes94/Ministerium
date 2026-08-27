@@ -10,9 +10,9 @@ import java.util.List;
  * Describe el ciclo y la regla de selección que deben acompañar a las lecturas.
  *
  * La fuente normativa es la Ordenación de las Lecturas de la Misa (OLM),
- * especialmente nn. 65, 82-89 y 103-109. Este motor no sustituye al Leccionario
- * ni inventa perícopas: valida la identidad del día y explica qué serie debe
- * haber resuelto el paquete de lecturas.
+ * especialmente nn. 65, 69, 79, 82-89 y 103-109. Este motor no sustituye al
+ * Leccionario ni inventa perícopas: valida la identidad del día y explica qué
+ * serie debe haber resuelto el paquete de lecturas.
  */
 public final class LectionaryRuleEngine {
     public static final String SOURCE_URL =
@@ -23,24 +23,23 @@ public final class LectionaryRuleEngine {
         public final String sundayCycle;
         public final String weekdayCycle;
         public final String kind;
+        public final String cycleLabel;
         public final String rule;
         public final String sourceReference;
 
         Selection(int liturgicalYear, String sundayCycle, String weekdayCycle,
-                  String kind, String rule, String sourceReference) {
+                  String kind, String cycleLabel, String rule, String sourceReference) {
             this.liturgicalYear = liturgicalYear;
             this.sundayCycle = sundayCycle;
             this.weekdayCycle = weekdayCycle;
             this.kind = kind;
+            this.cycleLabel = cycleLabel;
             this.rule = rule;
             this.sourceReference = sourceReference;
         }
 
         public String summary() {
-            String cycle = "Domingo".equals(kind) || "Solemnidad".equals(kind)
-                    ? "ciclo " + sundayCycle
-                    : "ciclo ferial " + weekdayCycle;
-            return kind + " · " + cycle + " · " + rule;
+            return kind + " · " + cycleLabel + " · " + rule;
         }
     }
 
@@ -56,37 +55,55 @@ public final class LectionaryRuleEngine {
         LiturgicalEvent primary = events.isEmpty() ? null : events.get(0);
         int liturgicalYear = liturgicalYear(date);
         String sundayCycle = sundayCycle(liturgicalYear);
-        String weekdayCycle = liturgicalYear % 2 == 0 ? "II" : "I";
+
+        // OLM 69 assigns ferial cycle I to odd civil years and II to even civil
+        // years. It does not change at Advent together with the Sunday cycle.
+        String weekdayCycle = date.get(Calendar.YEAR) % 2 == 0 ? "II" : "I";
+        boolean ordinaryTime = isOrdinaryTime(context, date);
 
         if (date.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
             return new Selection(liturgicalYear, sundayCycle, weekdayCycle,
-                    "Domingo",
+                    "Domingo", "ciclo dominical " + sundayCycle,
                     "tres lecturas; el salmo permanece unido a la primera lectura",
-                    "OLM 65, 79 y 89");
+                    "OLM 65, 66, 79 y 89");
         }
         if (primary != null && primary.isSolemnity()) {
             return new Selection(liturgicalYear, sundayCycle, weekdayCycle,
-                    "Solemnidad",
+                    "Solemnidad", "ciclo dominical " + sundayCycle,
                     "Propio o Común; ordinariamente tres lecturas",
                     "OLM 84");
         }
         if (primary != null && primary.isFeast()) {
             return new Selection(liturgicalYear, sundayCycle, weekdayCycle,
-                    "Fiesta",
-                    "lecturas del Propio o del Común",
+                    "Fiesta", "Propio o Común",
+                    "lecturas asignadas a la celebración",
                     "OLM 83-84");
         }
         if (primary != null
                 && (primary.isMandatoryMemorial() || primary.isOptionalMemorial())) {
             return new Selection(liturgicalYear, sundayCycle, weekdayCycle,
                     primary.isMandatoryMemorial() ? "Memoria" : "Memoria libre",
-                    "lecturas feriales salvo lectura propia expresamente indicada",
-                    "OLM 82-84");
+                    ordinaryTime ? "serie ferial " + weekdayCycle : "serie ferial anual",
+                    "lecturas del día salvo lectura propia expresamente indicada",
+                    "OLM 69 y 82-84");
         }
         return new Selection(liturgicalYear, sundayCycle, weekdayCycle,
-                "Feria",
-                "lecturas feriales del día y salmo asignado",
-                "OLM 65, 82 y 89");
+                "Feria", ordinaryTime ? "ciclo ferial " + weekdayCycle : "ciclo anual",
+                ordinaryTime
+                        ? "primera lectura del año " + weekdayCycle + ", Evangelio anual y salmo asignado"
+                        : "lecturas propias del tiempo y salmo asignado",
+                "OLM 65, 69, 82 y 89");
+    }
+
+    private static boolean isOrdinaryTime(Context context, Calendar date) {
+        try {
+            LiturgicalDay day = LiturgicalResolver.resolve(context, date);
+            return day.temporalOffice != null
+                    && day.temporalOffice.volume != null
+                    && "ordinary".equals(day.temporalOffice.volume.id);
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     /**
