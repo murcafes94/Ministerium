@@ -1,11 +1,26 @@
 apply plugin: 'com.android.application'
 
+// Android Studio local builds may run without COMPILAR-MINISTERIUM.bat first.
+// Reconstruct the public, non-production Ministerium Test keystore automatically
+// from the tracked Base64 copy when the binary keystore is missing.
+def ministeriumTestKeystore = file('../test-signing/ministerium-test.keystore')
+def ministeriumTestKeystoreB64 = file('../test-signing/ministerium-test.keystore.b64')
+if (!ministeriumTestKeystore.exists()) {
+    if (!ministeriumTestKeystoreB64.exists()) {
+        throw new GradleException("Missing Ministerium Test signing material: ${ministeriumTestKeystoreB64}")
+    }
+    ministeriumTestKeystore.parentFile.mkdirs()
+    def encoded = ministeriumTestKeystoreB64.getText('UTF-8').replaceAll('\\s', '')
+    ministeriumTestKeystore.bytes = encoded.decodeBase64()
+    println "Ministerium Test keystore reconstructed for local build: ${ministeriumTestKeystore}"
+}
+
 android {
     compileSdkVersion 30
 
     signingConfigs {
         testStable {
-            storeFile file('../test-signing/ministerium-test.keystore')
+            storeFile ministeriumTestKeystore
             storePassword 'ministerium-test'
             keyAlias 'ministerium-test'
             keyPassword 'ministerium-test'
@@ -23,8 +38,8 @@ android {
     buildTypes {
         debug {
             // Test builds intentionally use a separate package and a public,
-            // non-production signing key so consecutive CI APKs can update the
-            // installed Ministerium Test app without touching stable data.
+            // non-production signing key so consecutive CI/local APKs can update
+            // the installed Ministerium Test app without touching stable data.
             applicationIdSuffix '.test'
             versionNameSuffix '-test'
             signingConfig signingConfigs.testStable
