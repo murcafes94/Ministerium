@@ -37,16 +37,39 @@ expect(workflow.includes('feature/ministerium-4.0')
     && workflow.includes('build_magisterium_index_40.py')
     && workflow.includes('validate_release_40.mjs'),
   '4.0 debug workflow is incomplete.');
+expect(!workflow.includes('missal-reference-catalog.json\\n'),
+  'Debug workflow contains a literal escaped newline in artifact paths.');
+expect(workflow.includes("ElementTree.parse('app/src/main/AndroidManifest.xml')"),
+  'Debug workflow must parse AndroidManifest.xml before Gradle.');
+
 const local = read('tools/build_local_windows.ps1');
 expect(local.includes('Ministerium 4.0 - compilacion local Windows')
     && local.includes('build_magisterium_index_40.py')
     && local.includes('validate_release_40.mjs'),
   'Windows 4.0 build contract is incomplete.');
+expect(local.includes('Test-PythonImports')
+    && local.includes('beautifulsoup4')
+    && local.includes('Gradle/JVM 11: OK')
+    && local.includes('android-studio-portable'),
+  'Windows build must recover Python dependencies and support the tested portable SDK/JDK flow.');
 
 const readme = read('README.md');
 expect(readme.includes('# Ministerium 4.0')
     && readme.includes('Gradle 6.7.1')
     && readme.includes('JDK 11'),
   'Project README does not describe the 4.0 constrained build.');
+
+const localGuide = read('../ANDROID-STUDIO-LOCAL.md');
+expect(localGuide.includes('feature/ministerium-4.0')
+    && localGuide.includes('Ministerium-4.0.0-prueba.apk')
+    && !localGuide.includes('feature/ministerium-3.1.1-final-fixes'),
+  'Android Studio local guide is stale.');
+
+const testing = JSON.parse(read('../distribution/manifests/testing.json'));
+expect(testing.channel === 'testing'
+    && testing.app.version === '4.0.0-test'
+    && testing.app.downloadUrl === null
+    && testing.app.sha256 === null,
+  'Testing distribution manifest must describe 4.0.0-test without inventing an unpublished APK URL/hash.');
 
 console.log('Ministerium 4.0 release metadata and local build contract OK');
