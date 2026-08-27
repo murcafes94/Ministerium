@@ -67,9 +67,15 @@ for (const required of ['MassReadingsRepository.read', 'LiturgiaPapalMissalRepos
   requireText(composer, required, `contrato combinado ${required}`);
 for (const forbidden of ['HoursRepository.ROMAN_MISSAL', 'Misal-Diario-Romano.epub', 'MissalProperRepository', 'CombinedMassPolisher'])
   forbidText(composer + missalActivity + missalDocument, forbidden, `fallback antiguo de Misal (${forbidden})`);
-requireText(missalReader, 'MissalInteractiveOptions.inject', 'Credo/Padre Nuestro en lector de Misal');
-requireText(missalDocument, 'parallel-unit', 'unidades paralelas ES/LAT');
-forbidText(missalDocument + composer, 'MassReadingsRepository.syncDay', 'descarga implícita del Leccionario');
+
+// Final Missal contract: ES and Latin are separate full-width documents.
+requireText(missalActivity, 'String[] languages = {"Español", "Latín"}', 'selector ES/LAT separado');
+requireText(missalReader, 'MissalAlternativeOptions31.inject', 'alternativas compactas del Misal');
+requireText(missalDocument, 'String lang = "la".equals(language) ? "la" : "es"', 'documento monolingüe por idioma');
+requireText(missalDocument, 'professionOfFaithHtml(context, lang)', 'Credo en el idioma del Misal');
+requireText(missalDocument, 'Lecturas del día', 'orden de Liturgia de la Palabra');
+forbidText(missalDocument, 'parallel-unit', 'Misal ES/LAT en columnas paralelas');
+forbidText(missalDocument + composer, 'MassReadingsRepository.syncDay', 'descarga implícita dentro del compositor');
 
 // Liturgia Papal/Rituals and explicit update contract.
 requireText(ritualRepository, 'rituals/liturgiapapal/', 'Rituales Liturgia Papal');
@@ -82,11 +88,11 @@ requireText(readingsActivity, 'Sincronizar desde Ajustes', 'Leccionario pasivo a
 forbidText(readingsActivity, 'syncDay(', 'sincronización del Leccionario al entrar');
 requireText(liturgicalResolver, '!event.isOptionalMemorial()', 'feria separada de memoria libre');
 
-// Calibre-inspired annotation contract, implemented locally rather than importing its runtime.
-for (const required of ['contentId', 'anchorText', 'prefix', 'suffix', 'anchorVersion', 'tags'])
+// Annotation contract v3: robust anchors + editable highlights/notes/bookmarks.
+for (const required of ['contentId', 'anchorText', 'prefix', 'suffix', 'anchorVersion', 'tags', 'style', 'icon'])
   requireText(studyEntry, required, `campo robusto de anotación ${required}`);
-requireText(studyEntry, 'CURRENT_ANCHOR_VERSION = 2', 'ancla v2');
-for (const required of ['anchorText', 'prefix', 'suffix', 'semanticUnitId', 'startOffset', 'endOffset'])
+requireText(studyEntry, 'CURRENT_ANCHOR_VERSION = 3', 'ancla v3');
+for (const required of ['anchorText', 'prefix', 'suffix', 'semanticUnitId', 'startOffset', 'endOffset', 'openEntry'])
   requireText(selectionMenu, required, `captura/restauración ${required}`);
 requireText(selectionMenu, 'context.allowTts', 'TTS condicionado por contexto');
 requireText(studyStore, 'forContentId', 'consulta por contentId');
@@ -96,8 +102,10 @@ requireText(studyEditor, 'inputStudyTags', 'etiquetas de nota/reflexión');
 requireText(studyDesk, 'StudyExport.markdown', 'exportación Markdown');
 requireText(studyDesk, 'StudyExport.json', 'exportación JSON');
 requireText(studyExport, 'ministerium-study-export', 'formato portable Mi estudio');
-for (const action of ['Subrayar', 'Nota', 'Reflexión', 'Diccionario', 'Traducir'])
+for (const action of ['Resaltar', 'Nota', 'Marcador', 'Reflexión', 'Diccionario', 'Traducir'])
   requireText(selectionMenu, `\"${action}\"`, `acción contextual ${action}`);
+requireText(selectionMenu, 'Cambiar estilo', 'edición de resaltado existente');
+requireText(selectionMenu, 'Ampliar al párrafo o versículo', 'ampliación de resaltado');
 
 // Lokus/Missale Meum/CLEDR-CLBDR internal identity contract.
 requireText(readerContext, 'contentId', 'contentId en ReaderContext');
@@ -111,7 +119,7 @@ requireText(liturgicalIdentity, 'clbdrId', 'campo CLBDR opcional');
 requireText(liturgicalIdentity, 'return new LiturgicalIdentity(', 'constructor de identidad interna');
 requireText(liturgicalDay, 'LiturgicalIdentity.internal', 'día enlazado a identidad/formulario');
 
-// Divinum Officium-inspired alignment.
+// Divinum Officium-inspired alignment, final paragraph-card strategy.
 requireText(hoursBuilder, 'data-ministerium-align-key', 'claves de alineación ES');
 requireText(latinHoursBuilder, 'data-ministerium-align-key', 'claves de alineación LAT');
 requireText(hoursBuilder, 'shared semantic keys v1', 'manifiesto de alineación ES');
@@ -119,7 +127,9 @@ requireText(latinHoursBuilder, 'shared semantic keys v1', 'manifiesto de alineac
 requireText(cleanHours, '.ready-3.1.1-align4', 'refresco de paquete ES alineado');
 requireText(bilingual, 'semanticSynchronize', 'sincronización por ancla');
 requireText(bilingual, 'data-ministerium-align-key', 'búsqueda de ancla equivalente');
-requireText(bilingual, 'sourceY / (float) sourceRange', 'fallback proporcional');
+requireText(bilingual, 'applyParagraphCards', 'alineación visual por párrafos');
+requireText(bilingual, 'ministerium-align-card', 'tarjetas de párrafos bilingües');
+forbidText(bilingual, 'sourceY / (float) sourceRange', 'fallback porcentual antiguo');
 requireText(bilingual, '"Liturgia", true, false', 'TTS LAT desactivado en bilingüe');
 requireText(latinReader, '"Liturgia", true, false', 'TTS LAT desactivado');
 requireText(readerPrefs, 'data-ministerium-align-key', 'estilos de alineación semántica');
@@ -163,6 +173,8 @@ for (const p of [
   'app/src/main/java/com/fabri/ministerium/StudyExport.java',
   'app/src/main/java/com/fabri/ministerium/ContentReference.java',
   'app/src/main/java/com/fabri/ministerium/LiturgicalIdentity.java',
+  'app/src/main/java/com/fabri/ministerium/DailyMassProperRepository.java',
+  'app/src/main/java/com/fabri/ministerium/MissalAlternativeOptions31.java',
   'docs/REPOSITORY_INTEGRATION_AUDIT_3_1.md'
 ]) requireFile(p);
 
@@ -187,4 +199,4 @@ if (failures.length) {
   failures.forEach((failure) => console.error(`- ${failure}`));
   process.exit(1);
 }
-console.log('Ministerium 3.1.1 final fixes + repository integrations: OK');
+console.log('Ministerium 3.1.1 final test contract: OK');
