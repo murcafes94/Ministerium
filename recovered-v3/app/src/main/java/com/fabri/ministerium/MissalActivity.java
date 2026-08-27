@@ -16,10 +16,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * Misal 3.1. La UI ya no navega por el antiguo Misal EPUB: cada entrada abre
- * contenido generado desde los PDF de Liturgia Papal México/latín.
- */
+/** Misal 3.1: español y latín se leen en documentos separados, nunca en dos columnas. */
 public class MissalActivity extends ThemedActivity {
     public static final String EXTRA_YEAR = "missal_year";
     public static final String EXTRA_MONTH = "missal_month";
@@ -29,13 +26,13 @@ public class MissalActivity extends ThemedActivity {
     public static final String EXTRA_LANGUAGE = "missal_language";
 
     private final List<Item> items = Arrays.asList(
-            new Item("Ordinario de la Misa", "Ritos iniciales y Liturgia de la Palabra", "initial"),
+            new Item("Ordinario de la Misa", "Ritos iniciales", "initial"),
             new Item("Oración colecta", "Propia de la celebración del día", "collect"),
-            new Item("Liturgia de la Palabra", "Ordinario y lecturas del Leccionario", "word"),
+            new Item("Liturgia de la Palabra", "Lecturas, homilía, Credo y oración universal", "word"),
             new Item("Liturgia eucarística", "Dones, prefacio y plegaria eucarística", "eucharist"),
             new Item("Oración sobre las ofrendas", "Propia de la celebración del día", "offerings"),
-            new Item("Prefacios", "PDF de Prefacios de Liturgia Papal", "prefaces"),
-            new Item("Plegarias eucarísticas", "Plegarias I–IV", "prayers"),
+            new Item("Prefacios", "Fuente Liturgia Papal", "prefaces"),
+            new Item("Plegarias eucarísticas", "Plegarias I–IV; se muestra solo la elegida", "prayers"),
             new Item("Rito de la comunión", "Padrenuestro, paz, fracción y comunión", "communion"),
             new Item("Antífona de comunión", "Propia de la celebración del día", "communion_antiphon"),
             new Item("Oración después de la comunión", "Propia de la celebración del día", "post_communion"),
@@ -97,13 +94,13 @@ public class MissalActivity extends ThemedActivity {
 
     private void configureSelectors() {
         String[] modes = {"Misa", "Misa + Laudes", "Misa + Vísperas"};
-        String[] languages = {"Español", "Latín–Español"};
+        String[] languages = {"Español", "Latín"};
         modeSpinner.setAdapter(new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_dropdown_item, modes));
         languageSpinner.setAdapter(new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_dropdown_item, languages));
-        languageSpinner.setSelection("lat_es".equals(
-                getIntent().getStringExtra(EXTRA_LANGUAGE)) ? 1 : 0);
+        String requested = getIntent().getStringExtra(EXTRA_LANGUAGE);
+        languageSpinner.setSelection("la".equals(requested) || "lat_es".equals(requested) ? 1 : 0);
     }
 
     private void showDate() {
@@ -120,11 +117,11 @@ public class MissalActivity extends ThemedActivity {
                 detail += "Semana " + roman(ordinaryWeek) + " del Tiempo Ordinario";
             }
             details.setText((detail.isEmpty() ? "" : detail + "\n")
-                    + "Misal: Liturgia Papal · versión de México");
+                    + "Misal: Liturgia Papal · propios/lecturas: Arquidiócesis de Guadalajara");
         } catch (Exception error) {
             liturgicalDay = null;
             celebration.setText("Celebración del día");
-            details.setText("Misal Liturgia Papal disponible sin conexión tras generar el paquete.");
+            details.setText("Misal disponible sin conexión después de guardar los textos del día.");
         }
     }
 
@@ -134,6 +131,8 @@ public class MissalActivity extends ThemedActivity {
             putDate(intent);
             intent.putExtra(CombinedMassActivity.EXTRA_HOUR,
                     modeSpinner.getSelectedItemPosition() == 1 ? "lauds" : "vespers");
+            // La celebración unida conserva por ahora su texto ordinario español;
+            // el Misal independiente sí ofrece el latín completo por separado.
             intent.putExtra(CombinedMassActivity.EXTRA_LANGUAGE, selectedLanguage());
             startActivity(intent);
             return;
@@ -193,8 +192,7 @@ public class MissalActivity extends ThemedActivity {
     @Override public void onBackPressed() { exitToHome(); }
 
     private String selectedLanguage() {
-        return languageSpinner != null && languageSpinner.getSelectedItemPosition() == 1
-                ? "lat_es" : "es";
+        return languageSpinner != null && languageSpinner.getSelectedItemPosition() == 1 ? "la" : "es";
     }
 
     private void openRequestedPart(String part) {
