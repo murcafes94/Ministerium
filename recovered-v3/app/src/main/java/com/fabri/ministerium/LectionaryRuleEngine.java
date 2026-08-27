@@ -61,17 +61,17 @@ public final class LectionaryRuleEngine {
         String weekdayCycle = date.get(Calendar.YEAR) % 2 == 0 ? "II" : "I";
         boolean ordinaryTime = isOrdinaryTime(context, date);
 
+        if (primary != null && primary.isSolemnity()) {
+            return new Selection(liturgicalYear, sundayCycle, weekdayCycle,
+                    "Solemnidad", "Propio o Común",
+                    "lecturas asignadas; ordinariamente tres lecturas",
+                    "OLM 84");
+        }
         if (date.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
             return new Selection(liturgicalYear, sundayCycle, weekdayCycle,
                     "Domingo", "ciclo dominical " + sundayCycle,
                     "tres lecturas; el salmo permanece unido a la primera lectura",
                     "OLM 65, 66, 79 y 89");
-        }
-        if (primary != null && primary.isSolemnity()) {
-            return new Selection(liturgicalYear, sundayCycle, weekdayCycle,
-                    "Solemnidad", "ciclo dominical " + sundayCycle,
-                    "Propio o Común; ordinariamente tres lecturas",
-                    "OLM 84");
         }
         if (primary != null && primary.isFeast()) {
             return new Selection(liturgicalYear, sundayCycle, weekdayCycle,
