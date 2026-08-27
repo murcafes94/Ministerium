@@ -8,29 +8,37 @@ public final class LiturgiaPapalWordRepository {
     private LiturgiaPapalWordRepository() {}
 
     public static String niceneCreedHtml(android.content.Context context) throws Exception {
-        String spanish = extract(LiturgiaPapalMissalRepository.component(context, "es", "word"),
-                "Creo en un solo Dios", "Para utilidad de los fieles", 0);
-        String latin = extract(LiturgiaPapalMissalRepository.component(context, "la", "word"),
-                "Credo in unum Deum", "Loco symboli", 0);
-        return bilingual("creed-nicene", spanish, latin);
+        return bilingual("creed-nicene", niceneText(context, "es"), niceneText(context, "la"));
     }
 
     public static String apostlesCreedHtml(android.content.Context context) throws Exception {
-        String spanishText = LiturgiaPapalMissalRepository.component(context, "es", "word");
-        String spanish = extract(spanishText,
-                "Creo en Dios, Padre todopoderoso",
-                "Después se hace la plegaria universal", 0);
-
-        String latinText = LiturgiaPapalMissalRepository.component(context, "la", "word");
-        String[] latinLines = latinText.split("\\r?\\n");
-        int alternate = find(latinLines, "Loco symboli", 0);
-        String latin = extract(latinText,
-                "Credo in unum Deum", "Deinde fit oratio universalis",
-                alternate < 0 ? 0 : alternate + 1);
-        return bilingual("creed-apostles", spanish, latin);
+        return bilingual("creed-apostles", apostlesText(context, "es"), apostlesText(context, "la"));
     }
 
-    /** Selector used by the stand-alone Spanish Missal: two creeds, each with ES/LAT. */
+    /** Monolingual rendering used by the separated ES and Latin Missal readers. */
+    public static String niceneCreedHtml(android.content.Context context, String language) throws Exception {
+        return render(niceneText(context, language));
+    }
+
+    public static String apostlesCreedHtml(android.content.Context context, String language) throws Exception {
+        return render(apostlesText(context, language));
+    }
+
+    public static String professionOfFaithHtml(android.content.Context context, String language) throws Exception {
+        String lang = "la".equals(language) ? "la" : "es";
+        return "<div class=\"ministerium-creed-selector\" data-ministerium-creed-selector=\"1\">"
+                + "<div class=\"choicebar\"><button type=\"button\" class=\"selected\" "
+                + "id=\"ministeriumCredoNiceneButton\" onclick=\"ministeriumChooseCredo('nicene')\">"
+                + ("la".equals(lang) ? "Symbolum Nicænum" : "Niceno-constantinopolitano") + "</button>"
+                + "<button type=\"button\" id=\"ministeriumCredoApostlesButton\" "
+                + "onclick=\"ministeriumChooseCredo('apostles')\">"
+                + ("la".equals(lang) ? "Symbolum Apostolorum" : "De los Apóstoles") + "</button></div>"
+                + "<div id=\"ministeriumCredoNicene\">" + niceneCreedHtml(context, lang) + "</div>"
+                + "<div id=\"ministeriumCredoApostles\" hidden>" + apostlesCreedHtml(context, lang) + "</div>"
+                + chooserScript() + "</div>";
+    }
+
+    /** Kept for older screens that still deliberately expose an ES/LAT prayer switch. */
     public static String professionOfFaithHtml(android.content.Context context) throws Exception {
         return "<div class=\"ministerium-creed-selector\" data-ministerium-creed-selector=\"1\">"
                 + "<div class=\"choicebar\"><button type=\"button\" class=\"selected\" "
@@ -40,12 +48,39 @@ public final class LiturgiaPapalWordRepository {
                 + "onclick=\"ministeriumChooseCredo('apostles')\">De los Apóstoles</button></div>"
                 + "<div id=\"ministeriumCredoNicene\">" + niceneCreedHtml(context) + "</div>"
                 + "<div id=\"ministeriumCredoApostles\" hidden>" + apostlesCreedHtml(context) + "</div>"
-                + "<script>window.ministeriumChooseCredo=window.ministeriumChooseCredo||function(which){"
+                + chooserScript() + "</div>";
+    }
+
+    private static String chooserScript() {
+        return "<script>window.ministeriumChooseCredo=window.ministeriumChooseCredo||function(which){"
                 + "var n=document.getElementById('ministeriumCredoNicene'),a=document.getElementById('ministeriumCredoApostles');"
                 + "var bn=document.getElementById('ministeriumCredoNiceneButton'),ba=document.getElementById('ministeriumCredoApostlesButton');"
                 + "var apost=which==='apostles';if(n)n.hidden=apost;if(a)a.hidden=!apost;"
-                + "if(bn)bn.classList.toggle('selected',!apost);if(ba)ba.classList.toggle('selected',apost);};</script>"
-                + "</div>";
+                + "if(bn)bn.classList.toggle('selected',!apost);if(ba)ba.classList.toggle('selected',apost);};</script>";
+    }
+
+    private static String niceneText(android.content.Context context, String language) throws Exception {
+        String lang = "la".equals(language) ? "la" : "es";
+        if ("la".equals(lang)) {
+            return extract(LiturgiaPapalMissalRepository.component(context, "la", "word"),
+                    "Credo in unum Deum", "Loco symboli", 0);
+        }
+        return extract(LiturgiaPapalMissalRepository.component(context, "es", "word"),
+                "Creo en un solo Dios", "Para utilidad de los fieles", 0);
+    }
+
+    private static String apostlesText(android.content.Context context, String language) throws Exception {
+        String lang = "la".equals(language) ? "la" : "es";
+        if ("la".equals(lang)) {
+            String latinText = LiturgiaPapalMissalRepository.component(context, "la", "word");
+            String[] latinLines = latinText.split("\\r?\\n");
+            int alternate = find(latinLines, "Loco symboli", 0);
+            return extract(latinText, "Credo in unum Deum", "Deinde fit oratio universalis",
+                    alternate < 0 ? 0 : alternate + 1);
+        }
+        String spanishText = LiturgiaPapalMissalRepository.component(context, "es", "word");
+        return extract(spanishText, "Creo en Dios, Padre todopoderoso",
+                "Después se hace la plegaria universal", 0);
     }
 
     private static String bilingual(String id, String spanish, String latin) {
