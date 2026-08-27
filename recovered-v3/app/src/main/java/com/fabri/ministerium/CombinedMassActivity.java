@@ -35,7 +35,9 @@ public class CombinedMassActivity extends ThemedActivity {
                 getIntent().getIntExtra(EXTRA_MONTH, now.get(Calendar.MONTH)),
                 getIntent().getIntExtra(EXTRA_DAY, now.get(Calendar.DAY_OF_MONTH)), 12, 0, 0);
         hourKey = "vespers".equals(getIntent().getStringExtra(EXTRA_HOUR)) ? "vespers" : "lauds";
-        language = "lat_es".equals(getIntent().getStringExtra(EXTRA_LANGUAGE)) ? "lat_es" : "es";
+        // The integrated celebration currently follows the Spanish Liturgy of the Hours.
+        // Latin remains available as a separate complete Missal reader.
+        language = "es";
         ((TextView) findViewById(R.id.txtCombinedMassTitle)).setText("Misa + " + hourName());
         subtitleView = findViewById(R.id.txtCombinedMassSubtitle);
         webView = findViewById(R.id.combinedMassWebView);
@@ -65,8 +67,8 @@ public class CombinedMassActivity extends ThemedActivity {
                 ReaderPreferences.apply(CombinedMassActivity.this, webView, false);
                 LiturgicalWebStyle.apply(CombinedMassActivity.this, webView);
                 MissalCompactView.inject(webView);
-                MissalInteractiveOptions.inject(CombinedMassActivity.this, webView, false);
                 MissalRuntimeFixes31.inject(webView);
+                MissalAlternativeOptions31.inject(webView);
                 UniversalSelectionMenu.restoreHighlights(CombinedMassActivity.this,
                         webView, readerContext().sourceKey);
             }
@@ -78,6 +80,13 @@ public class CombinedMassActivity extends ThemedActivity {
         webView.setVisibility(WebView.INVISIBLE);
         new Thread(() -> {
             try {
+                if (MassReadingsRepository.isCurrentMonth(date)) {
+                    if (!MassReadingsRepository.has(getApplicationContext(), date)) {
+                        try { MassReadingsRepository.syncDay(getApplicationContext(), date); }
+                        catch (Exception ignored) {}
+                    }
+                    DailyMassProperRepository.getOrSync(getApplicationContext(), date);
+                }
                 CombinedMassComposer.Result result = CombinedMassComposer31.compose(
                         getApplicationContext(), date, hourKey, language);
                 runOnUiThread(() -> {
@@ -96,7 +105,7 @@ public class CombinedMassActivity extends ThemedActivity {
                             Toast.LENGTH_LONG).show();
                 });
             }
-        }).start();
+        }, "ministerium-combined-mass-loader").start();
     }
 
     private ReaderContext readerContext() {
