@@ -76,7 +76,7 @@ public final class MagisteriumIndexRepository {
         }
 
         if (dataRows == 0) return fallbackTocSearch(context, query, maximum);
-        hits.sort(new Comparator<ScoredHit>() {
+        Collections.sort(hits, new Comparator<ScoredHit>() {
             @Override public int compare(ScoredHit left, ScoredHit right) {
                 int score = Integer.compare(right.score, left.score);
                 if (score != 0) return score;
