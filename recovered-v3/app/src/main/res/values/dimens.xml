@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Phone baseline: all touch targets stay at least 48dp. -->
+    <dimen name="reader_header_padding">4dp</dimen>
+    <dimen name="reader_icon_touch">48dp</dimen>
+    <dimen name="reader_icon_padding">12dp</dimen>
+    <dimen name="reader_content_margin">6dp</dimen>
+    <dimen name="reader_title_size">17sp</dimen>
+    <dimen name="reader_subtitle_size">11sp</dimen>
+    <dimen name="reader_mode_height">46dp</dimen>
+    <dimen name="reader_mode_button_height">42dp</dimen>
+    <dimen name="reader_column_gap">4dp</dimen>
+</resources>

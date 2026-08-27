@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tablet baseline, tuned for devices such as Redmi Pad 2 without hard-coding one model. -->
+    <dimen name="reader_header_padding">8dp</dimen>
+    <dimen name="reader_icon_touch">54dp</dimen>
+    <dimen name="reader_icon_padding">14dp</dimen>
+    <dimen name="reader_content_margin">12dp</dimen>
+    <dimen name="reader_title_size">19sp</dimen>
+    <dimen name="reader_subtitle_size">12sp</dimen>
+    <dimen name="reader_mode_height">52dp</dimen>
+    <dimen name="reader_mode_button_height">46dp</dimen>
+    <dimen name="reader_column_gap">8dp</dimen>
+</resources>
