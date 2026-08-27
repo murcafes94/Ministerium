@@ -189,6 +189,8 @@ public class HoursReaderActivity extends ThemedActivity {
         ((TextView) findViewById(R.id.txtReaderSubtitle)).setText(
                 HoursRepository.isDictionary(volume)
                         ? volume.title + " · sin conexión"
+                        : HoursRepository.isReference(volume)
+                        ? "Magisterio · " + volume.title + " · sin conexión"
                         : "Liturgia de las Horas · " + volume.title);
         if (!showMemoryOffice()) load(directFilePath, directFragment);
         bindReaderActions();
