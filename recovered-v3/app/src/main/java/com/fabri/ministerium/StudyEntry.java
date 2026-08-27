@@ -10,15 +10,16 @@ import java.util.List;
 /**
  * Anotación personal portable.
  *
- * El anclaje usa una estrategia propia de Ministerium inspirada en lectores
- * robustos como Calibre: unidad semántica + offsets + texto exacto + contexto.
- * No depende de EPUB CFI ni copia código GPL del proyecto de referencia.
+ * El anclaje usa unidad semántica + offsets + texto exacto + contexto. Los
+ * campos nuevos son deliberadamente opcionales para conservar las notas y
+ * subrayados creados en versiones anteriores.
  */
 public final class StudyEntry {
     public static final String HIGHLIGHT = "highlight";
     public static final String NOTE = "note";
     public static final String MEDITATION = "meditation";
-    public static final int CURRENT_ANCHOR_VERSION = 2;
+    public static final String BOOKMARK = "bookmark";
+    public static final int CURRENT_ANCHOR_VERSION = 3;
 
     public String id = "";
     public String type = MEDITATION;
@@ -36,6 +37,10 @@ public final class StudyEntry {
     public String anchorText = "";
     public String body = "";
     public String color = "yellow";
+    /** fill, underline, double, box, margin, question, important. */
+    public String style = "fill";
+    /** note, star, idea, question, important, prayer, study, bookmark. */
+    public String icon = "note";
     public final List<String> tags = new ArrayList<>();
 
     /** Unidad semántica estable del documento, por ejemplo compline.psalmody. */
@@ -59,6 +64,7 @@ public final class StudyEntry {
                 .put("sourceKey", sourceKey).put("contentId", contentId)
                 .put("title", title).put("reference", reference).put("quote", quote)
                 .put("anchorText", anchorText).put("body", body).put("color", color)
+                .put("style", style).put("icon", icon)
                 .put("tags", tagArray)
                 .put("semanticUnitId", semanticUnitId)
                 .put("startOffset", startOffset).put("endOffset", endOffset)
@@ -81,6 +87,9 @@ public final class StudyEntry {
         entry.anchorText = value.optString("anchorText", entry.quote);
         entry.body = value.optString("body");
         entry.color = value.optString("color", "yellow");
+        entry.style = value.optString("style", "fill");
+        entry.icon = value.optString("icon", NOTE.equals(entry.type) ? "note"
+                : BOOKMARK.equals(entry.type) ? "bookmark" : "note");
         JSONArray tags = value.optJSONArray("tags");
         if (tags != null) for (int i = 0; i < tags.length(); i++) {
             String tag = tags.optString(i, "").trim();
