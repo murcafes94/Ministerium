@@ -160,10 +160,11 @@ jobs:
           python tools/build_bible_search_index.py
           test -s app/src/main/assets/bible-search-index.tsv
 
-      - name: Validate Ministerium 3.1.1 contract
+      - name: Validate Ministerium base and 4.0 contracts
         run: |
           node tools/validate_stabilization_31.mjs
           node tools/validate_calendar_31.mjs
+          node tools/validate_lectionary_40.mjs
           python - <<'PY'
           import hashlib, json, pathlib
           manifest = json.loads(pathlib.Path('app/src/main/assets/package-manifest.json').read_text(encoding='utf-8'))
