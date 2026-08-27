@@ -8,6 +8,8 @@ const expect = (condition, message) => {
 };
 
 const manifest = read('app/src/main/AndroidManifest.xml');
+expect(!manifest.includes('\\n'),
+  'AndroidManifest.xml contains a literal escaped newline and is not safe to package.');
 expect(manifest.includes('android:allowBackup="false"'),
   'Private prayer data must not enter automatic Android backups.');
 expect(manifest.includes('android:fullBackupContent="false"'),
