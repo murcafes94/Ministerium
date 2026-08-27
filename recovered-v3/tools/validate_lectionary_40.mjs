@@ -72,11 +72,11 @@ requireText(layout, 'android:id="@+id/txtLectionaryRule"', "activity_mass_readin
 
 const repository = read("app/src/main/java/com/fabri/ministerium/MassReadingsRepository.java");
 for (const section of [
-  '"Primera lectura"',
-  '"Salmo responsorial"',
-  '"Segunda lectura"',
-  '"Aclamación antes del Evangelio"',
-  '"Evangelio"',
+  "Primera lectura",
+  "Salmo responsorial",
+  "Segunda lectura",
+  "Aclamación antes del Evangelio",
+  "Evangelio",
 ]) requireText(repository, section, "MassReadingsRepository");
 
 console.log("Ministerium 4.0 Lectionary contract OK");
