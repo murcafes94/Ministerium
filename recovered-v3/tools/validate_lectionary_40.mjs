@@ -61,6 +61,7 @@ for (const marker of [
   "date.get(Calendar.YEAR) % 2",
   "lecturas asignadas; ordinariamente tres lecturas",
   "firstSundayOfAdvent",
+  "LiturgicalResolver.primaryEvent(events)",
 ]) requireText(engine, marker, "LectionaryRuleEngine");
 
 const activity = read("app/src/main/java/com/fabri/ministerium/MassReadingsActivity.java");
@@ -82,4 +83,6 @@ for (const section of [
 console.log("Ministerium 4.0 Lectionary contract OK");
 console.log("- OLM source and selection rules are traceable");
 console.log("- Sunday cycles A/B/C cross the Advent boundary correctly");
-console.log("- Ferial I/II stays on the civil-year boundary; seasonal cycles remain annual\n- Saints rules and all Word liturgy sections are preserved");
+console.log("- Ferial I/II stays on the civil-year boundary; seasonal cycles remain annual");
+console.log("- Optional memorials do not silently replace the feria");
+console.log("- Saints rules and all Word liturgy sections are preserved");
