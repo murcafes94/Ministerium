@@ -63,13 +63,29 @@ expect(baseline40.includes("versionCode 40")
   '4.0 stabilization adapter does not rewrite the legacy version assertions.');
 
 const bilingualActivity = read('app/src/main/java/com/fabri/ministerium/BilingualHoursActivity.java');
+const bilingualReader = read('app/src/main/java/com/fabri/ministerium/BilingualHoursReaderActivity.java');
 const intermediate = read('app/src/main/java/com/fabri/ministerium/IntermediateHourResolver.java');
 expect(bilingualActivity.includes('EXTRA_HOUR_KEY')
     && bilingualActivity.includes('EXTRA_SUNDAY_OR_SOLEMNITY'),
   'Bilingual Hours must pass the selected hour/date context to its reader.');
+expect(bilingualReader.includes('loadSpanishCompline')
+    && bilingualReader.includes('ComplineSemanticRenderer.render')
+    && bilingualReader.includes('cleanLatinPrelude')
+    && bilingualReader.includes('IntermediateHourResolver.resolve'),
+  'Bilingual Hours must render semantic Compline, clean Latin prelude and resolve intermediate hours.');
 expect(intermediate.includes('hymnRangeMatches')
     && intermediate.includes('ordinaryWeek'),
   'Intermediate Hours must resolve the I-XVII / XVIII-XXXIV hymn range.');
+
+const readings = read('app/src/main/java/com/fabri/ministerium/MassReadingsRepository.java');
+const propers = read('app/src/main/java/com/fabri/ministerium/DailyMassProperRepository.java');
+expect(readings.includes('DailyMassProperRepository.cacheFromSourceHtml')
+    && readings.includes('String rawHtml = download(sourceUrl(date))'),
+  'Lectionary sync must reuse its download to cache Mass propers.');
+expect(propers.includes('cacheFromSourceHtml')
+    && propers.includes('Charset.forName')
+    && propers.includes('actividad diocesana'),
+  'Daily Mass propers need charset-aware parsing and a safe page footer boundary.');
 
 const readme = read('README.md');
 expect(readme.includes('# Ministerium 4.0')
