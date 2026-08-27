@@ -1,63 +1,32 @@
-# Ministerium 3.0
+# Ministerium 4.0
 
-**Ministerium** es una aplicación Android de apoyo litúrgico, bíblico, canónico y pastoral. Este repositorio privado contiene el código fuente y la infraestructura técnica del proyecto.
+Repositorio privado de **Ministerium**, aplicación Android *offline first* para
+oración, Liturgia de las Horas, Misa, Biblia, Magisterio, derecho canónico y
+estudio personal.
 
-> Estado actual: preparación de la arquitectura de Ministerium 3.0 a partir de la rama 2.3.2.
+El proyecto Android editable está en `recovered-v3/`. La rama de la versión es
+`feature/ministerium-4.0`.
 
-## Principios del proyecto
+## Compilación local
 
-- La aplicación y los paquetes de contenido se actualizan de forma independiente.
-- Se mantienen canales separados **Estable** y **Pruebas**.
-- Las distribuciones deben incluir versión, fecha, hash SHA-256 y compatibilidad mínima.
-- El APK no debe contener tokens de escritura de GitHub ni credenciales privadas.
-- El feedback de usuarios debe pasar por un endpoint seguro antes de crear Issues.
-- Los textos litúrgicos, bíblicos o editoriales sujetos a derechos de autor no deben publicarse en distribuciones públicas sin verificar los permisos correspondientes.
+En Windows, ejecuta `COMPILAR-MINISTERIUM.bat` desde esta carpeta. El proceso:
 
-## Componentes previstos
+- detecta JDK 11 y Android SDK;
+- genera los contenidos limpios y los índices locales;
+- valida calendario, Leccionario OLM, Magisterio, oración y lectores;
+- compila la APK de prueba;
+- deja la APK y su SHA-256 en `Ministerium-APK/`.
 
-- Liturgia de las Horas
-- Misal y lecturas de la Misa
-- Biblia y herramientas de estudio
-- Código de Derecho Canónico
-- Magisterio
-- Rituales y devociones
-- Reflexiones, notas y oraciones personales
-- Lectura en voz alta mediante TTS cuando corresponda
+Consulta `recovered-v3/README.md` para los requisitos y el detalle de la
+versión 4.0.
 
-## Arquitectura de actualizaciones
+## Principios
 
-Ministerium 3.0 separa las actualizaciones en módulos:
-
-1. **Aplicación (APK)**
-2. **Calendario litúrgico**
-3. **Breviarium / Liturgia de las Horas**
-4. **Leccionario**
-5. **Rituales y otros contenidos**
-
-Los manifiestos de distribución se encuentran en `distribution/manifests/`.
-
-## Canales
-
-- `stable.json`: versiones recomendadas para uso ordinario.
-- `testing.json`: versiones de prueba antes de pasar al canal estable.
-
-## Documentación
-
-- `docs/ARCHITECTURE_3_0.md` — organización funcional de Ministerium 3.0.
-- `docs/UPDATE_SYSTEM.md` — diseño del sistema de actualizaciones y distribución.
-- `FEEDBACK.md` — esquema para consolidación de incidencias y sugerencias.
-
-## Seguridad
-
-Nunca deben almacenarse en el APK:
-
-- Personal Access Tokens de GitHub.
-- Secrets de Actions.
-- Credenciales de escritura del repositorio.
-- Claves privadas de servicios externos.
-
-Las operaciones de escritura deben realizarse mediante un servicio intermedio autenticado y con permisos mínimos.
-
-## Estado de desarrollo
-
-La base funcional proviene de **Ministerium 2.3.2**. La versión 3.0 se está reorganizando para permitir mantenimiento modular, distribución controlada y actualización independiente de los distintos contenidos.
+- La aplicación y los paquetes de contenido se mantienen de forma modular.
+- Los textos litúrgicos se validan contra sus fuentes; no se inventan perícopas
+  ni rúbricas.
+- Intenciones, oraciones, notas y estudios permanecen locales salvo exportación
+  expresa del usuario.
+- TTS se ofrece en español; los textos latinos se leen visualmente.
+- El APK no contiene tokens de escritura ni claves privadas de producción.
+- Antes de distribuir material protegido deben verificarse los permisos.
