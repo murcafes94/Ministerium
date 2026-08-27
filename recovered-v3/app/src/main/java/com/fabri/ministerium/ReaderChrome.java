@@ -9,7 +9,7 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.webkit.WebView;
 
-/** Gestos, cabecera autoocultable y herramientas comunes del lector. */
+/** Gestos, cabecera fija y herramientas comunes del lector. */
 public final class ReaderChrome {
     public interface Navigator {
         boolean canPrevious();
@@ -26,37 +26,20 @@ public final class ReaderChrome {
         UniversalSelectionMenu.attach(activity, webView, context);
         ReaderPreferences.apply(activity, webView, preserveBibleTypeface);
         attachGestures(activity, webView, navigator);
-        attachAutoHideHeader(webView, header);
+        keepHeaderFixed(header);
     }
 
-    private static void attachAutoHideHeader(WebView webView, View header) {
-        if (header == null || webView == null) return;
+    /**
+     * La cabecera forma parte del chrome de la Activity y no del documento.
+     * No se anima ni se oculta al hacer scroll: esto evita saltos de layout,
+     * parpadeos y el bug observado al cambiar rápidamente la dirección del gesto.
+     */
+    private static void keepHeaderFixed(View header) {
+        if (header == null) return;
+        header.animate().cancel();
         header.setVisibility(View.VISIBLE);
         header.setAlpha(1f);
-        final boolean[] hidden = {false};
-        webView.setOnScrollChangeListener((view, scrollX, scrollY, oldScrollX, oldScrollY) -> {
-            if (scrollY <= 8) {
-                if (hidden[0]) {
-                    hidden[0] = false;
-                    header.setVisibility(View.VISIBLE);
-                    header.setAlpha(0f);
-                    header.animate().alpha(1f).setDuration(120).start();
-                }
-                return;
-            }
-            if (scrollY > oldScrollY + 2 && !hidden[0]) {
-                hidden[0] = true;
-                header.animate().alpha(0f).setDuration(100).withEndAction(() -> {
-                    if (hidden[0]) header.setVisibility(View.GONE);
-                }).start();
-            } else if (scrollY < oldScrollY - 2 && hidden[0]) {
-                hidden[0] = false;
-                header.animate().cancel();
-                header.setVisibility(View.VISIBLE);
-                header.setAlpha(0f);
-                header.animate().alpha(1f).setDuration(120).start();
-            }
-        });
+        header.setTranslationY(0f);
     }
 
     public static void bindTheme(Activity activity, View button) {
@@ -90,7 +73,7 @@ public final class ReaderChrome {
                                     .setTitle("Información del texto")
                                     .setMessage(context.source + (context.reference.isEmpty()
                                             ? "" : "\n" + context.reference)
-                                            + "\nContenido local de Ministerium 3.0")
+                                            + "\nContenido local de Ministerium 3.1")
                                     .setPositiveButton("Cerrar", null).show();
                         }).show());
     }
