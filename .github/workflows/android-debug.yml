@@ -172,6 +172,7 @@ jobs:
           node tools/validate_calendar_31.mjs
           node tools/validate_lectionary_40.mjs
           node tools/validate_magisterium_40.mjs
+          node tools/validate_prayer_experience_40.mjs
           python - <<'PY'
           import hashlib, json, pathlib
           manifest = json.loads(pathlib.Path('app/src/main/assets/package-manifest.json').read_text(encoding='utf-8'))
