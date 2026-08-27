@@ -9,6 +9,7 @@ import re
 import unicodedata
 import zipfile
 from pathlib import Path
+from urllib.parse import unquote
 from xml.etree import ElementTree
 
 from bs4 import BeautifulSoup
