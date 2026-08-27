@@ -24,6 +24,10 @@ function sundayCycle(year) {
   return remainder === 1 ? "A" : remainder === 2 ? "B" : "C";
 }
 
+function weekdayCycle(date) {
+  return date.getUTCFullYear() % 2 === 0 ? "II" : "I";
+}
+
 const cases = [
   ["2025-11-23T12:00:00Z", 2025, "C"],
   ["2025-11-30T12:00:00Z", 2026, "A"],
@@ -36,12 +40,23 @@ for (const [iso, expectedYear, expectedCycle] of cases) {
     throw new Error(`Ciclo incorrecto para ${iso}: ${year}/${sundayCycle(year)}`);
   }
 }
+for (const [iso, expectedCycle] of [
+  ["2025-12-15T12:00:00Z", "I"],
+  ["2026-01-12T12:00:00Z", "II"],
+  ["2026-12-14T12:00:00Z", "II"],
+  ["2027-01-11T12:00:00Z", "I"],
+]) {
+  const actual = weekdayCycle(new Date(iso));
+  if (actual !== expectedCycle) {
+    throw new Error(`Ciclo ferial incorrecto para ${iso}: ${actual}`);
+  }
+}
 
 const engine = read("app/src/main/java/com/fabri/ministerium/LectionaryRuleEngine.java");
 for (const marker of [
   "Ordenación de las Lecturas de la Misa",
-  "OLM 65, 79 y 89",
-  "lecturas feriales salvo lectura propia expresamente indicada",
+  "OLM 65, 66, 79 y 89",\n  "OLM 69",
+  "lecturas del día salvo lectura propia expresamente indicada",\n  "date.get(Calendar.YEAR) % 2",
   "Propio o Común; ordinariamente tres lecturas",
   "firstSundayOfAdvent",
 ]) requireText(engine, marker, "LectionaryRuleEngine");
@@ -65,4 +80,4 @@ for (const section of [
 console.log("Ministerium 4.0 Lectionary contract OK");
 console.log("- OLM source and selection rules are traceable");
 console.log("- Sunday cycles A/B/C cross the Advent boundary correctly");
-console.log("- Ferial/saints rules and all Word liturgy sections are preserved");
+console.log("- Ferial I/II stays on the civil-year boundary; seasonal cycles remain annual\n- Saints rules and all Word liturgy sections are preserved");
