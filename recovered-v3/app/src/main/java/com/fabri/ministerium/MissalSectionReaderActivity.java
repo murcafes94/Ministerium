@@ -10,7 +10,7 @@ import android.widget.Toast;
 
 import java.util.Calendar;
 
-/** Reader for the semantic/native Missal generated from Liturgia Papal PDFs. */
+/** Reader for the semantic/native Missal generated from Liturgia Papal sources. */
 public class MissalSectionReaderActivity extends ThemedActivity {
     public static final String EXTRA_YEAR = "missal_reader_year";
     public static final String EXTRA_MONTH = "missal_reader_month";
@@ -23,6 +23,7 @@ public class MissalSectionReaderActivity extends ThemedActivity {
     private String section;
     private String language;
     private MissalDocument31.Result result;
+    private boolean selectionAttached;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         ThemeUtils.apply(this);
@@ -35,7 +36,7 @@ public class MissalSectionReaderActivity extends ThemedActivity {
                 getIntent().getIntExtra(EXTRA_MONTH, now.get(Calendar.MONTH)),
                 getIntent().getIntExtra(EXTRA_DAY, now.get(Calendar.DAY_OF_MONTH)), 12, 0, 0);
         section = value(getIntent().getStringExtra(EXTRA_SECTION), "day");
-        language = "lat_es".equals(getIntent().getStringExtra(EXTRA_LANGUAGE)) ? "lat_es" : "es";
+        language = "la".equals(getIntent().getStringExtra(EXTRA_LANGUAGE)) ? "la" : "es";
         webView = findViewById(R.id.hoursWebView);
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         findViewById(R.id.btnReaderSearch).setVisibility(View.GONE);
@@ -49,31 +50,59 @@ public class MissalSectionReaderActivity extends ThemedActivity {
                 ReaderPreferences.apply(MissalSectionReaderActivity.this, webView, false);
                 LiturgicalWebStyle.apply(MissalSectionReaderActivity.this, webView);
                 MissalCompactView.inject(webView);
-                // Credo, Padre Nuestro y selector de Plegaria se mantienen disponibles
-                // tanto en español como en la vista ES/LAT.
-                MissalInteractiveOptions.inject(MissalSectionReaderActivity.this,
-                        webView, true);
+                // The Missal is now monolingual; no ES/LAT prayer switch is injected here.
                 MissalRuntimeFixes31.inject(webView);
                 ReaderContext context = readerContext();
-                UniversalSelectionMenu.restoreHighlights(MissalSectionReaderActivity.this, webView, context.sourceKey);
+                UniversalSelectionMenu.restoreHighlights(MissalSectionReaderActivity.this,
+                        webView, context.sourceKey);
             }
         });
-        load();
+        loadAsync();
     }
 
-    private void load() {
-        try {
-            result = MissalDocument31.build(this, date, section, language);
-            ((TextView) findViewById(R.id.txtReaderTitle)).setText(result.title);
-            ((TextView) findViewById(R.id.txtReaderSubtitle)).setText(result.subtitle);
-            ReaderContext context = readerContext();
+    private void loadAsync() {
+        TextView title = findViewById(R.id.txtReaderTitle);
+        TextView subtitle = findViewById(R.id.txtReaderSubtitle);
+        title.setText("Misal Romano");
+        subtitle.setText("Preparando textos del día…");
+        webView.setVisibility(View.INVISIBLE);
+        new Thread(() -> {
+            try {
+                // Same source as the Lectionary: keep readings and propers together offline.
+                if (MassReadingsRepository.isCurrentMonth(date)) {
+                    if (!MassReadingsRepository.has(this, date)) {
+                        try { MassReadingsRepository.syncDay(getApplicationContext(), date); }
+                        catch (Exception ignored) {}
+                    }
+                    DailyMassProperRepository.getOrSync(getApplicationContext(), date);
+                }
+                MissalDocument31.Result built = MissalDocument31.build(
+                        getApplicationContext(), date, section, language);
+                runOnUiThread(() -> show(built));
+            } catch (Exception error) {
+                runOnUiThread(() -> {
+                    Toast.makeText(this, error.getMessage() == null
+                            ? "No se pudo abrir esta sección del Misal." : error.getMessage(),
+                            Toast.LENGTH_LONG).show();
+                    finish();
+                });
+            }
+        }, "ministerium-missal-loader").start();
+    }
+
+    private void show(MissalDocument31.Result built) {
+        result = built;
+        ((TextView) findViewById(R.id.txtReaderTitle)).setText(result.title);
+        ((TextView) findViewById(R.id.txtReaderSubtitle)).setText(result.subtitle);
+        ReaderContext context = readerContext();
+        if (!selectionAttached) {
             UniversalSelectionMenu.attach(this, webView, context);
             ReaderChrome.bindMore(this, findViewById(R.id.btnReaderMore), webView, context);
-            webView.loadDataWithBaseURL("file:///android_asset/", result.html, "text/html", "UTF-8", null);
-        } catch (Exception error) {
-            Toast.makeText(this, error.getMessage() == null ? "No se pudo abrir esta sección del Misal." : error.getMessage(), Toast.LENGTH_LONG).show();
-            finish();
+            selectionAttached = true;
         }
+        webView.setVisibility(View.VISIBLE);
+        webView.loadDataWithBaseURL("file:///android_asset/", result.html,
+                "text/html", "UTF-8", null);
     }
 
     private ReaderContext readerContext() {
@@ -81,7 +110,8 @@ public class MissalSectionReaderActivity extends ThemedActivity {
         String subtitle = result == null ? LiturgicalCalendarRepository.dateLabel(date) : result.subtitle;
         String source = "missal31:" + date.get(Calendar.YEAR) + ":" + (date.get(Calendar.MONTH) + 1)
                 + ":" + date.get(Calendar.DAY_OF_MONTH) + ":" + section + ":" + language;
-        return new ReaderContext("Misal Romano · Liturgia Papal México", source, title, subtitle, "Liturgia", true);
+        return new ReaderContext("Misal Romano · Liturgia Papal / Arquidiócesis de Guadalajara",
+                source, title, subtitle, "Liturgia", true);
     }
 
     private static String value(String value, String fallback) {
