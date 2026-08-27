@@ -7,6 +7,7 @@ on:
       - fix/combined-mass-single-flow
       - feature/ministerium-3.1-stabilization
       - feature/ministerium-3.1.1-final-fixes
+      - feature/ministerium-4.0
   pull_request:
     branches:
       - main
@@ -27,6 +28,7 @@ jobs:
 
     steps:
       - name: Conservar solo el artifact anterior más reciente
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -75,8 +77,8 @@ jobs:
 
   build-debug:
     name: Build debug APK
-    needs: cleanup-artifacts
-    if: ${{ always() && (needs.cleanup-artifacts.result == 'success' || needs.cleanup-artifacts.result == 'skipped') }}
+    # La compilación es independiente: una incidencia limpiando artifacts
+    # históricos nunca debe impedir generar y validar la APK actual.
     runs-on: ubuntu-latest
 
     defaults:
