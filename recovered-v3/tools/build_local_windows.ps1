@@ -167,6 +167,8 @@ if (-not $SkipValidation) {
         Assert-Exit 'Validacion OLM del Leccionario 4.0'
         & node tools/validate_magisterium_40.mjs
         Assert-Exit 'Validacion de Magisterio 4.0'
+        & node tools/validate_prayer_experience_40.mjs
+        Assert-Exit 'Validacion de oracion, privacidad y lectores 4.0'
     } else {
         Write-Warning 'Node.js no esta instalado. Se omiten las validaciones .mjs; Gradle seguira compilando.'
     }
