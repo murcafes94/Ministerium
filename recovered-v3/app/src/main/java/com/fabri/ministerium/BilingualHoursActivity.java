@@ -191,6 +191,13 @@ public class BilingualHoursActivity extends ThemedActivity {
         intent.putExtra(BilingualHoursReaderActivity.EXTRA_SPANISH_FRAGMENT, entry.fragment);
         intent.putExtra(BilingualHoursReaderActivity.EXTRA_SPANISH_SCROLL, entry.scrollText);
         intent.putExtra(BilingualHoursReaderActivity.EXTRA_TITLE, entry.title);
+        intent.putExtra(BilingualHoursReaderActivity.EXTRA_HOUR_KEY, entry.key);
+        intent.putExtra(BilingualHoursReaderActivity.EXTRA_YEAR,
+                selectedDate.get(Calendar.YEAR));
+        intent.putExtra(BilingualHoursReaderActivity.EXTRA_MONTH,
+                selectedDate.get(Calendar.MONTH));
+        intent.putExtra(BilingualHoursReaderActivity.EXTRA_DAY,
+                selectedDate.get(Calendar.DAY_OF_MONTH));
         intent.putExtra(BilingualHoursReaderActivity.EXTRA_LATIN_YEAR, latinDay.year);
         intent.putExtra(BilingualHoursReaderActivity.EXTRA_LATIN_PATH, latinPath);
 
@@ -206,6 +213,10 @@ public class BilingualHoursActivity extends ThemedActivity {
             intent.putExtra(BilingualHoursReaderActivity.EXTRA_READINGS_YEAR,
                     reference.get(Calendar.YEAR) % 2 == 0 ? 2 : 1);
         }
+        boolean sundayOrSolemnity = reference.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY
+                || selectedProper != null && selectedProper.isFeastOrSolemnity();
+        intent.putExtra(BilingualHoursReaderActivity.EXTRA_SUNDAY_OR_SOLEMNITY,
+                sundayOrSolemnity);
         if (selectedProper != null && !sundayFirstVespers
                 && ("invitatory".equals(entry.key) || "office".equals(entry.key)
                 || "lauds".equals(entry.key) || "vespers".equals(entry.key)
