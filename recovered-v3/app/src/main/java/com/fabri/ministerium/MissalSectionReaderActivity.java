@@ -50,8 +50,8 @@ public class MissalSectionReaderActivity extends ThemedActivity {
                 ReaderPreferences.apply(MissalSectionReaderActivity.this, webView, false);
                 LiturgicalWebStyle.apply(MissalSectionReaderActivity.this, webView);
                 MissalCompactView.inject(webView);
-                // The Missal is now monolingual; no ES/LAT prayer switch is injected here.
                 MissalRuntimeFixes31.inject(webView);
+                MissalAlternativeOptions31.inject(webView);
                 ReaderContext context = readerContext();
                 UniversalSelectionMenu.restoreHighlights(MissalSectionReaderActivity.this,
                         webView, context.sourceKey);
@@ -68,7 +68,6 @@ public class MissalSectionReaderActivity extends ThemedActivity {
         webView.setVisibility(View.INVISIBLE);
         new Thread(() -> {
             try {
-                // Same source as the Lectionary: keep readings and propers together offline.
                 if (MassReadingsRepository.isCurrentMonth(date)) {
                     if (!MassReadingsRepository.has(this, date)) {
                         try { MassReadingsRepository.syncDay(getApplicationContext(), date); }
