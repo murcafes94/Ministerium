@@ -52,7 +52,10 @@ public final class LectionaryRuleEngine {
         } catch (Exception ignored) {
             events = Collections.emptyList();
         }
-        LiturgicalEvent primary = events.isEmpty() ? null : events.get(0);
+        // Use the same precedence rule as LiturgicalResolver: an optional
+        // memorial never silently replaces the feria when it is merely offered
+        // as an alternative in the local calendar.
+        LiturgicalEvent primary = LiturgicalResolver.primaryEvent(events);
         int liturgicalYear = liturgicalYear(date);
         String sundayCycle = sundayCycle(liturgicalYear);
 
