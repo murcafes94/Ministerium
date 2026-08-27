@@ -162,6 +162,8 @@ if (-not $SkipValidation) {
         Assert-Exit 'Validacion base 3.1.1'
         & node tools/validate_calendar_31.mjs
         Assert-Exit 'Validacion de calendario'
+        & node tools/validate_lectionary_40.mjs
+        Assert-Exit 'Validacion OLM del Leccionario 4.0'
     } else {
         Write-Warning 'Node.js no esta instalado. Se omiten las validaciones .mjs; Gradle seguira compilando.'
     }
