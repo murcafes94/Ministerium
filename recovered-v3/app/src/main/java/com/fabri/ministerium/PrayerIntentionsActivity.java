@@ -1,7 +1,7 @@
 package com.fabri.ministerium;
 
-import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.LayoutInflater;
@@ -21,6 +21,7 @@ public class PrayerIntentionsActivity extends ThemedActivity {
     private final List<String> intentions = new ArrayList<>();
     private IntentionsAdapter adapter;
     private TextView empty;
+    private Button prayButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,12 +30,14 @@ public class PrayerIntentionsActivity extends ThemedActivity {
         setContentView(R.layout.activity_prayer_intentions);
 
         empty = findViewById(R.id.txtIntentionsEmpty);
+        prayButton = findViewById(R.id.btnPrayIntentions);
         adapter = new IntentionsAdapter();
         ListView list = findViewById(R.id.listIntentions);
         list.setAdapter(adapter);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
         findViewById(R.id.btnAddIntention).setOnClickListener(v -> edit(-1));
+        prayButton.setOnClickListener(v -> prayNow());
         reload();
     }
 
@@ -43,6 +46,24 @@ public class PrayerIntentionsActivity extends ThemedActivity {
         intentions.addAll(IntentionsStore.get(this));
         adapter.notifyDataSetChanged();
         empty.setVisibility(intentions.isEmpty() ? View.VISIBLE : View.GONE);
+        prayButton.setEnabled(!intentions.isEmpty());
+        prayButton.setAlpha(intentions.isEmpty() ? .45f : 1f);
+        prayButton.setText(intentions.isEmpty()
+                ? "Presentar mis intenciones"
+                : "Presentar mis intenciones · " + intentions.size());
+    }
+
+    private void prayNow() {
+        if (intentions.isEmpty()) return;
+        StringBuilder text = new StringBuilder();
+        for (String intention : intentions) {
+            if (text.length() > 0) text.append("\n\n");
+            text.append("• ").append(intention);
+        }
+        startActivity(new Intent(this, PrayerReaderActivity.class)
+                .putExtra(PrayerReaderActivity.EXTRA_DIRECT_TITLE, "Mis intenciones")
+                .putExtra(PrayerReaderActivity.EXTRA_DIRECT_SUBTITLE, "Oración privada")
+                .putExtra(PrayerReaderActivity.EXTRA_DIRECT_TEXT, text.toString()));
     }
 
     private void edit(int position) {
@@ -69,7 +90,8 @@ public class PrayerIntentionsActivity extends ThemedActivity {
                 .setOnClickListener(v -> {
                     String value = input.getText().toString().trim();
                     if (value.isEmpty()) {
-                        Toast.makeText(this, "Escribe una intención.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Escribe una intención.",
+                                Toast.LENGTH_SHORT).show();
                         return;
                     }
                     if (position >= 0) intentions.set(position, value);
