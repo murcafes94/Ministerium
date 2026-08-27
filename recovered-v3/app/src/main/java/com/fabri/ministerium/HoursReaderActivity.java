@@ -145,6 +145,7 @@ public class HoursReaderActivity extends ThemedActivity {
                 applyReadingStyle();
                 ReaderPreferences.apply(HoursReaderActivity.this, webView, false);
                 prepareDictionaryLayout();
+                cleanDevotionalSourceNavigation();
                 filterIntermediateHour();
                 filterCombinedSegment();
                 String combinedSegment = value(getIntent().getStringExtra(
@@ -239,7 +240,6 @@ public class HoursReaderActivity extends ThemedActivity {
                         ? "Magisterio · " + volume.title + " · sin conexión"
                         : "Liturgia de las Horas · " + volume.title);
         load(entry.filePath, entry.fragment);
-
         bindReaderActions();
     }
 
@@ -257,7 +257,7 @@ public class HoursReaderActivity extends ThemedActivity {
         if (directMode && !intermediateHour.isEmpty()) {
             html = IntermediateHourResolver.resolve(this, root, filePath, html,
                     intermediateHour, getIntent().getBooleanExtra(
-                            EXTRA_SUNDAY_OR_SOLEMNITY, false));
+                            EXTRA_SUNDAY_OR_SOLEMNITY, false), ordinaryWeek);
         }
         if (html != null) {
             webView.loadDataWithBaseURL(Uri.fromFile(target).toString(), html,
@@ -395,6 +395,18 @@ public class HoursReaderActivity extends ThemedActivity {
                     + "document.body.appendChild(card);window.scrollTo(0,0);})()";
             webView.evaluateJavascript(script, null);
         }
+    }
+
+    private void cleanDevotionalSourceNavigation() {
+        if (!HoursRepository.isDevotional(volume)) return;
+        String script = "(function(){function n(v){return(v||'').normalize('NFD')"
+                + ".replace(/[\\u0300-\\u036f]/g,'').replace(/\\s+/g,' ').trim().toLowerCase();}"
+                + "var c=[].slice.call(document.querySelectorAll('a,button'));"
+                + "for(var i=0;i<c.length;i++){var t=n(c[i].textContent);"
+                + "if(t==='seccion'||t==='indice'){var p=c[i].parentElement;c[i].style.display='none';"
+                + "if(p){var q=n(p.textContent);if(q==='seccion indice'||q==='indice seccion'||"
+                + "q==='seccion'||q==='indice')p.style.display='none';}}}})()";
+        webView.evaluateJavascript(script, null);
     }
 
     private void expandGospelCanticles() {
