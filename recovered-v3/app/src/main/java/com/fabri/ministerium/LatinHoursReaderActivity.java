@@ -10,8 +10,11 @@ import android.webkit.WebViewClient;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONObject;
+
 import java.io.File;
 
+/** Liturgia Horarum en latín con la misma jerarquía visual del lector español. */
 public class LatinHoursReaderActivity extends ThemedActivity {
     public static final String EXTRA_YEAR = "latin_year";
     public static final String EXTRA_PATH = "latin_path";
@@ -37,8 +40,9 @@ public class LatinHoursReaderActivity extends ThemedActivity {
         webView.setBackgroundColor(Color.TRANSPARENT);
         webView.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
-                applyStyle();
+                applySourceCleanup();
                 ReaderPreferences.apply(LatinHoursReaderActivity.this, webView, false);
+                LiturgicalWebStyle.apply(LatinHoursReaderActivity.this, webView);
             }
         });
         findViewById(R.id.btnBack).setOnClickListener(v -> back());
@@ -61,41 +65,23 @@ public class LatinHoursReaderActivity extends ThemedActivity {
         }
     }
 
-    private void applyStyle() {
-        boolean dark = ThemeUtils.isDark(this);
-        String background = dark ? "#26211E" : "#FFFDF7";
-        String ink = dark ? "#F3EDE4" : "#2A2521";
-        String accent = dark ? "#D9B96F" : "#772233";
-        String css = "html,body{background:" + background + "!important;color:" + ink
-                + "!important;width:100%!important;max-width:none!important;box-sizing:border-box}"
-                + "body,body *{color:" + ink + "!important;"
-                + "-webkit-text-fill-color:" + ink + "!important;text-shadow:none!important;"
-                + "-webkit-text-shadow:none!important}"
-                + "body{font-family:serif!important;line-height:1.65!important;"
-                + "margin:0!important;padding:24px!important;box-sizing:border-box;"
-                + "overflow-wrap:anywhere!important}body *{max-width:100%;box-sizing:border-box}"
-                + "a,.redtitle,.redsmall1,[style*=red],[style*=\"#CC0000\"],"
-                + "[style*=\"#cc0000\"]{color:" + accent + "!important;"
-                + "-webkit-text-fill-color:" + accent + "!important}"
-                + "img,table{max-width:100%!important;height:auto!important}"
-                + ".patka{display:none!important}"
-                + "@media(min-width:700px){body{padding-left:48px!important;"
-                + "padding-right:48px!important}}"
-                + "@media(min-width:1100px){body{padding-left:64px!important;"
-                + "padding-right:64px!important}}";
-        String script = "(function(){var s=document.createElement('style');s.innerHTML='"
-                + css.replace("'", "\\'") + "';document.head.appendChild(s);"
-                + "var all=document.body.querySelectorAll('*');for(var i=0;i<all.length;i++){"
-                + "all[i].style.setProperty('color','" + ink + "','important');"
-                + "all[i].style.setProperty('-webkit-text-fill-color','" + ink + "','important');"
-                + "all[i].style.setProperty('text-shadow','none','important');}"
-                + "var marked=document.querySelectorAll('a,.redtitle,.redsmall1,[style*=red],"
-                + "[style*=\"#CC0000\"],[style*=\"#cc0000\"]');"
-                + "for(var m=0;m<marked.length;m++){marked[m].style.setProperty('color','" + accent
-                + "','important');marked[m].style.setProperty('-webkit-text-fill-color','"
-                + accent + "','important');}"
+    /**
+     * El paquete latino conserva a veces restos editoriales de la fuente. Se
+     * limpian sin imponer colores inline para que la paleta compartida pueda
+     * presentar himno, salmodia, lectura, responsorio, cántico, preces y oración
+     * exactamente con la jerarquía del lector español.
+     */
+    private void applySourceCleanup() {
+        String script = "(function(){"
+                + "var old=document.getElementById('ministerium-latin-source-cleanup');"
+                + "if(!old){old=document.createElement('style');old.id='ministerium-latin-source-cleanup';"
+                + "old.textContent='.patka{display:none!important}img,table{max-width:100%!important;height:auto!important}';"
+                + "document.head.appendChild(old);}"
                 + "var links=document.querySelectorAll('a');for(var i=0;i<links.length;i++){"
-                + "if((links[i].textContent||'').trim()==='↑')links[i].style.display='none';}})()";
+                + "var t=(links[i].textContent||'').trim();if(t==='↑'||t==='←'||t==='→'){"
+                + "var p=links[i].parentElement;links[i].style.display='none';"
+                + "if(p&&p.tagName==='P'&&(p.textContent||'').trim().length<12)p.style.display='none';}}"
+                + "})()";
         webView.evaluateJavascript(script, null);
     }
 
