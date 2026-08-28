@@ -2,6 +2,19 @@
 
 Este archivo resume las versiones de Ministerium. Los detalles históricos se conservan en `NOVEDADES-<versión>.md`.
 
+## [4.1.0] - en desarrollo
+
+### Estudio e interoperabilidad
+- Mi estudio puede exportarse como Markdown normal, JSON portable o Markdown preparado para Obsidian.
+- La exportación Obsidian conserva IDs de contenido de Ministerium, referencias, citas, etiquetas y anclas semánticas.
+
+### Lectores y calendario
+- Esta rama queda preparada para continuar con modo de lectura desplazamiento/página y validación secundaria del calendario litúrgico.
+
+### Alcance
+- La versión 4.1 no incorpora IA ni dictado/transcripción por voz.
+- Se mantienen el funcionamiento local-first y las reglas de privacidad de 4.0.
+
 ## [4.0.0] - 2026-08-27
 
 ### Oración y privacidad
