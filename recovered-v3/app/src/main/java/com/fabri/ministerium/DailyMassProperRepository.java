@@ -13,12 +13,15 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Propios diarios tomados de la misma página que Ministerium usa para el
@@ -26,7 +29,7 @@ import java.util.Locale;
  * fecha; después los textos quedan en cache local junto a las lecturas.
  */
 public final class DailyMassProperRepository {
-    private static final int FORMAT = 1;
+    private static final int FORMAT = 2;
     private static final String[] MONTHS = {
             "enero", "febrero", "marzo", "abril", "mayo", "junio",
             "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
@@ -72,6 +75,13 @@ public final class DailyMassProperRepository {
         } catch (Exception ignored) {
             return cached;
         }
+    }
+
+    /** Reuses the exact HTML already downloaded by the Lectionary sync. */
+    static synchronized void cacheFromSourceHtml(Context context, Calendar date,
+                                                 String rawHtml) throws Exception {
+        ProperDay day = parse(rawHtml, date);
+        write(context, date, day);
     }
 
     public static ProperDay cached(Context context, Calendar date) {
@@ -182,11 +192,12 @@ public final class DailyMassProperRepository {
     }
 
     private static int properEnd(String[] lines, int from) {
-        int max = Math.min(lines.length, from + 10);
+        int max = Math.min(lines.length, from + 14);
         for (int i = from; i < max; i++) {
             String n = normalize(lines[i]);
-            if (n.contains("biblia catecismo") || n.startsWith("lectura de dia")
-                    || n.contains("noticias vaticano") || n.contains("aviso de privacidad")
+            if (n.startsWith("actividad diocesana") || n.contains("biblia catecismo")
+                    || n.startsWith("lectura de dia") || n.contains("noticias vaticano")
+                    || n.contains("aviso de privacidad")
                     || n.contains("arquidiocesis de guadalajara")) return i;
         }
         return max;
@@ -263,13 +274,29 @@ public final class DailyMassProperRepository {
         connection.setConnectTimeout(12000);
         connection.setReadTimeout(18000);
         connection.setInstanceFollowRedirects(true);
-        connection.setRequestProperty("User-Agent", "Ministerium/3.1 Android");
+        connection.setRequestProperty("User-Agent", "Ministerium/4.0 Android");
+        int status = connection.getResponseCode();
+        if (status < 200 || status >= 300) {
+            connection.disconnect();
+            throw new IllegalStateException("Respuesta HTTP " + status);
+        }
         try (InputStream input = new BufferedInputStream(connection.getInputStream());
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[8192];
             int count;
             while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
-            return new String(output.toByteArray(), StandardCharsets.UTF_8);
+            Charset charset = StandardCharsets.UTF_8;
+            String contentType = connection.getContentType();
+            if (contentType != null) {
+                Matcher declared = Pattern.compile(
+                        "(?i)charset\\s*=\\s*[\"']?([^;\"']+)").matcher(contentType);
+                if (declared.find()) try {
+                    charset = Charset.forName(declared.group(1).trim());
+                } catch (Exception ignored) {
+                    charset = StandardCharsets.UTF_8;
+                }
+            }
+            return new String(output.toByteArray(), charset);
         } finally {
             connection.disconnect();
         }

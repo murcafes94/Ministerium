@@ -1,63 +1,62 @@
-# Ministerium 3.0.0
+# Ministerium 4.0
 
 Aplicación Android nativa, editorial y *offline first* para oración, liturgia,
-Biblia, estudio y biblioteca católica. Conserva compatibilidad con **Android
-Studio 4.2.1**, Android Gradle Plugin 4.2.1, Gradle 6.7.1 y SDK 30.
+Biblia, Magisterio y estudio. Conserva compatibilidad con **Android Studio
+4.2.1**, Android Gradle Plugin 4.2.1, Gradle 6.7.1, JDK 11 y SDK 30.
 
-## Abrir el proyecto
+## Compilar en Windows
 
-Lee `GUIA-INICIO-ANDROID-STUDIO.md`. Abre la carpeta que contiene
-`settings.gradle`, espera la primera sincronización y ejecuta en Android 6.0 o
-superior. Gradle está limitado a 1536 MB y dos trabajadores.
+1. Descarga o actualiza el repositorio y cambia a `feature/ministerium-4.0`.
+2. Instala JDK 11, Android SDK 30 y Python 3.11.
+3. Ejecuta `COMPILAR-MINISTERIUM.bat` desde la raíz.
+4. El script genera los paquetes limpios y los índices, ejecuta los contratos
+   4.0 y construye la APK de prueba.
+5. La salida queda en `Ministerium-APK/Ministerium-4.0.0-prueba.apk`, junto a
+   su SHA-256.
 
-## Ministerium 3.0
+También puede abrirse `recovered-v3` en Android Studio. La compilación completa
+de distribución debe ejecutar antes el preprocesamiento, porque el índice del
+Magisterio se genera desde los EPUB locales.
 
-- Lectores compactos sin barras inferiores: cabecera autoocultable, gestos,
-  pellizco para ajustar texto, tema rápido y menú global.
-- Menú contextual explícito para copiar, compartir, resaltar, anotar, meditar,
-  consultar, traducir y escuchar. Seleccionar no abre nada automáticamente.
-- `Mi estudio`, autoguardado, Mesa de estudio, referencias y búsquedas precisas
-  de Biblia, Canon y Catecismo.
-- Continuar leyendo con módulo, documento y posición.
-- Completas continuas; Horas intermedias con himno automático y salmodia
-  complementaria; conclusiones legítimas.
-- Oficio de lecturas + Laudes conforme OGLH 99 y recorrido Misa +
-  Laudes/Vísperas conforme OGLH 93–97.
-- Misal y Lecturas separados, con selectores de modo e idioma Español o
-  Latín–Español.
-- Liturgia bilingüe reducida a `Bilingüe | Latín`; sin TTS latino.
-- Planes bíblicos personalizados con progreso real y avisos directos.
-- TTS español por bloques semánticos y controles en notificación.
-- Respaldo SHA-256 restaurable, con Drive opcional mediante el proveedor seguro
-  de documentos de Android.
-- Centro modular de versiones y comentarios sin tokens dentro de la APK.
+## Novedades 4.0
 
-El contenido incluye Liturgia de las Horas, Liturgia Horarum 2026, Misal
-LAT–ES, Leccionario, calendario Ecuador 2026, Biblia de Jerusalén, cuatro
-diccionarios, Código canónico bilingüe, Magisterio, rituales y devociones.
+- Leccionario guiado por la Ordenación de las Lecturas de la Misa: ciclos A/B/C,
+  ferial I/II por año civil y reglas diferenciadas para domingos, solemnidades,
+  fiestas, memorias y ferias.
+- Centro diario enlazado: Liturgia de las Horas y lecturas de la Misa conservan
+  la misma fecha seleccionada.
+- Magisterio jerárquico y búsqueda local dentro del texto completo, con apertura
+  directa del fragmento encontrado.
+- Oraciones personales con modo de oración independiente del editor.
+- Intenciones privadas integradas en Laudes/Vísperas y en una sesión propia.
+- Datos espirituales excluidos de las copias automáticas de Android; respaldo
+  únicamente por acción expresa del usuario.
+- Lectores con cabecera autoocultable estable, gestos, TTS español y columna
+  editorial adaptable a teléfono y tablet.
+
+## Contenido y fuentes
+
+Ministerium no inventa perícopas ni rúbricas. La OLM orienta la selección y
+validación, mientras las lecturas en español proceden del paquete sincronizado.
+Los documentos del Magisterio incluidos se consultan sin conexión. Los PDF
+normativos visibles en la biblioteca requieren Internet.
 
 ## Validación
 
-```text
-node tools/validate_project.mjs
-node tools/validate_content.mjs
-```
+La compilación local ejecuta:
 
-La compilación completa requiere SDK 30 y Gradle 6.7.1 descargados por Android
-Studio. Genera la APK desde `Build > Build Bundle(s) / APK(s) > Build APK(s)`.
+```text
+node tools/validate_stabilization_31.mjs
+node tools/validate_calendar_31.mjs
+node tools/validate_lectionary_40.mjs
+node tools/validate_magisterium_40.mjs
+node tools/validate_prayer_experience_40.mjs
+node tools/validate_release_40.mjs
+```
 
 ## Distribución responsable
 
-No publiques material protegido sin comprobar permisos. `distribution` aporta
-solo plantillas: cada Release debe completar URLs, firma y hashes reales.
-
-## Flujo del repositorio
-
-- `main`: versión estable.
-- `develop`: integración de la siguiente versión.
-- Releases normales: Estable.
-- Prereleases: Pruebas.
-
-Consulta `docs/GITHUB-STRUCTURE.md`, `docs/RELEASE-PROCESS.md` y
-`docs/CONTENT-RIGHTS.md` antes de publicar artefactos o cambiar la visibilidad
-del repositorio.
+No publiques material protegido sin comprobar permisos. El APK no debe contener
+tokens, credenciales de escritura ni una clave privada de producción. La firma
+de prueba incluida es pública y solo sirve para actualizar instalaciones de
+Ministerium Test.

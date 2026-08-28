@@ -18,6 +18,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.io.File;
+import java.util.Calendar;
 
 /**
  * ES/LAT Hours reader. Tablets align semantic paragraph cards. Phones keep one
@@ -29,6 +30,11 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
     public static final String EXTRA_SPANISH_FRAGMENT = "spanish_fragment";
     public static final String EXTRA_SPANISH_SCROLL = "spanish_scroll";
     public static final String EXTRA_TITLE = "reader_title";
+    public static final String EXTRA_HOUR_KEY = "hour_key";
+    public static final String EXTRA_YEAR = "reader_year";
+    public static final String EXTRA_MONTH = "reader_month";
+    public static final String EXTRA_DAY = "reader_day";
+    public static final String EXTRA_SUNDAY_OR_SOLEMNITY = "sunday_or_solemnity";
     public static final String EXTRA_LATIN_YEAR = "latin_year";
     public static final String EXTRA_LATIN_PATH = "latin_path";
     public static final String EXTRA_MEMORY_VOLUME = "memory_volume";
@@ -98,7 +104,6 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
         try {
             loadSpanish();
             int year = getIntent().getIntExtra(EXTRA_LATIN_YEAR, 2026);
-            // hourFile() resolves the clean installed HTML package; an EPUB is never rendered here.
             File latinFile = LatinContentManager.hourFile(this, year,
                     value(getIntent().getStringExtra(EXTRA_LATIN_PATH)));
             latin.loadUrl(Uri.fromFile(latinFile).toString());
@@ -130,7 +135,6 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
         syncHandler.postDelayed(pendingSync, 70L);
     }
 
-    /** Syncs to the beginning of the matching paragraph card, not to a pixel percentage. */
     private void semanticSynchronize(WebView source, WebView target) {
         if (!wideParallel || syncingScroll) return;
         String probe = "(function(){var es=document.querySelectorAll('[data-ministerium-align-key]');"
@@ -163,8 +167,12 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
             @Override public void onPageFinished(WebView webView, String url) {
                 applyStyle(webView, isSpanish);
                 ReaderPreferences.apply(BilingualHoursReaderActivity.this, webView, false);
-                if (isSpanish) filterIntermediateHour();
-                webView.postDelayed(() -> applyParagraphCards(webView, isSpanish), 80L);
+                if (isSpanish) {
+                    filterIntermediateHour();
+                } else {
+                    cleanLatinPrelude(webView);
+                }
+                webView.postDelayed(() -> applyParagraphCards(webView, isSpanish), 120L);
                 UniversalSelectionMenu.restoreHighlights(BilingualHoursReaderActivity.this,
                         webView, sourceKey(isSpanish ? "es" : "la"));
             }
@@ -172,6 +180,12 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
     }
 
     private void loadSpanish() throws Exception {
+        String hourKey = value(getIntent().getStringExtra(EXTRA_HOUR_KEY));
+        if ("compline".equals(hourKey)) {
+            loadSpanishCompline();
+            return;
+        }
+
         HoursVolume volume = HoursRepository.find(
                 value(getIntent().getStringExtra(EXTRA_SPANISH_VOLUME)));
         if (volume == null) throw new IllegalStateException("Volumen español no válido.");
@@ -181,6 +195,8 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
         File target = new File(root, filePath);
         if (!target.isFile()) throw new IllegalStateException("Hora española no encontrada.");
 
+        String html = null;
+        String baseUrl = Uri.fromFile(target).toString();
         String memoryVolumeId = value(getIntent().getStringExtra(EXTRA_MEMORY_VOLUME));
         String memoryHour = value(getIntent().getStringExtra(EXTRA_MEMORY_HOUR));
         if (!memoryVolumeId.isEmpty() && !memoryHour.isEmpty()) {
@@ -203,25 +219,57 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
                     getIntent().getIntExtra(EXTRA_ORDINARY_WEEK, 0),
                     value(getIntent().getStringExtra(EXTRA_CYCLE)),
                     getIntent().getIntExtra(EXTRA_READINGS_YEAR, 0));
-            if (office != null) {
-                spanish.loadDataWithBaseURL(office.baseUrl, office.html,
-                        "text/html", "UTF-8", null);
-                return;
+            if (office != null && office.html != null && !office.html.trim().isEmpty()) {
+                html = office.html;
+                baseUrl = office.baseUrl;
             }
         }
 
         int ordinaryWeek = getIntent().getIntExtra(EXTRA_ORDINARY_WEEK, 0);
-        if ("ordinary".equals(volume.id) && ordinaryWeek > 0) {
-            String html = OrdinaryReferenceResolver.resolve(root, filePath, ordinaryWeek,
+        if (html == null && "ordinary".equals(volume.id) && ordinaryWeek > 0) {
+            html = OrdinaryReferenceResolver.resolve(root, filePath, ordinaryWeek,
                     value(getIntent().getStringExtra(EXTRA_CYCLE)),
                     getIntent().getIntExtra(EXTRA_READINGS_YEAR, 0));
-            spanish.loadDataWithBaseURL(Uri.fromFile(target).toString(), html,
-                    "text/html", "UTF-8", null);
+        }
+
+        if (!spanishScroll.isEmpty()) {
+            html = IntermediateHourResolver.resolve(this, root, filePath, html,
+                    spanishScroll,
+                    getIntent().getBooleanExtra(EXTRA_SUNDAY_OR_SOLEMNITY, false),
+                    ordinaryWeek);
+        }
+
+        if (html != null && !html.trim().isEmpty()) {
+            spanish.loadDataWithBaseURL(baseUrl, html, "text/html", "UTF-8", null);
             return;
         }
+
         String url = Uri.fromFile(target).toString();
         if (!fragment.isEmpty()) url += "#" + Uri.encode(fragment);
         spanish.loadUrl(url);
+    }
+
+    private void loadSpanishCompline() throws Exception {
+        Calendar now = Calendar.getInstance();
+        Calendar selected = Calendar.getInstance();
+        selected.clear();
+        selected.set(
+                getIntent().getIntExtra(EXTRA_YEAR, now.get(Calendar.YEAR)),
+                getIntent().getIntExtra(EXTRA_MONTH, now.get(Calendar.MONTH)),
+                getIntent().getIntExtra(EXTRA_DAY, now.get(Calendar.DAY_OF_MONTH)),
+                12, 0, 0);
+        JSONObject data = ComplineContentRepository.load(this);
+        JSONObject form = ComplineContentRepository.formForDay(
+                data, selected.get(Calendar.DAY_OF_WEEK));
+        if (form == null) throw new IllegalStateException("Formulario español de Completas ausente.");
+        LiturgicalDay day = LiturgicalResolver.resolve(this, selected);
+        String season = day.temporalOffice == null || day.temporalOffice.volume == null
+                ? "ordinary" : day.temporalOffice.volume.id;
+        int ordinaryWeek = LiturgicalResolver.ordinaryWeekNumber(selected);
+        data.put("_ordinaryWeek", ordinaryWeek);
+        String html = ComplineSemanticRenderer.render(this, data, form, season);
+        spanish.loadDataWithBaseURL("https://ministerium.local/compline/",
+                html, "text/html", "UTF-8", null);
     }
 
     private void showMode(int mode) {
@@ -309,12 +357,41 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
                 + "var links=document.querySelectorAll('a');for(var i=0;i<links.length;i++){var t=(links[i].textContent||'').replace(/\\s+/g,' ').trim().toLowerCase();"
                 + "if(t==='↑'||/^\\[[olmvc123]+\\]$/.test(t)||t.indexOf('officium lectionis')>=0||t==='tertia →'||t==='sexta →'||t==='nona →')links[i].style.display='none';}"
                 + "var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),x;while((x=w.nextNode())){if(/^\\s*\\[[OLMVC123]+\\]\\s*$/.test(x.nodeValue||''))x.nodeValue='';}"
-                + (isSpanish ? "" : "var els=[].slice.call(document.querySelectorAll('h1,h2,h3,h4,p,div'));var metadata=0;for(var j=0;j<els.length&&j<24;j++){var q=(els[j].textContent||'').replace(/\\s+/g,' ').trim();var low=q.toLowerCase();if(/^\\d{1,2}\\s+[a-zæ]+\\s+20\\d{2}$/.test(low)||low.indexOf('hebdomada ')>=0||low.indexOf('tempus per annum')>=0){els[j].style.display='none';metadata++;}if(low.indexOf('laudes matutin')>=0||low.indexOf('vesper')===0)break;}" )
                 + "})()";
         view.evaluateJavascript(script, null);
     }
 
-    /** Turns text into semantic cards and assigns equivalent ES/LAT paragraph keys. */
+    private void cleanLatinPrelude(WebView view) {
+        String marker = latinHourMarker();
+        String script = "(function(){function n(v){return(v||'').normalize('NFD')"
+                + ".replace(/[\\u0300-\\u036f]/g,'').replace(/\\s+/g,' ').trim().toLowerCase();}"
+                + "var links=[].slice.call(document.querySelectorAll('a'));"
+                + "for(var i=0;i<links.length;i++){var t=n(links[i].textContent);"
+                + "if(t.indexOf('←')>=0||t.indexOf('→')>=0||t==='↑'||/^\\[[olmvc123]+\\]$/.test(t)){"
+                + "var p=links[i].parentElement;links[i].style.display='none';"
+                + "if(p&&p.tagName==='P'&&n(p.textContent).length<90)p.style.display='none';}}"
+                + "var marker=" + JSONObject.quote(marker) + ";"
+                + "if(marker){var blocks=[].slice.call(document.querySelectorAll('h1,h2,h3,h4,p'));"
+                + "var cut=-1;for(var j=0;j<blocks.length;j++){var q=n(blocks[j].textContent);"
+                + "if(q===marker||q.indexOf(marker)===0){cut=j;break;}}"
+                + "if(cut>0){for(var k=0;k<cut;k++)blocks[k].style.display='none';}}"
+                + "window.scrollTo(0,0);})()";
+        view.evaluateJavascript(script, null);
+    }
+
+    private String latinHourMarker() {
+        String key = value(getIntent().getStringExtra(EXTRA_HOUR_KEY));
+        if ("invitatory".equals(key)) return "invitatorium";
+        if ("office".equals(key)) return "officium lectionis";
+        if ("lauds".equals(key)) return "laudes matutin";
+        if ("terce".equals(key)) return "tertia";
+        if ("sext".equals(key)) return "sexta";
+        if ("none".equals(key)) return "nona";
+        if ("vespers".equals(key)) return "vesper";
+        if ("compline".equals(key)) return "completorium";
+        return "";
+    }
+
     private void applyParagraphCards(WebView view, boolean spanishSide) {
         String script = "(function(){if(document.body.getAttribute('data-ministerium-cards')==='1')return;"
                 + "document.body.setAttribute('data-ministerium-cards','1');function n(v){return(v||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/\\s+/g,' ').trim().toLowerCase();}"
@@ -330,8 +407,7 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
                 + "for(var i=0;i<blocks.length;i++){var e=blocks[i];if(e.offsetParent===null)continue;var text=n(e.textContent);if(!text)continue;"
                 + "if(/^h[1-4]$/i.test(e.tagName)){section=sec(text,section);e.classList.add('ministerium-align-heading');continue;}"
                 + "if(e.closest&&e.closest('.ministerium-study-marker'))continue;section=sec(text,section);var k=counts[section]||0;counts[section]=k+1;"
-                + "e.classList.add('ministerium-align-card');e.setAttribute('data-ministerium-align-key',section+':'+k);}" 
-                + "})()";
+                + "e.classList.add('ministerium-align-card');e.setAttribute('data-ministerium-align-key',section+':'+k);}})()";
         view.evaluateJavascript(script, null);
     }
 

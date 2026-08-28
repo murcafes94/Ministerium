@@ -157,8 +157,9 @@ public final class HoursRepository {
         sources.add(DEVOTIONAL);
         sources.add(RATZINGER_WAY_OF_CROSS);
         sources.add(ROMAN_MISSAL);
-        sources.addAll(REFERENCES);
 
+        // Reference EPUBs are searched by MagisteriumIndexRepository using their
+        // complete text; keeping them here would duplicate title-only results.
         for (HoursVolume volume : sources) {
             String section = volume.title;
             List<EpubTocEntry> entries = EpubUtils.tableOfContents(context, volume);

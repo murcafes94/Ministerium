@@ -61,6 +61,20 @@
         android:textSize="16sp"
         android:textStyle="bold" />
 
+    <Button
+        android:id="@+id/btnPrayIntentions"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/bg_button_secondary"
+        android:text="Presentar mis intenciones"
+        android:textAllCaps="false"
+        android:textColor="@color/wine"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
     <TextView
         android:id="@+id/txtIntentionsEmpty"
         android:layout_width="match_parent"

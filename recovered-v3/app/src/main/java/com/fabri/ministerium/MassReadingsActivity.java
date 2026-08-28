@@ -32,6 +32,7 @@ public class MassReadingsActivity extends ThemedActivity {
     private Button syncButton;
     private TextView celebrationLabel;
     private TextView liturgicalDetails;
+    private TextView lectionaryRule;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +57,7 @@ public class MassReadingsActivity extends ThemedActivity {
         syncButton = findViewById(R.id.btnSyncReadings);
         celebrationLabel = findViewById(R.id.txtMassCelebration);
         liturgicalDetails = findViewById(R.id.txtMassLiturgicalDetails);
+        lectionaryRule = findViewById(R.id.txtLectionaryRule);
 
         progress.setVisibility(View.GONE);
         findViewById(R.id.btnBack).setOnClickListener(v -> back());
@@ -101,6 +103,10 @@ public class MassReadingsActivity extends ThemedActivity {
             celebrationLabel.setText("Lecturas de la celebración del día");
             liturgicalDetails.setText("Leccionario");
         }
+
+        LectionaryRuleEngine.Selection lectionary =
+                LectionaryRuleEngine.resolve(this, selectedDate);
+        lectionaryRule.setText(lectionary.summary() + " · " + lectionary.sourceReference);
 
         boolean saved = MassReadingsRepository.has(this, selectedDate);
         int cached = MassReadingsRepository.cachedDays(this, selectedDate);

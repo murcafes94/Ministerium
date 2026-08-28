@@ -78,6 +78,13 @@ public final class ContentRepository {
                 if (results.size() >= maximumResults) return results;
             }
             try {
+                results.addAll(MagisteriumIndexRepository.search(
+                        context, query, maximumResults - results.size()));
+            } catch (Exception ignored) {
+                // Una falla aislada del índice magisterial no debe impedir la búsqueda global.
+            }
+            if (results.size() >= maximumResults) return results;
+            try {
                 results.addAll(HoursRepository.search(
                         context, query, maximumResults - results.size()));
             } catch (Exception ignored) {

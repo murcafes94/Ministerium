@@ -25,9 +25,15 @@ function Assert-Exit([string]$Label) {
 
 $script:UsePyLauncher = $false
 if (Get-Command py -ErrorAction SilentlyContinue) {
-    & py -3.11 --version *> $null
-    if ($LASTEXITCODE -eq 0) {
-        $script:UsePyLauncher = $true
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        & py -3.11 --version 2>$null | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            $script:UsePyLauncher = $true
+        }
+    } finally {
+        $ErrorActionPreference = $previousPreference
     }
 }
 if (-not $script:UsePyLauncher -and -not (Get-Command python -ErrorAction SilentlyContinue)) {
@@ -43,17 +49,60 @@ function Invoke-Py([string[]]$PyArgs, [string]$Label = 'Python') {
     Assert-Exit $Label
 }
 
-function Test-Java11([string]$JavaExe) {
+function Test-PythonImports {
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
     try {
-        $version = (& $JavaExe -version 2>&1 | Out-String)
-        return ($version -match 'version\s+"11(?:\.|\")' -or $version -match 'openjdk\s+11(?:\.|\s)')
+        if ($script:UsePyLauncher) {
+            & py -3.11 -c "import pypdf, bs4" 2>$null | Out-Null
+        } else {
+            & python -c "import pypdf, bs4" 2>$null | Out-Null
+        }
+        return ($LASTEXITCODE -eq 0)
     } catch {
         return $false
+    } finally {
+        $ErrorActionPreference = $previousPreference
+    }
+}
+
+function Test-Java11([string]$JavaExe) {
+    if (-not $JavaExe -or -not (Test-Path $JavaExe)) {
+        return $false
+    }
+
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $command = '"' + $JavaExe + '" -version 2>&1'
+        $versionText = (& cmd.exe /d /c $command | Out-String)
+        return ($versionText -match '(?im)(?:java|openjdk) version\s+"?11(?:\.|\s|")')
+    } catch {
+        return $false
+    } finally {
+        $ErrorActionPreference = $previousPreference
     }
 }
 
 function Configure-Java11 {
     $candidates = New-Object System.Collections.Generic.List[string]
+
+    if ($env:JAVA_HOME) {
+        $fromHome = Join-Path $env:JAVA_HOME 'bin\java.exe'
+        if (Test-Path $fromHome) {
+            $candidates.Add($fromHome)
+        }
+    }
+
+    try {
+        $whereJava = & where.exe java 2>$null
+        foreach ($item in $whereJava) {
+            if ($item -and (Test-Path $item)) {
+                $candidates.Add([string]$item)
+            }
+        }
+    } catch {}
+
     $javaCommand = Get-Command java -ErrorAction SilentlyContinue
     if ($javaCommand -and $javaCommand.Source) {
         $candidates.Add($javaCommand.Source)
@@ -65,65 +114,99 @@ function Configure-Java11 {
         "$env:ProgramFiles\Microsoft\jdk-11*\bin\java.exe",
         "$env:ProgramFiles\Amazon Corretto\jdk11*\bin\java.exe",
         "$env:USERPROFILE\.jdks\*11*\bin\java.exe",
+        'C:\portapps\android-studio-portable\app\jre\bin\java.exe',
         "$env:ProgramFiles\Android\Android Studio\jre\bin\java.exe"
     )
     foreach ($pattern in $patterns) {
-        Get-Item $pattern -ErrorAction SilentlyContinue | ForEach-Object { $candidates.Add($_.FullName) }
+        Get-Item $pattern -ErrorAction SilentlyContinue | ForEach-Object {
+            $candidates.Add($_.FullName)
+        }
     }
 
     foreach ($candidate in ($candidates | Select-Object -Unique)) {
-        if ((Test-Path $candidate) -and (Test-Java11 $candidate)) {
+        if (Test-Java11 $candidate) {
             $bin = Split-Path -Parent $candidate
-            $home = Split-Path -Parent $bin
-            $env:JAVA_HOME = $home
+            $jdkHome = Split-Path -Parent $bin
+            $env:JAVA_HOME = $jdkHome
             $env:Path = "$bin;$env:Path"
-            Write-Host "JDK 11: $home"
+            Write-Host "JDK 11: $jdkHome"
+
+            $previousPreference = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
+            try {
+                $gradleVersion = (& .\gradlew.bat --version 2>&1 | Out-String)
+                $gradleExit = $LASTEXITCODE
+            } finally {
+                $ErrorActionPreference = $previousPreference
+            }
+            if ($gradleExit -ne 0 -or $gradleVersion -notmatch '(?m)^JVM:\s+11\.') {
+                throw "Gradle no esta usando Java 11.`n$gradleVersion"
+            }
+            Write-Host 'Gradle/JVM 11: OK'
             return
         }
     }
 
     throw @'
 No se encontro JDK 11. Ministerium usa Gradle 6.7.1 / Android Gradle Plugin 4.2.1 y esta compilacion local requiere Java 11.
-Instala un JDK 11 (por ejemplo Temurin 11) o configuralo en Android Studio y vuelve a ejecutar.
+Instala un JDK 11 (por ejemplo Temurin 11) y vuelve a ejecutar.
 '@
+}
+
+function Test-ConfiguredSdk([string]$LocalProperties) {
+    if (-not (Test-Path $LocalProperties)) {
+        return $false
+    }
+    try {
+        $line = Get-Content $LocalProperties | Where-Object { $_ -match '^\s*sdk\.dir\s*=' } | Select-Object -First 1
+        if (-not $line) { return $false }
+        $value = ($line -replace '^\s*sdk\.dir\s*=\s*', '').Trim()
+        $value = $value.Replace('\\:', ':').Replace('\\', '\')
+        return (Test-Path $value)
+    } catch {
+        return $false
+    }
 }
 
 function Configure-AndroidSdk {
     $localProperties = Join-Path $ProjectRoot 'local.properties'
-    if (Test-Path $localProperties) {
+    if (Test-ConfiguredSdk $localProperties) {
+        Write-Host 'Android SDK: local.properties OK'
         return
     }
 
     $sdkCandidates = @(
         $env:ANDROID_SDK_ROOT,
         $env:ANDROID_HOME,
-        (Join-Path $env:LOCALAPPDATA 'Android\Sdk')
+        (Join-Path $env:LOCALAPPDATA 'Android\Sdk'),
+        'C:\portapps\android-studio-portable\data\sdk'
     ) | Where-Object { $_ -and (Test-Path $_) }
 
     if (-not $sdkCandidates -or $sdkCandidates.Count -eq 0) {
-        throw 'No se encontro Android SDK. Abre recovered-v3 en Android Studio una vez o instala/configura el SDK de Android.'
+        throw 'No se encontro Android SDK. Abre recovered-v3 en Android Studio una vez o instala/configura Android SDK Platform 30.'
     }
 
     $sdk = ($sdkCandidates | Select-Object -First 1).Replace('\','/')
     "sdk.dir=$sdk" | Set-Content -Path $localProperties -Encoding ASCII
-    Write-Host "local.properties creado para: $sdk"
+    Write-Host "local.properties configurado para: $sdk"
 }
 
-Write-Section 'Ministerium 3.1.1 - compilacion local Windows'
+Write-Section 'Ministerium 4.0 - compilacion local Windows'
 Configure-Java11
 Configure-AndroidSdk
 
 if (-not $SkipContent) {
     Write-Section 'Dependencias de preprocesamiento'
-    if ($script:UsePyLauncher) {
-        & py -3.11 -c "import pypdf, bs4" *> $null
-    } else {
-        & python -c "import pypdf, bs4" *> $null
-    }
-    if ($LASTEXITCODE -ne 0) {
-        Invoke-Py -PyArgs @('-m','pip','install','--disable-pip-version-check','pypdf','beautifulsoup4') -Label 'Instalacion de dependencias Python'
+    if (-not (Test-PythonImports)) {
+        Write-Host 'Instalando pypdf y beautifulsoup4...'
+        Invoke-Py -PyArgs @('-m','pip','install','--disable-pip-version-check',
+                'pypdf','beautifulsoup4') -Label 'Instalacion de dependencias Python'
     } else {
         Write-Host 'pypdf y beautifulsoup4: OK'
+    }
+
+    if (-not (Test-PythonImports)) {
+        throw 'Python 3.11 sigue sin poder importar pypdf/bs4 despues de la instalacion.'
     }
 
     Write-Section 'Liturgia de las Horas - paquetes limpios'
@@ -136,26 +219,42 @@ if (-not $SkipContent) {
     Invoke-Py -PyArgs @('tools/build_missal_reference_catalog.py') -Label 'Catalogo estructural del Misal'
 
     Write-Section 'Comprobacion secundaria de fuentes'
-    if ($script:UsePyLauncher) {
-        & py -3.11 tools/check_secondary_liturgy_sources.py
-    } else {
-        & python tools/check_secondary_liturgy_sources.py
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        if ($script:UsePyLauncher) {
+            & py -3.11 tools/check_secondary_liturgy_sources.py
+        } else {
+            & python tools/check_secondary_liturgy_sources.py
+        }
+        $secondaryExit = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousPreference
     }
-    if ($LASTEXITCODE -ne 0) {
+    if ($secondaryExit -ne 0) {
         Write-Warning 'La comprobacion secundaria fallo, pero no bloquea la compilacion.'
     }
 
-    Write-Section 'Indice de busqueda biblica'
+    Write-Section 'Indices de busqueda local'
     Invoke-Py -PyArgs @('tools/build_bible_search_index.py') -Label 'Indice biblico'
+    Invoke-Py -PyArgs @('tools/build_magisterium_index_40.py') -Label 'Indice completo del Magisterio'
 }
 
 if (-not $SkipValidation) {
-    Write-Section 'Validaciones Ministerium 3.1.1'
+    Write-Section 'Validaciones base y contrato 4.0'
     if (Get-Command node -ErrorAction SilentlyContinue) {
-        & node tools/validate_stabilization_31.mjs
-        Assert-Exit 'Validacion 3.1.1'
+        & node tools/validate_stabilization_40.mjs
+        Assert-Exit 'Validacion base adaptada a 4.0'
         & node tools/validate_calendar_31.mjs
         Assert-Exit 'Validacion de calendario'
+        & node tools/validate_lectionary_40.mjs
+        Assert-Exit 'Validacion OLM del Leccionario 4.0'
+        & node tools/validate_magisterium_40.mjs
+        Assert-Exit 'Validacion de Magisterio 4.0'
+        & node tools/validate_prayer_experience_40.mjs
+        Assert-Exit 'Validacion de oracion, privacidad y lectores 4.0'
+        & node tools/validate_release_40.mjs
+        Assert-Exit 'Validacion de version y compilacion local 4.0'
     } else {
         Write-Warning 'Node.js no esta instalado. Se omiten las validaciones .mjs; Gradle seguira compilando.'
     }
@@ -167,13 +266,23 @@ $requiredFiles = @(
     'app/src/main/assets/missal/es/initial.txt',
     'app/src/main/assets/missal/la/initial.txt',
     'app/src/main/assets/rituals/liturgiapapal/manifest.json',
-    'app/src/main/assets/bible-search-index.tsv'
+    'app/src/main/assets/bible-search-index.tsv',
+    'app/src/main/assets/magisterium-index.tsv'
 )
 foreach ($required in $requiredFiles) {
     if (-not (Test-Path (Join-Path $ProjectRoot $required))) {
         throw "Falta archivo generado requerido: $required"
     }
 }
+
+$magisteriumIndex = Join-Path $ProjectRoot 'app/src/main/assets/magisterium-index.tsv'
+$magisteriumRows = @(
+    Get-Content $magisteriumIndex | Where-Object { $_ -and -not $_.StartsWith('#') }
+).Count
+if ($magisteriumRows -lt 20) {
+    throw "El indice del Magisterio no fue generado correctamente ($magisteriumRows filas)."
+}
+Write-Host "Indice del Magisterio: $magisteriumRows fragmentos"
 
 Write-Section 'Preparando firma estable de pruebas'
 $b64Key = Join-Path $ProjectRoot 'test-signing\ministerium-test.keystore.b64'
@@ -187,9 +296,6 @@ if ((Get-Item $keyFile).Length -le 0) {
     throw 'La clave de firma generada esta vacia.'
 }
 
-# Los EPUB de Liturgia se usan como entrada para generar los assets limpios, pero
-# no deben quedar dentro del APK. En una compilacion local se guardan temporalmente
-# y se restauran siempre, incluso si Gradle falla.
 $epubRelatives = @(
     'app/src/main/assets/epubs/LH - 1. ADVIENTO.epub',
     'app/src/main/assets/epubs/LH - 2. NAVIDAD.epub',
@@ -245,7 +351,7 @@ try {
     Write-Section 'COMPILACION TERMINADA'
     Write-Host "APK:    $destApk"
     Write-Host "SHA256: $hash"
-    Write-Host "Firma:  Ministerium Test estable"
+    Write-Host 'Firma:  Ministerium Test estable'
 }
 finally {
     Write-Host ''

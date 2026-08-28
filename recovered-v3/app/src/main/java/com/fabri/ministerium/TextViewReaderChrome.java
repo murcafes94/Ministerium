@@ -36,12 +36,20 @@ public final class TextViewReaderChrome {
         attachSelection(activity, content, context);
         attachGestures(activity, content, navigator);
         if (scroll != null && header != null) {
+            final boolean[] hidden = {false};
             scroll.setOnScrollChangeListener((view, x, y, oldX, oldY) -> {
-                if (y - oldY > 12 && y > header.getHeight()) {
-                    header.animate().translationY(-header.getHeight()).alpha(.15f)
-                            .setDuration(170).start();
-                } else if (y - oldY < -8 || y < header.getHeight()) {
-                    header.animate().translationY(0).alpha(1f).setDuration(150).start();
+                int delta = y - oldY;
+                int height = Math.max(1, header.getHeight());
+                if (!hidden[0] && delta > 18 && y > height * 2) {
+                    hidden[0] = true;
+                    header.animate().cancel();
+                    header.animate().translationY(-height).alpha(.12f)
+                            .setDuration(180).start();
+                } else if (hidden[0] && (delta < -12 || y < height)) {
+                    hidden[0] = false;
+                    header.animate().cancel();
+                    header.animate().translationY(0f).alpha(1f)
+                            .setDuration(150).start();
                 }
             });
         }

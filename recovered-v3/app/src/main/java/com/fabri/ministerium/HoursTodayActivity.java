@@ -64,7 +64,9 @@ public class HoursTodayActivity extends ThemedActivity {
         findViewById(R.id.btnChooseOffice).setOnClickListener(v -> chooseOffice());
         findViewById(R.id.btnCombineOfficeLauds).setOnClickListener(v -> openCombined());
         findViewById(R.id.cardProper).setOnClickListener(v -> openLink(selectedProper));
-        findViewById(R.id.btnIntentions).setOnClickListener(v -> startActivity(new Intent(this, PrayerIntentionsActivity.class)));
+        findViewById(R.id.btnMassReadings).setOnClickListener(v -> openMassReadings());
+        findViewById(R.id.btnIntentions).setOnClickListener(v ->
+                startActivity(new Intent(this, PrayerIntentionsActivity.class)));
         findViewById(R.id.btnCommonOffices).setOnClickListener(v -> openNamedSantoral("OFICIOS COMUNES"));
         findViewById(R.id.btnOfficeDead).setOnClickListener(v -> openNamedSantoral("OFICIO DE DIFUNTOS"));
         findViewById(R.id.btnVolumes).setOnClickListener(v -> startActivity(new Intent(this, HoursActivity.class)));
@@ -215,6 +217,13 @@ public class HoursTodayActivity extends ThemedActivity {
                     selectedCommon = commonChoices.get(which); updateOfficeHeader(); dialog.dismiss();
                 }).setNegativeButton("Usar el primero", (dialog, which) -> updateOfficeHeader())
                 .setOnCancelListener(dialog -> updateOfficeHeader()).show();
+    }
+
+    private void openMassReadings() {
+        startActivity(new Intent(this, MassReadingsActivity.class)
+                .putExtra(MassReadingsActivity.EXTRA_YEAR, selectedDate.get(Calendar.YEAR))
+                .putExtra(MassReadingsActivity.EXTRA_MONTH, selectedDate.get(Calendar.MONTH))
+                .putExtra(MassReadingsActivity.EXTRA_DAY, selectedDate.get(Calendar.DAY_OF_MONTH)));
     }
 
     private void openHour(HourEntry entry) {

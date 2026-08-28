@@ -58,6 +58,12 @@ public final class ReaderPreferences {
         if (MARGIN_NARROW.equals(value)) return 14;
         return 28;
     }
+    public static int maximumColumnWidthCss(Context context) {
+        String value = margin(context);
+        if (MARGIN_WIDE.equals(value)) return 780;
+        if (MARGIN_NARROW.equals(value)) return 1040;
+        return 880;
+    }
     public static String palatinoCssStack() { return "'Palatino Linotype','Book Antiqua',Palatino,serif"; }
     private static String cssFamily(Context context) {
         String selected = family(context);
@@ -88,9 +94,11 @@ public final class ReaderPreferences {
         String divider = dark ? "#594D43" : "#D9CDBE";
         String accent = dark ? "#D9B96F" : "#772233";
         int horizontal = horizontalPaddingPx(context);
+        int maximumColumn = maximumColumnWidthCss(context);
         String css = "html,body{" + palette + "}body{font-family:" + family
                 + "!important;font-weight:" + weight(context) + "!important;line-height:"
-                + lineHeight(context) + "!important;width:100%!important;max-width:1040px!important;"
+                + lineHeight(context) + "!important;width:100%!important;max-width:"
+                + maximumColumn + "px!important;"
                 + "margin-left:auto!important;margin-right:auto!important;padding-left:" + horizontal
                 + "px!important;padding-right:" + horizontal + "px!important;box-sizing:border-box!important;}"
                 + "body,body p,body span,body div,body li,body td,body blockquote{font-family:"

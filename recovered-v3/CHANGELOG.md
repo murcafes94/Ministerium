@@ -2,6 +2,29 @@
 
 Este archivo resume las versiones de Ministerium. Los detalles históricos se conservan en `NOVEDADES-<versión>.md`.
 
+## [4.0.0] - 2026-08-27
+
+### Oración y privacidad
+- Las oraciones personales se abren en un lector de oración; editar y eliminar son acciones separadas.
+- Las intenciones pueden presentarse juntas y siguen integradas en Laudes y Vísperas.
+- Los datos espirituales privados quedan fuera de las copias automáticas de Android.
+
+### Magisterio
+- Biblioteca jerárquica por materias y búsqueda local de texto completo con relevancia.
+- Apertura directa del fragmento encontrado en Vaticano II, Catecismo, Compendio y Doctrina Social.
+- Acceso visible a la OGLH y a la Ordenación de las Lecturas de la Misa.
+
+### Liturgia y lectores
+- Ciclos dominicales A/B/C y feriales I/II corregidos según OLM 65 y 69.
+- Reglas de domingos, solemnidades, fiestas, memorias y ferias trazables a OLM 79 y 82–89.
+- Acceso de la Liturgia de las Horas a las lecturas de la Misa conservando la fecha.
+- Cabeceras autoocultables estables y ancho editorial adaptable a teléfono y tablet.
+
+### Compilación
+- Versión 4.0.0 (código 40).
+- Se conservan Gradle 6.7.1, AGP 4.2.1, JDK 11 y SDK 30.
+- El compilador local genera y valida los índices bíblico y magisterial antes de Gradle.
+
 ## [3.0.0] - 2026-08-23
 
 ### Añadido

@@ -16,6 +16,14 @@ public final class PersonalPrayerStore {
         } catch (Exception ignored) {}
         return result;
     }
+    public static PersonalPrayer find(Context context, String id) {
+        if (id == null || id.trim().isEmpty()) return null;
+        for (PersonalPrayer prayer : all(context)) {
+            if (id.equals(prayer.id)) return prayer;
+        }
+        return null;
+    }
+
     public static void save(Context context, PersonalPrayer prayer) {
         List<PersonalPrayer> values = all(context); boolean replaced = false;
         for (int i = 0; i < values.size(); i++) if (prayer.id.equals(values.get(i).id)) { values.set(i, prayer); replaced = true; break; }

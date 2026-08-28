@@ -316,6 +316,17 @@
                     android:textSize="12sp"
                     android:textStyle="bold" />
 
+                <LinearLayout android:id="@+id/btnMassReadings" style="@style/HomeCard">
+                    <TextView style="@style/HomeCardIcon" android:background="@drawable/bg_icon_gold"
+                        android:text="℣" android:textColor="@color/wine_dark" />
+                    <LinearLayout style="@style/HomeCardBody">
+                        <TextView style="@style/HomeCardTitle" android:text="Lecturas de la Misa" />
+                        <TextView style="@style/HomeCardSubtitle"
+                            android:text="Misma fecha y celebración · Leccionario en español" />
+                    </LinearLayout>
+                    <TextView style="@style/HomeCardChevron" />
+                </LinearLayout>
+
                 <LinearLayout android:id="@+id/btnIntentions" style="@style/HomeCard">
                     <TextView style="@style/HomeCardIcon" android:background="@drawable/bg_icon_wine" android:text="✎" android:textColor="#FFFFFF" />
                     <LinearLayout style="@style/HomeCardBody">

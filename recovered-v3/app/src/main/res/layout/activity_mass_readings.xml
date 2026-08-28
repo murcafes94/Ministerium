@@ -91,6 +91,14 @@
                 android:layout_marginTop="5dp"
                 android:textColor="@color/muted"
                 android:textSize="12sp" />
+            <TextView
+                android:id="@+id/txtLectionaryRule"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:lineSpacingExtra="2dp"
+                android:textColor="@color/ink"
+                android:textSize="12sp" />
         </LinearLayout>
         <TextView
             android:id="@+id/txtReadingsStatus"

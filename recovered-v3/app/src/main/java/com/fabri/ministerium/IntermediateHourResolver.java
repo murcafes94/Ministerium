@@ -28,16 +28,25 @@ public final class IntermediateHourResolver {
     public static String resolve(Context context, File root, String sourcePath,
                                  String sourceHtml, String hour,
                                  boolean sundayOrSolemnity) throws Exception {
+        return resolve(context, root, sourcePath, sourceHtml, hour,
+                sundayOrSolemnity, 0);
+    }
+
+    public static String resolve(Context context, File root, String sourcePath,
+                                 String sourceHtml, String hour,
+                                 boolean sundayOrSolemnity, int ordinaryWeek)
+            throws Exception {
         String html = sourceHtml == null ? read(new File(root, sourcePath)) : sourceHtml;
-        html = inlineHymn(root, sourcePath, html, hour, sundayOrSolemnity);
+        html = inlineHymn(root, sourcePath, html, hour, sundayOrSolemnity,
+                ordinaryWeek);
         String complementary = complementaryPsalmody(context, hour);
         if (!complementary.isEmpty()) html = addComplementaryPsalmody(html, complementary);
         return html;
     }
 
     private static String inlineHymn(File root, String sourcePath, String html,
-                                     String hour, boolean sundayOrSolemnity)
-            throws Exception {
+                                     String hour, boolean sundayOrSolemnity,
+                                     int ordinaryWeek) throws Exception {
         List<Block> paragraphs = paragraphs(html);
         boolean afterHymn = false;
         for (Block block : paragraphs) {
@@ -48,28 +57,48 @@ public final class IntermediateHourResolver {
             }
             if (!afterHymn || "SALMODIA".equals(text)) break;
             Matcher anchor = ANCHOR.matcher(block.html);
-            if (!anchor.find()) continue;
-            String href = anchor.group(1).trim();
-            String[] parts = href.split("#", 2);
-            URI base = new URI(null, null, sourcePath, null);
-            String targetPath = parts[0].isEmpty() ? sourcePath
-                    : base.resolve(parts[0]).normalize().getPath();
-            while (targetPath.startsWith("/")) targetPath = targetPath.substring(1);
-            File target = new File(root, targetPath).getCanonicalFile();
-            String rootPath = root.getCanonicalPath() + File.separator;
-            if (!target.getPath().startsWith(rootPath) || !target.isFile()) return html;
-            String targetHtml = read(target);
-            int fragmentAt = parts.length < 2 ? 0 : idPosition(targetHtml, parts[1]);
-            if (fragmentAt < 0) fragmentAt = 0;
-            String hymn = selectHymn(targetHtml.substring(fragmentAt), hour,
-                    sundayOrSolemnity);
-            if (hymn.isEmpty()) return html;
-            String replacement = "<section class=\"ministerium-auto-hymn\">"
-                    + "<p class=\"ministerium-source-note\">Himno elegido automáticamente para "
-                    + escape(hour) + "</p>" + hymn + "</section>";
-            return html.substring(0, block.start) + replacement + html.substring(block.end);
+            while (anchor.find()) {
+                String linkLabel = plain(anchor.group(2));
+                if (!hymnRangeMatches(linkLabel, ordinaryWeek)) continue;
+                String href = anchor.group(1).trim();
+                String[] parts = href.split("#", 2);
+                URI base = new URI(null, null, sourcePath, null);
+                String targetPath = parts[0].isEmpty() ? sourcePath
+                        : base.resolve(parts[0]).normalize().getPath();
+                while (targetPath.startsWith("/")) targetPath = targetPath.substring(1);
+                File target = new File(root, targetPath).getCanonicalFile();
+                String rootPath = root.getCanonicalPath() + File.separator;
+                if (!target.getPath().startsWith(rootPath) || !target.isFile()) continue;
+                String targetHtml = read(target);
+                int fragmentAt = parts.length < 2 ? 0 : idPosition(targetHtml, parts[1]);
+                if (fragmentAt < 0) fragmentAt = 0;
+                String hymn = selectHymn(targetHtml.substring(fragmentAt), hour,
+                        sundayOrSolemnity);
+                if (hymn.isEmpty()) continue;
+                String replacement = "<section class=\"ministerium-auto-hymn\">"
+                        + "<p class=\"ministerium-source-note\">Himno elegido automáticamente para "
+                        + escape(hour) + "</p>" + hymn + "</section>";
+                return html.substring(0, block.start) + replacement + html.substring(block.end);
+            }
         }
         return html;
+    }
+
+    /**
+     * Los tomos dividen los himnos de la Hora intermedia en dos grupos:
+     * semanas I-XVII y XVIII-XXXIV. Si el enlace no expresa un rango se acepta
+     * como referencia genérica, preservando compatibilidad con otros tiempos.
+     */
+    private static boolean hymnRangeMatches(String label, int ordinaryWeek) {
+        if (ordinaryWeek < 1 || ordinaryWeek > 34) return true;
+        String value = plain(label);
+        if (value.contains("XVIII") && value.contains("XXXIV")) {
+            return ordinaryWeek >= 18;
+        }
+        if (value.contains("XVII") && !value.contains("XVIII")) {
+            return ordinaryWeek <= 17;
+        }
+        return true;
     }
 
     private static String selectHymn(String html, String hour,
@@ -83,8 +112,8 @@ public final class IntermediateHourResolver {
         for (int i = 0; i < values.size(); i++) {
             String text = plain(values.get(i).html);
             if (start < 0 && wanted.equals(text)) start = i + 1;
-            else if (start >= 0 && (!next.isEmpty() && next.equals(text)
-                    || next.isEmpty() && isSectionHeading(text))) {
+            else if (start >= 0 && ((!next.isEmpty() && next.equals(text))
+                    || (next.isEmpty() && isSectionHeading(text)))) {
                 end = i;
                 break;
             }
@@ -133,8 +162,8 @@ public final class IntermediateHourResolver {
                 start = 1;
                 continue;
             }
-            if (start >= 0 && (!next.isEmpty() && next.equals(text)
-                    || next.isEmpty() && text.startsWith("SALMODIA PARA "))) break;
+            if (start >= 0 && ((!next.isEmpty() && next.equals(text))
+                    || (next.isEmpty() && text.startsWith("SALMODIA PARA ")))) break;
             if (start >= 0) result.append(value.html);
         }
         return result.toString();
