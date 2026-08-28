@@ -14,7 +14,10 @@ import android.text.style.StyleSpan;
 import java.text.Normalizer;
 import java.util.Locale;
 
-/** Native visual structure for ritual texts without changing their wording. */
+/**
+ * Estructura visual nativa para Ritual y Bendicional sin modificar el texto.
+ * Títulos, celebrante, asamblea y rúbricas reciben jerarquías claramente distintas.
+ */
 public final class RitualTextFormatter {
     private RitualTextFormatter() {}
 
@@ -22,40 +25,90 @@ public final class RitualTextFormatter {
         if (source == null) return "";
         boolean dark = ThemeUtils.isDark(context);
         int accent = Color.parseColor(dark ? "#D9B96F" : "#6E1D2A");
+        int ink = Color.parseColor(dark ? "#F3EDE4" : "#2A2521");
         int muted = Color.parseColor(dark ? "#C8BDB0" : "#766B61");
-        int responseBg = Color.parseColor(dark ? "#3B332C" : "#F4E9D1");
+        int celebrantBg = Color.parseColor(dark ? "#332C28" : "#F8F1E5");
+        int responseBg = Color.parseColor(dark ? "#43382E" : "#F2E3C4");
         SpannableStringBuilder out = new SpannableStringBuilder();
         String[] lines = source.replace("\r", "").split("\n", -1);
 
         for (String raw : lines) {
             String line = raw.trim();
             if (line.isEmpty()) {
-                if (out.length() > 0 && out.charAt(out.length() - 1) != '\n') out.append('\n');
+                appendBreak(out);
                 continue;
             }
+            String normalized = normalize(line);
+            boolean heading = isHeading(line, normalized);
+            boolean assembly = isResponse(normalized);
+            boolean rubric = isRubric(normalized);
+            boolean celebrant = !rubric && isMinisterSpeech(normalized);
+
+            if (heading) ensureSectionBreak(out);
             int start = out.length();
             out.append(line).append('\n');
             int end = out.length() - 1;
-            String normalized = normalize(line);
 
-            if (isHeading(line, normalized)) {
-                out.setSpan(new StyleSpan(Typeface.BOLD), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                out.setSpan(new RelativeSizeSpan(1.12f), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                out.setSpan(new ForegroundColorSpan(accent), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            } else if (isResponse(normalized)) {
-                out.setSpan(new StyleSpan(Typeface.BOLD), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                out.setSpan(new BackgroundColorSpan(responseBg), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                out.setSpan(new LeadingMarginSpan.Standard(18, 18), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            } else if (isRubric(normalized)) {
-                out.setSpan(new StyleSpan(Typeface.ITALIC), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                out.setSpan(new RelativeSizeSpan(.90f), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                out.setSpan(new ForegroundColorSpan(muted), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            } else if (isMinisterCue(normalized)) {
-                out.setSpan(new ForegroundColorSpan(accent), start,
-                        Math.min(end, start + Math.min(3, line.length())), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            if (heading) {
+                out.setSpan(new StyleSpan(Typeface.BOLD), start, end,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                out.setSpan(new RelativeSizeSpan(1.15f), start, end,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                out.setSpan(new ForegroundColorSpan(accent), start, end,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            } else if (assembly) {
+                // Respuesta del pueblo/asamblea: bloque más visible y en negrita.
+                out.setSpan(new StyleSpan(Typeface.BOLD), start, end,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                out.setSpan(new BackgroundColorSpan(responseBg), start, end,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                out.setSpan(new ForegroundColorSpan(ink), start, end,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                out.setSpan(new LeadingMarginSpan.Standard(22, 22), start, end,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            } else if (rubric) {
+                // Rúbrica: menor, cursiva y secundaria; nunca parece texto proclamado.
+                out.setSpan(new StyleSpan(Typeface.ITALIC), start, end,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                out.setSpan(new RelativeSizeSpan(.90f), start, end,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                out.setSpan(new ForegroundColorSpan(muted), start, end,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                out.setSpan(new LeadingMarginSpan.Standard(28, 28), start, end,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            } else if (celebrant) {
+                // Palabras del sacerdote/diácono/ministro: bloque propio, distinto del pueblo.
+                out.setSpan(new BackgroundColorSpan(celebrantBg), start, end,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                out.setSpan(new LeadingMarginSpan.Standard(12, 12), start, end,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                int cueEnd = ministerCueEnd(line, start, end);
+                out.setSpan(new StyleSpan(Typeface.BOLD), start, cueEnd,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                out.setSpan(new ForegroundColorSpan(accent), start, cueEnd,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
         }
         return out;
+    }
+
+    private static void appendBreak(SpannableStringBuilder out) {
+        if (out.length() == 0) return;
+        if (out.charAt(out.length() - 1) != '\n') out.append('\n');
+        if (out.length() < 2 || out.charAt(out.length() - 2) != '\n') out.append('\n');
+    }
+
+    private static void ensureSectionBreak(SpannableStringBuilder out) {
+        if (out.length() == 0) return;
+        appendBreak(out);
+    }
+
+    private static int ministerCueEnd(String line, int start, int end) {
+        int colon = line.indexOf(':');
+        if (colon >= 0 && colon < 24) return Math.min(end, start + colon + 1);
+        int dot = line.indexOf('.');
+        if (dot >= 0 && dot < 4) return Math.min(end, start + dot + 1);
+        return Math.min(end, start + Math.min(12, line.length()));
     }
 
     private static boolean isHeading(String raw, String normalized) {
@@ -66,29 +119,46 @@ public final class RitualTextFormatter {
         return normalized.startsWith("capitulo ") || normalized.startsWith("rito de ")
                 || normalized.startsWith("bendicion de ") || normalized.startsWith("oracion de ")
                 || normalized.equals("oracion") || normalized.equals("lectura de la palabra de dios")
-                || normalized.equals("preces") || normalized.equals("monicion");
+                || normalized.equals("liturgia de la palabra") || normalized.equals("preces")
+                || normalized.equals("monicion") || normalized.equals("saludo")
+                || normalized.equals("bendicion") || normalized.equals("aspersion")
+                || normalized.equals("conclusion del rito");
     }
 
     private static boolean isResponse(String value) {
-        return value.startsWith("r. ") || value.startsWith("℟. ") || value.equals("amen")
-                || value.startsWith("todos: ") || value.startsWith("todos responden")
-                || value.startsWith("el pueblo responde");
+        return value.startsWith("r. ") || value.startsWith("r: ") || value.startsWith("℟. ")
+                || value.equals("amen") || value.equals("amen.")
+                || value.startsWith("todos: ") || value.startsWith("asamblea: ")
+                || value.startsWith("pueblo: ") || value.startsWith("fieles: ")
+                || value.startsWith("todos responden") || value.startsWith("responden:")
+                || value.startsWith("el pueblo responde") || value.startsWith("los fieles responden")
+                || value.startsWith("y con tu espiritu") || value.startsWith("demos gracias a dios")
+                || value.startsWith("te alabamos, senor");
     }
 
-    private static boolean isMinisterCue(String value) {
-        return value.startsWith("v. ") || value.startsWith("℣. ")
-                || value.startsWith("sacerdote: ") || value.startsWith("diacono: ");
+    private static boolean isMinisterSpeech(String value) {
+        return value.startsWith("v. ") || value.startsWith("v: ") || value.startsWith("℣. ")
+                || value.startsWith("sacerdote: ") || value.startsWith("celebrante: ")
+                || value.startsWith("diacono: ") || value.startsWith("ministro: ")
+                || value.startsWith("presidente: ") || value.startsWith("capellan: ");
     }
 
     private static boolean isRubric(String value) {
         return value.startsWith("el sacerdote ") || value.startsWith("el diacono ")
-                || value.startsWith("el celebrante ") || value.startsWith("a continuacion ")
+                || value.startsWith("el celebrante ") || value.startsWith("el ministro ")
+                || value.startsWith("el que preside ") || value.startsWith("a continuacion ")
                 || value.startsWith("luego ") || value.startsWith("despues ")
                 || value.startsWith("seguidamente ") || value.startsWith("mientras ")
                 || value.startsWith("si se ") || value.startsWith("si parece ")
-                || value.startsWith("cuando ") || value.startsWith("entonces ")
-                || value.startsWith("todos se ") || value.startsWith("los fieles ")
-                || value.startsWith("terminada ") || value.startsWith("acabado ");
+                || value.startsWith("si las circunstancias ") || value.startsWith("cuando ")
+                || value.startsWith("entonces ") || value.startsWith("todos se ")
+                || value.startsWith("los fieles ") || value.startsWith("la asamblea ")
+                || value.startsWith("terminada ") || value.startsWith("terminado ")
+                || value.startsWith("acabado ") || value.startsWith("acabada ")
+                || value.startsWith("de pie ") || value.startsWith("sentados ")
+                || value.startsWith("de rodillas ") || value.startsWith("se hace ")
+                || value.startsWith("puede hacerse ") || value.startsWith("se puede ")
+                || value.startsWith("el rito ") || value.startsWith("el celebrante puede ");
     }
 
     private static String normalize(String value) {
