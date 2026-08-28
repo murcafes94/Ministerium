@@ -49,9 +49,21 @@ public final class ReaderPagination {
         return PAGE.equals(mode(context)) ? "Página" : "Desplazamiento";
     }
 
+    /**
+     * Rearma la paginación después de una carga WebView. Se programan varios
+     * intentos breves porque ReaderChrome puede enlazarse antes de loadUrl/loadData.
+     */
+    public static void arm(Activity activity, WebView webView, ReaderContext context) {
+        if (webView == null || !supports(context)) return;
+        apply(activity, webView, context);
+        webView.postDelayed(() -> apply(activity, webView, context), 180L);
+        webView.postDelayed(() -> apply(activity, webView, context), 650L);
+        webView.postDelayed(() -> apply(activity, webView, context), 1400L);
+    }
+
     /** Aplica o retira la maquetación paginada sin modificar el documento fuente. */
     public static void apply(Activity activity, WebView webView, ReaderContext context) {
-        if (webView == null) return;
+        if (webView == null || !supports(context)) return;
         boolean enabled = isPageMode(activity, context);
         int horizontal = Math.max(18, ReaderPreferences.horizontalPaddingPx(activity));
         int gap = Math.max(28, horizontal * 2);
@@ -74,12 +86,13 @@ public final class ReaderPagination {
         }
 
         String script = "(function(){"
+                + "if(!document.head||!document.documentElement)return false;"
                 + "var root=document.documentElement;"
                 + "var style=document.getElementById('ministerium-pagination-41');"
                 + "if(!style){style=document.createElement('style');style.id='ministerium-pagination-41';document.head.appendChild(style);}"
                 + "style.innerHTML=" + JSONObject.quote(css) + ";"
                 + "if(" + (enabled ? "true" : "false") + "){"
-                + "root.classList.add('ministerium-page-mode');window.scrollTo(0,0);"
+                + "root.classList.add('ministerium-page-mode');"
                 + "window.__ministeriumPageStep=function(delta){"
                 + "var sc=document.scrollingElement||document.documentElement;"
                 + "var width=Math.max(1,window.innerWidth);"
@@ -90,7 +103,7 @@ public final class ReaderPagination {
                 + "var target=Math.max(0,Math.min(max,current+(delta>0?width:-width)));"
                 + "sc.scrollTo(target,0);return true;};"
                 + "}else{root.classList.remove('ministerium-page-mode');"
-                + "window.__ministeriumPageStep=null;window.scrollTo(0,window.scrollY||0);}})()";
+                + "window.__ministeriumPageStep=null;window.scrollTo(0,window.scrollY||0);}return true;})()";
         webView.evaluateJavascript(script, null);
     }
 
@@ -102,20 +115,30 @@ public final class ReaderPagination {
                             ReaderChrome.Navigator navigator, int delta) {
         if (delta == 0) return;
         if (!isPageMode(activity, context)) {
-            moveDocument(navigator, delta);
+            moveDocument(activity, webView, context, navigator, delta);
             return;
         }
         String js = "(function(){return window.__ministeriumPageStep?"
                 + "window.__ministeriumPageStep(" + (delta > 0 ? "1" : "-1") + "):false;})()";
         webView.evaluateJavascript(js, result -> {
-            if (!"true".equals(result)) moveDocument(navigator, delta);
+            if (!"true".equals(result)) {
+                moveDocument(activity, webView, context, navigator, delta);
+            }
         });
     }
 
-    private static void moveDocument(ReaderChrome.Navigator navigator, int delta) {
+    private static void moveDocument(Activity activity, WebView webView, ReaderContext context,
+                                     ReaderChrome.Navigator navigator, int delta) {
         if (navigator == null) return;
-        if (delta > 0 && navigator.canNext()) navigator.next();
-        else if (delta < 0 && navigator.canPrevious()) navigator.previous();
+        boolean moved = false;
+        if (delta > 0 && navigator.canNext()) {
+            navigator.next();
+            moved = true;
+        } else if (delta < 0 && navigator.canPrevious()) {
+            navigator.previous();
+            moved = true;
+        }
+        if (moved && isPageMode(activity, context)) arm(activity, webView, context);
     }
 
     private static SharedPreferences values(Context context) {
