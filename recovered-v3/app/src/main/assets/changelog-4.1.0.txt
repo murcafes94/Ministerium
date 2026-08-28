@@ -4,6 +4,7 @@ Ministerium 4.1.0 · en desarrollo
 • Se conserva la exportación Markdown normal y JSON portable.
 • Biblia, Magisterio y libros incorporan un modo opcional Página además del desplazamiento continuo; el cambio se realiza desde el menú del lector.
 • En modo Página, los gestos laterales avanzan por columnas de lectura y pasan al capítulo o entrada siguiente al llegar al borde del documento.
+• El modo Página recuerda la página alcanzada en cada documento para poder retomarla al volver a abrirlo.
 • La Liturgia bilingüe permanece en desplazamiento vertical para conservar la sincronización semántica ES/LAT.
 • El proceso de build añade una comprobación secundaria estructurada contra LiturgicalCalendarAPI; el calendario local de Ecuador continúa siendo la fuente de ejecución y funciona sin red.
 • Comienza la migración a un sistema visual común con colores semánticos, espaciado, radios y geometría de tarjetas adaptados a teléfono y tablet.
