@@ -31,11 +31,12 @@ Ministerium 4.1 continúa sobre la base funcional de 4.0 y mantiene el enfoque l
 - La indisponibilidad de la API o una discrepancia no bloquean la compilación.
 - Pendiente: ampliar los casos comparables después de verificar calendarios particulares de Ecuador disponibles en la fuente secundaria.
 
-### 4. Sistema visual compartido — migración iniciada
+### 4. Sistema visual compartido — migración en curso
 - Añadidos tokens semánticos de superficie, texto, acento y divisor para claro/oscuro.
 - Añadidos tokens comunes de espaciado, radios y geometría de tarjetas con ajustes `sw600dp` para tablet.
 - `HomeCard`, tarjetas de Horas y `bg_card` ya consumen los nuevos tokens sin cambiar la identidad visual existente.
-- Pendiente: trasladar progresivamente lectores y pantallas restantes a los tokens comunes y revisar sepia de forma explícita.
+- `ReaderVisualPalette` centraliza la paleta CSS de los lectores WebView y define explícitamente claro, oscuro y sepia; `ReaderPreferences` ya consume esta paleta común.
+- Pendiente: trasladar progresivamente los estilos específicos que aún mantienen colores propios a la paleta común y comprobar visualmente claro/oscuro/sepia en teléfono y tablet.
 
 ## Fuera de 4.1
 
