@@ -92,6 +92,8 @@ public final class ReaderPagination {
                 + "style.innerHTML=" + JSONObject.quote(css) + ";"
                 + "if(" + (enabled ? "true" : "false") + "){"
                 + "root.classList.add('ministerium-page-mode');"
+                + "var storageKey='ministerium-page-41:'+(location.href||'document').split('#')[0];"
+                + "var saved=0;try{saved=parseInt(localStorage.getItem(storageKey)||'0',10)||0;}catch(e){}"
                 + "window.__ministeriumPageStep=function(delta){"
                 + "var sc=document.scrollingElement||document.documentElement;"
                 + "var width=Math.max(1,window.innerWidth);"
@@ -100,7 +102,12 @@ public final class ReaderPagination {
                 + "if(delta>0&&current>=max-4)return false;"
                 + "if(delta<0&&current<=4)return false;"
                 + "var target=Math.max(0,Math.min(max,current+(delta>0?width:-width)));"
+                + "var page=Math.max(0,Math.round(target/width));"
+                + "try{localStorage.setItem(storageKey,String(page));}catch(e){}"
                 + "window.scrollTo(target,0);return true;};"
+                + "setTimeout(function(){var sc=document.scrollingElement||document.documentElement;"
+                + "var width=Math.max(1,window.innerWidth);var max=Math.max(0,sc.scrollWidth-width);"
+                + "window.scrollTo(Math.max(0,Math.min(max,saved*width)),0);},0);"
                 + "}else{root.classList.remove('ministerium-page-mode');"
                 + "window.__ministeriumPageStep=null;window.scrollTo(0,window.scrollY||0);}return true;})()";
         webView.evaluateJavascript(script, null);
