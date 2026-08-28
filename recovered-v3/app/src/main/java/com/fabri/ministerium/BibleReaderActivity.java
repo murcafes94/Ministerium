@@ -21,6 +21,7 @@ import java.io.FileInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.UUID;
 
 import org.json.JSONObject;
 
@@ -133,6 +134,9 @@ public class BibleReaderActivity extends ThemedActivity {
                 BibleRepository.citationAbbreviation(book) + " " + chapter.number,
                 book.title);
         UniversalSelectionMenu.attach(this, webView, context());
+        // En la Biblia, tocar un subrayado o marcador abre directamente un menú
+        // de acciones (nota/marcador/eliminar), no una ficha emergente del texto.
+        webView.addJavascriptInterface(new BibleStudyBridge(), "MinisteriumStudy");
         ReaderChrome.bindMore(this, findViewById(R.id.btnReaderMore), webView, context());
         File target = new File(extractedRoot, chapter.file);
         try {
@@ -236,6 +240,123 @@ public class BibleReaderActivity extends ThemedActivity {
         return new ReaderContext("Biblia de Jerusalén", sourceKey(), book.title,
                 reference, "Biblia", false);
     }
+
+    private final class BibleStudyBridge {
+        @JavascriptInterface public void openEntry(String id) {
+            runOnUiThread(() -> showBibleStudyActions(id));
+        }
+    }
+
+    private void showBibleStudyActions(String id) {
+        StudyEntry entry = findStudyEntry(id);
+        if (entry == null) return;
+        if (StudyEntry.HIGHLIGHT.equals(entry.type)) {
+            new AlertDialog.Builder(this)
+                    .setTitle(entry.reference.isEmpty() ? "Subrayado" : entry.reference)
+                    .setItems(new String[]{"Nota", "Marcador", "Eliminar subrayado"},
+                            (dialog, which) -> {
+                                if (which == 0) openNoteFor(entry);
+                                else if (which == 1) addBookmarkFor(entry);
+                                else deleteBibleStudyEntry(entry, "Subrayado eliminado.");
+                            })
+                    .setNegativeButton("Cancelar", null).show();
+            return;
+        }
+        if (StudyEntry.BOOKMARK.equals(entry.type)) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Marcador")
+                    .setItems(new String[]{"Nota", "Eliminar marcador"},
+                            (dialog, which) -> {
+                                if (which == 0) openNoteFor(entry);
+                                else deleteBibleStudyEntry(entry, "Marcador eliminado.");
+                            })
+                    .setNegativeButton("Cancelar", null).show();
+            return;
+        }
+        if (StudyEntry.NOTE.equals(entry.type)) {
+            new AlertDialog.Builder(this)
+                    .setTitle(entry.reference.isEmpty() ? "Nota" : entry.reference)
+                    .setMessage(entry.body == null ? "" : entry.body)
+                    .setPositiveButton("Cerrar", null).show();
+        }
+    }
+
+    private StudyEntry findStudyEntry(String id) {
+        if (id == null || id.isEmpty()) return null;
+        for (StudyEntry entry : StudyStore.all(this)) {
+            if (id.equals(entry.id)) return entry;
+        }
+        return null;
+    }
+
+    private void openNoteFor(StudyEntry source) {
+        startActivity(new Intent(this, StudyEditorActivity.class)
+                .putExtra(StudyEditorActivity.EXTRA_TYPE, StudyEntry.NOTE)
+                .putExtra(StudyEditorActivity.EXTRA_CATEGORY, source.category)
+                .putExtra(StudyEditorActivity.EXTRA_SOURCE, source.source)
+                .putExtra(StudyEditorActivity.EXTRA_SOURCE_KEY, source.sourceKey)
+                .putExtra(StudyEditorActivity.EXTRA_CONTENT_ID, source.contentId)
+                .putExtra(StudyEditorActivity.EXTRA_REFERENCE, source.reference)
+                .putExtra(StudyEditorActivity.EXTRA_QUOTE, source.quote)
+                .putExtra(StudyEditorActivity.EXTRA_ANCHOR_TEXT, source.anchorText)
+                .putExtra(StudyEditorActivity.EXTRA_SEMANTIC_UNIT_ID, source.semanticUnitId)
+                .putExtra(StudyEditorActivity.EXTRA_START_OFFSET, source.startOffset)
+                .putExtra(StudyEditorActivity.EXTRA_END_OFFSET, source.endOffset)
+                .putExtra(StudyEditorActivity.EXTRA_PREFIX, source.prefix)
+                .putExtra(StudyEditorActivity.EXTRA_SUFFIX, source.suffix));
+    }
+
+    private void addBookmarkFor(StudyEntry source) {
+        for (StudyEntry value : StudyStore.forSource(this, source.sourceKey)) {
+            if (StudyEntry.BOOKMARK.equals(value.type) && sameAnchor(source, value)) {
+                Toast.makeText(this, "Ese texto ya tiene marcador.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        }
+        StudyEntry bookmark = new StudyEntry();
+        bookmark.id = UUID.randomUUID().toString();
+        bookmark.type = StudyEntry.BOOKMARK;
+        bookmark.category = source.category;
+        bookmark.source = source.source;
+        bookmark.sourceKey = source.sourceKey;
+        bookmark.contentId = source.contentId;
+        bookmark.reference = source.reference;
+        bookmark.title = source.title;
+        bookmark.quote = source.quote;
+        bookmark.anchorText = source.anchorText;
+        bookmark.semanticUnitId = source.semanticUnitId;
+        bookmark.startOffset = source.startOffset;
+        bookmark.endOffset = source.endOffset;
+        bookmark.prefix = source.prefix;
+        bookmark.suffix = source.suffix;
+        bookmark.anchorVersion = StudyEntry.CURRENT_ANCHOR_VERSION;
+        bookmark.icon = "bookmark";
+        bookmark.color = source.color == null || source.color.isEmpty() ? "yellow" : source.color;
+        StudyStore.save(this, bookmark);
+        UniversalSelectionMenu.restoreHighlights(this, webView, sourceKey());
+        Toast.makeText(this, "Marcador añadido.", Toast.LENGTH_SHORT).show();
+    }
+
+    private static boolean sameAnchor(StudyEntry first, StudyEntry second) {
+        if (!first.semanticUnitId.isEmpty() && first.semanticUnitId.equals(second.semanticUnitId)
+                && first.startOffset == second.startOffset && first.endOffset == second.endOffset) {
+            return true;
+        }
+        String left = first.anchorText == null || first.anchorText.isEmpty() ? first.quote : first.anchorText;
+        String right = second.anchorText == null || second.anchorText.isEmpty() ? second.quote : second.anchorText;
+        return left != null && !left.isEmpty() && left.equals(right);
+    }
+
+    private void deleteBibleStudyEntry(StudyEntry entry, String confirmation) {
+        StudyStore.delete(this, entry.id);
+        String script = "(function(id){var e=document.querySelector('[data-study-id=\\\"'+id+'\\\"]');"
+                + "if(!e)return;if(e.tagName==='MARK'){var p=e.parentNode;while(e.firstChild)"
+                + "p.insertBefore(e.firstChild,e);p.removeChild(e);p.normalize();}else e.remove();})("
+                + JSONObject.quote(entry.id) + ")";
+        webView.evaluateJavascript(script, null);
+        Toast.makeText(this, confirmation, Toast.LENGTH_SHORT).show();
+    }
+
     private void attachPlanProgress() {
         if (planId.isEmpty() || planDay < 1) return;
         webView.evaluateJavascript("(function(){if(window.__ministeriumPlan)return;"
@@ -273,6 +394,14 @@ public class BibleReaderActivity extends ThemedActivity {
                 : "Capítulo registrado en la sesión.", Toast.LENGTH_SHORT).show();
     }
     private static String value(String value) { return value == null ? "" : value.trim(); }
+
+    @Override protected void onResume() {
+        super.onResume();
+        if (webView != null && book != null) {
+            UniversalSelectionMenu.restoreHighlights(this, webView, sourceKey());
+        }
+    }
+
     @Override protected void onPause() {
         try {
             ContinueReadingStore.save(this, "Biblia",
