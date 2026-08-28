@@ -26,51 +26,24 @@ public final class ReaderChrome {
                               boolean preserveBibleTypeface) {
         UniversalSelectionMenu.attach(activity, webView, context);
         ReaderPreferences.apply(activity, webView, preserveBibleTypeface);
-        // Page mode persists the current column in localStorage; enabling DOM
-        // storage here makes that behavior consistent across Android WebView versions.
         webView.getSettings().setDomStorageEnabled(true);
         ReaderPagination.arm(activity, webView, context);
         attachGestures(activity, webView, context, navigator);
-        attachAutoHideHeader(webView, header, context);
+        keepHeaderStatic(webView, header);
     }
 
     /**
-     * Oculta la cabecera con histéresis al avanzar y la recupera en cuanto el
-     * lector vuelve hacia arriba. La vista conserva su espacio, evitando saltos
-     * de paginación o cambios en la posición del texto.
+     * Desde 4.1 la barra superior permanece visible en todos los lectores.
+     * No se traslada ni se desvanece al desplazarse, para que volver, búsqueda,
+     * tema y acciones sigan siempre en la misma posición.
      */
-    private static void attachAutoHideHeader(WebView webView, View header,
-                                             ReaderContext context) {
-        if (webView == null || header == null) return;
+    private static void keepHeaderStatic(WebView webView, View header) {
+        if (header == null) return;
         header.animate().cancel();
         header.setVisibility(View.VISIBLE);
         header.setAlpha(1f);
         header.setTranslationY(0f);
-        final boolean[] hidden = {false};
-        webView.setOnScrollChangeListener((view, x, y, oldX, oldY) -> {
-            if (ReaderPagination.isPageMode(view.getContext(), context)) {
-                if (hidden[0]) {
-                    hidden[0] = false;
-                    header.animate().cancel();
-                    header.animate().translationY(0f).alpha(1f)
-                            .setDuration(120).start();
-                }
-                return;
-            }
-            int delta = y - oldY;
-            int height = Math.max(1, header.getHeight());
-            if (!hidden[0] && delta > 18 && y > height * 2) {
-                hidden[0] = true;
-                header.animate().cancel();
-                header.animate().translationY(-height).alpha(.12f)
-                        .setDuration(180).start();
-            } else if (hidden[0] && (delta < -12 || y < height)) {
-                hidden[0] = false;
-                header.animate().cancel();
-                header.animate().translationY(0f).alpha(1f)
-                        .setDuration(150).start();
-            }
-        });
+        if (webView != null) webView.setOnScrollChangeListener(null);
     }
 
     public static void bindTheme(Activity activity, View button) {
