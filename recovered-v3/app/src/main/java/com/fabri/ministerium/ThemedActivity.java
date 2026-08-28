@@ -3,14 +3,23 @@ package com.fabri.ministerium;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
 
-/** Base temática y ciclo de vida del modo de oración. */
+/** Base temática, barra superior estable y ciclo de vida del modo de oración. */
 public abstract class ThemedActivity extends Activity {
     private boolean prayerFocusEntered;
 
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(ThemeUtils.wrap(newBase));
+    }
+
+    @Override
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        // Las pantallas basadas en ScrollView conservan su barra superior visible.
+        // Los lectores tienen además su protección específica en ReaderChrome.
+        StaticTopBarController.attach(this);
     }
 
     /**
