@@ -30,10 +30,11 @@ Ministerium 4.1 continúa sobre la base funcional de 4.0 y mantiene el enfoque l
 - La indisponibilidad de la API o una discrepancia no bloquean la compilación.
 - Pendiente: ampliar los casos comparables después de verificar calendarios particulares de Ecuador disponibles en la fuente secundaria.
 
-### 4. Sistema visual compartido — pendiente
-- Consolidar tokens de color, espaciado, radios, tipografía y anchos de lector.
-- Reducir valores repetidos entre pantallas y lectores.
-- Mantener modo claro, oscuro y sepia.
+### 4. Sistema visual compartido — migración iniciada
+- Añadidos tokens semánticos de superficie, texto, acento y divisor para claro/oscuro.
+- Añadidos tokens comunes de espaciado, radios y geometría de tarjetas con ajustes `sw600dp` para tablet.
+- `HomeCard`, tarjetas de Horas y `bg_card` ya consumen los nuevos tokens sin cambiar la identidad visual existente.
+- Pendiente: trasladar progresivamente lectores y pantallas restantes a los tokens comunes y revisar sepia de forma explícita.
 
 ## Fuera de 4.1
 
