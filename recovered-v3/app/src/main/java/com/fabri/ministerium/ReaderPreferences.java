@@ -123,6 +123,7 @@ public final class ReaderPreferences {
                 + "if(!s){s=document.createElement('style');s.id='ministerium-reader-prefs';document.head.appendChild(s);}"
                 + "s.innerHTML=" + JSONObject.quote(css) + ";})()";
         webView.evaluateJavascript(script, null);
+        ReaderEditorialEnhancer.apply(context, webView);
         HoursSeasonFilter.apply(context, webView);
     }
 
