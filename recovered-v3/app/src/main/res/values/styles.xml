@@ -2,7 +2,7 @@
 <resources>
     <style name="Theme.Ministerium" parent="android:style/Theme.Material.Light.NoActionBar">
         <item name="android:fontFamily">sans</item>
-        <item name="android:colorAccent">@color/wine</item>
+        <item name="android:colorAccent">@color/ministerium_accent</item>
         <item name="android:navigationBarColor">@color/wine_dark</item>
         <item name="android:statusBarColor">@color/wine_dark</item>
         <item name="android:windowLightStatusBar">false</item>
@@ -11,7 +11,7 @@
 
     <style name="Theme.Ministerium.Dark" parent="android:style/Theme.Material.NoActionBar">
         <item name="android:fontFamily">sans</item>
-        <item name="android:colorAccent">@color/gold</item>
+        <item name="android:colorAccent">@color/ministerium_accent_secondary</item>
         <item name="android:navigationBarColor">#100E0D</item>
         <item name="android:statusBarColor">#100E0D</item>
         <item name="android:windowActionModeOverlay">true</item>
@@ -20,21 +20,21 @@
     <style name="HomeCard">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginStart">22dp</item>
-        <item name="android:layout_marginTop">10dp</item>
-        <item name="android:layout_marginEnd">22dp</item>
+        <item name="android:layout_marginStart">@dimen/ministerium_card_horizontal_margin</item>
+        <item name="android:layout_marginTop">@dimen/ministerium_card_vertical_gap</item>
+        <item name="android:layout_marginEnd">@dimen/ministerium_card_horizontal_margin</item>
         <item name="android:background">@drawable/bg_card</item>
         <item name="android:clickable">true</item>
         <item name="android:elevation">1dp</item>
         <item name="android:focusable">true</item>
         <item name="android:gravity">center_vertical</item>
         <item name="android:orientation">horizontal</item>
-        <item name="android:padding">16dp</item>
+        <item name="android:padding">@dimen/ministerium_card_padding</item>
     </style>
 
     <style name="HomeCardIcon">
-        <item name="android:layout_width">50dp</item>
-        <item name="android:layout_height">50dp</item>
+        <item name="android:layout_width">@dimen/ministerium_card_icon_size</item>
+        <item name="android:layout_height">@dimen/ministerium_card_icon_size</item>
         <item name="android:gravity">center</item>
         <item name="android:textSize">24sp</item>
     </style>
@@ -42,7 +42,7 @@
     <style name="HomeCardBody">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginStart">15dp</item>
+        <item name="android:layout_marginStart">@dimen/ministerium_card_body_gap</item>
         <item name="android:layout_weight">1</item>
         <item name="android:orientation">vertical</item>
     </style>
@@ -50,7 +50,7 @@
     <style name="HomeCardTitle">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:textColor">@color/ink</item>
+        <item name="android:textColor">@color/ministerium_text_primary</item>
         <item name="android:textSize">18sp</item>
         <item name="android:textStyle">bold</item>
     </style>
@@ -58,8 +58,8 @@
     <style name="HomeCardSubtitle">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginTop">4dp</item>
-        <item name="android:textColor">@color/muted</item>
+        <item name="android:layout_marginTop">@dimen/ministerium_space_xs</item>
+        <item name="android:textColor">@color/ministerium_text_secondary</item>
         <item name="android:textSize">13sp</item>
     </style>
 
@@ -67,7 +67,7 @@
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:text">›</item>
-        <item name="android:textColor">@color/wine</item>
+        <item name="android:textColor">@color/ministerium_accent</item>
         <item name="android:textSize">30sp</item>
     </style>
 
@@ -89,7 +89,7 @@
     <style name="DailyHourTitle">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:textColor">@color/ink</item>
+        <item name="android:textColor">@color/ministerium_text_primary</item>
         <item name="android:textSize">16sp</item>
         <item name="android:textStyle">bold</item>
     </style>
@@ -97,18 +97,18 @@
     <style name="DailyHourSubtitle">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginTop">4dp</item>
+        <item name="android:layout_marginTop">@dimen/ministerium_space_xs</item>
         <item name="android:maxLines">2</item>
-        <item name="android:textColor">@color/muted</item>
+        <item name="android:textColor">@color/ministerium_text_secondary</item>
         <item name="android:textSize">12sp</item>
     </style>
 
     <style name="DailyHourTime">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:layout_marginTop">@dimen/ministerium_space_sm</item>
         <item name="android:gravity">start</item>
-        <item name="android:textColor">@color/wine</item>
+        <item name="android:textColor">@color/ministerium_accent</item>
         <item name="android:textSize">11sp</item>
         <item name="android:textStyle">bold</item>
     </style>
