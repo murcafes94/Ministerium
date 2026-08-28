@@ -28,7 +28,7 @@ public final class ReaderChrome {
         ReaderPreferences.apply(activity, webView, preserveBibleTypeface);
         ReaderPagination.arm(activity, webView, context);
         attachGestures(activity, webView, context, navigator);
-        attachAutoHideHeader(webView, header);
+        attachAutoHideHeader(webView, header, context);
     }
 
     /**
@@ -36,7 +36,8 @@ public final class ReaderChrome {
      * lector vuelve hacia arriba. La vista conserva su espacio, evitando saltos
      * de paginación o cambios en la posición del texto.
      */
-    private static void attachAutoHideHeader(WebView webView, View header) {
+    private static void attachAutoHideHeader(WebView webView, View header,
+                                             ReaderContext context) {
         if (webView == null || header == null) return;
         header.animate().cancel();
         header.setVisibility(View.VISIBLE);
@@ -44,7 +45,7 @@ public final class ReaderChrome {
         header.setTranslationY(0f);
         final boolean[] hidden = {false};
         webView.setOnScrollChangeListener((view, x, y, oldX, oldY) -> {
-            if (ReaderPagination.PAGE.equals(ReaderPagination.mode(view.getContext()))) {
+            if (ReaderPagination.isPageMode(view.getContext(), context)) {
                 if (hidden[0]) {
                     hidden[0] = false;
                     header.animate().cancel();
