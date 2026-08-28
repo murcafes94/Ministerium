@@ -35,24 +35,13 @@ public final class TextViewReaderChrome {
         restoreHighlights(activity, content, context.sourceKey);
         attachSelection(activity, content, context);
         attachGestures(activity, content, navigator);
-        if (scroll != null && header != null) {
-            final boolean[] hidden = {false};
-            scroll.setOnScrollChangeListener((view, x, y, oldX, oldY) -> {
-                int delta = y - oldY;
-                int height = Math.max(1, header.getHeight());
-                if (!hidden[0] && delta > 18 && y > height * 2) {
-                    hidden[0] = true;
-                    header.animate().cancel();
-                    header.animate().translationY(-height).alpha(.12f)
-                            .setDuration(180).start();
-                } else if (hidden[0] && (delta < -12 || y < height)) {
-                    hidden[0] = false;
-                    header.animate().cancel();
-                    header.animate().translationY(0f).alpha(1f)
-                            .setDuration(150).start();
-                }
-            });
+        if (header != null) {
+            header.animate().cancel();
+            header.setVisibility(View.VISIBLE);
+            header.setAlpha(1f);
+            header.setTranslationY(0f);
         }
+        if (scroll != null) scroll.setOnScrollChangeListener(null);
     }
 
     public static void bindMore(Activity activity, View button, TextView content,
@@ -76,7 +65,9 @@ public final class TextViewReaderChrome {
 
     private static void applyPreferences(Activity activity, TextView content) {
         content.setTextSize(17f * ReaderPreferences.textZoom(activity) / 110f);
-        content.setTypeface(Typeface.create(ReaderPreferences.family(activity),
+        String family = ReaderPreferences.family(activity);
+        if (ReaderPreferences.PALATINO.equals(family)) family = ReaderPreferences.SERIF;
+        content.setTypeface(Typeface.create(family,
                 ReaderPreferences.weight(activity) >= 600
                         ? Typeface.BOLD : Typeface.NORMAL));
         content.setLineSpacing(0, ReaderPreferences.lineHeight(activity));
@@ -125,8 +116,6 @@ public final class TextViewReaderChrome {
         content.setTextIsSelectable(true);
         content.setCustomSelectionActionModeCallback(new ActionMode.Callback() {
             @Override public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-                // Android 6+ presenta este ActionMode como toolbar flotante junto
-                // al texto seleccionado, como los lectores de referencia.
                 addAction(menu, HIGHLIGHT, 90, "Subrayar",
                         android.R.drawable.ic_menu_edit, MenuItem.SHOW_AS_ACTION_ALWAYS);
                 addAction(menu, NOTE, 91, "Nota",
@@ -139,7 +128,6 @@ public final class TextViewReaderChrome {
                         android.R.drawable.ic_menu_set_as, MenuItem.SHOW_AS_ACTION_IF_ROOM);
                 addAction(menu, READ, 95, "Leer",
                         android.R.drawable.ic_lock_silent_mode_off, MenuItem.SHOW_AS_ACTION_IF_ROOM);
-                // Copiar/Compartir siguen siendo las acciones nativas del sistema.
                 return true;
             }
 
