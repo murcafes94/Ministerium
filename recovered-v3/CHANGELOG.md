@@ -9,7 +9,11 @@ Este archivo resume las versiones de Ministerium. Los detalles históricos se co
 - La exportación Obsidian conserva IDs de contenido de Ministerium, referencias, citas, etiquetas y anclas semánticas.
 
 ### Lectores y calendario
-- Esta rama queda preparada para continuar con modo de lectura desplazamiento/página y validación secundaria del calendario litúrgico.
+- Biblia, Magisterio y libros incorporan preferencia global `Desplazamiento` / `Página` desde el menú del lector.
+- El modo Página usa columnas del ancho del dispositivo y gestos laterales; al terminar un documento conserva la navegación al capítulo o entrada siguiente.
+- La Liturgia bilingüe permanece en desplazamiento sincronizado y no adopta la paginación de 4.1.
+- El build realiza una comparación estructurada informativa contra LiturgicalCalendarAPI para Bautismo del Señor, Pascua, Pentecostés y San Bartolomé cuando la fuente externa está disponible.
+- El calendario local de Ecuador continúa siendo la fuente runtime y ninguna comprobación externa bloquea el uso offline.
 
 ### Alcance
 - La versión 4.1 no incorpora IA ni dictado/transcripción por voz.
