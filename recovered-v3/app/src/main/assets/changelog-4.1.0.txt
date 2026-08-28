@@ -6,7 +6,13 @@ Ministerium 4.1.0 · en desarrollo
 • En modo Página, los gestos laterales avanzan por columnas de lectura y pasan al capítulo o entrada siguiente al llegar al borde del documento.
 • El modo Página recuerda la página alcanzada en cada documento para poder retomarla al volver a abrirlo.
 • Las barras superiores de los lectores permanecen estáticas y visibles durante la lectura.
+• Los lectores HTML adoptan una jerarquía editorial común inspirada en Lecturas del día: títulos, subtítulos, secciones, respuestas y bloques litúrgicos quedan visualmente separados.
 • La antigua Liturgia de las Horas bilingüe ES/LAT queda retirada de la experiencia de la app; la entrada latina abre únicamente Liturgia Horarum por fecha.
+• Liturgia Horarum en latín usa la misma jerarquía visual de la Liturgia de las Horas española, sin que el estilo heredado del EPUB anule títulos o secciones.
+• La Liturgia de las Horas española conserva y despliega el cántico evangélico completo: Benedictus en Laudes y Magníficat en Vísperas.
+• El Misal se presenta exclusivamente en español o exclusivamente en latín; se evita que los propios españoles de Guadalajara aparezcan en el Missale latino.
+• El Misal gana separación real entre secciones, títulos, respuestas, texto del celebrante y rúbricas; se conservan los selectores y botones de fórmulas/alternativas ya existentes.
+• Ritual y Bendicional distinguen visualmente los títulos, las palabras del sacerdote/celebrante/ministro, las respuestas de la asamblea y las rúbricas.
 • Se restaura el modo oración con No molestar en Liturgia, Misa, Ritual, oraciones y sesiones de plan bíblico, restaurando el estado previo al salir.
 • Las fuentes de lectura se normalizan en Oraciones, Misal y Liturgia Horarum para respetar de forma consistente la tipografía seleccionada.
 • En la Biblia, tocar un subrayado permite añadir una nota, crear un marcador o eliminarlo; los marcadores también pueden eliminarse directamente desde el capítulo.
