@@ -12,4 +12,14 @@
     <color name="dark_surface">#26211E</color>
     <color name="dark_ink">#F3EDE4</color>
     <color name="dark_muted">#C8BDB0</color>
+
+    <!-- 4.1 semantic visual tokens. Components should prefer these names so
+         palette changes do not require editing every layout/drawable. -->
+    <color name="ministerium_surface">@color/paper</color>
+    <color name="ministerium_surface_pressed">#EADFCB</color>
+    <color name="ministerium_text_primary">@color/ink</color>
+    <color name="ministerium_text_secondary">@color/muted</color>
+    <color name="ministerium_accent">@color/wine</color>
+    <color name="ministerium_accent_secondary">@color/gold</color>
+    <color name="ministerium_divider">@color/line</color>
 </resources>
