@@ -79,8 +79,10 @@ public class MissalSectionReaderActivity extends ThemedActivity {
                     }
                     DailyMassProperRepository.getOrSync(getApplicationContext(), date);
                 }
-                MissalDocument31.Result built = MissalDocument31.build(
+                MissalDocument31.Result raw = MissalDocument31.build(
                         getApplicationContext(), date, section, language);
+                MissalDocument31.Result built = new MissalDocument31.Result(
+                        raw.title, raw.subtitle, MissalLanguageGuard.sanitize(raw.html, language));
                 runOnUiThread(() -> show(built));
             } catch (Exception error) {
                 runOnUiThread(() -> {
