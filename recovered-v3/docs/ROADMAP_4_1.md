@@ -18,10 +18,11 @@ Ministerium 4.1 continúa sobre la base funcional de 4.0 y mantiene el enfoque l
 - Preferencia global `Desplazamiento` / `Página` desde el menú del lector.
 - Modo Página basado en columnas del ancho del viewport y gestos laterales.
 - Al llegar al borde del documento se conserva la navegación al capítulo/entrada anterior o siguiente.
+- La página actual se guarda por documento y se restaura al volver a abrirlo; DOM storage se habilita explícitamente para compatibilidad entre versiones de Android WebView.
 - Tablet: usa los márgenes editoriales configurados por `ReaderPreferences`.
 - Primera cobertura: Biblia, Magisterio y libros basados en WebView.
 - Liturgia bilingüe permanece en desplazamiento sincronizado.
-- Pendiente antes de cerrar el lote: probar reflujo con zoom, selección/subrayados y reanudación exacta de posición en teléfono/tablet.
+- Pendiente antes de cerrar el lote: probar reflujo con zoom, selección/subrayados y restauración real de página en teléfono/tablet.
 
 ### 3. Validación secundaria del calendario — diagnóstico estructurado implementado
 - El motor local de Ministerium sigue siendo la fuente runtime y funciona sin red.
