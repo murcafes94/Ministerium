@@ -52,6 +52,28 @@ expect(secondary.includes('LiturgicalCalendarAPI')
     && secondary.includes('local Ecuador calendar remains authoritative'),
   'Structured secondary calendar validation is missing.');
 
+const colors = read('app/src/main/res/values/colors.xml');
+const darkColors = read('app/src/main/res/values-night/colors.xml');
+const dimens = read('app/src/main/res/values/dimens.xml');
+const tabletDimens = read('app/src/main/res/values-sw600dp/dimens.xml');
+const styles = read('app/src/main/res/values/styles.xml');
+const card = read('app/src/main/res/drawable/bg_card.xml');
+for (const token of ['ministerium_surface', 'ministerium_text_primary',
+  'ministerium_text_secondary', 'ministerium_accent', 'ministerium_divider']) {
+  expect(colors.includes(`name="${token}"`) && darkColors.includes(`name="${token}"`),
+    `Missing light/dark semantic color token: ${token}`);
+}
+for (const token of ['ministerium_card_radius', 'ministerium_card_horizontal_margin',
+  'ministerium_card_padding']) {
+  expect(dimens.includes(`name="${token}"`) && tabletDimens.includes(`name="${token}"`),
+    `Missing phone/tablet dimension token: ${token}`);
+}
+expect(styles.includes('@dimen/ministerium_card_horizontal_margin')
+    && styles.includes('@color/ministerium_text_primary')
+    && card.includes('@dimen/ministerium_card_radius')
+    && card.includes('@color/ministerium_surface'),
+  'Shared card styles are not consuming the 4.1 visual tokens.');
+
 const runtime = fs.readdirSync('app/src/main/java/com/fabri/ministerium')
   .filter(name => name.endsWith('.java'))
   .map(name => read(`app/src/main/java/com/fabri/ministerium/${name}`)).join('\n');
