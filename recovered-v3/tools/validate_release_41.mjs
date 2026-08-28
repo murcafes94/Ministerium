@@ -39,12 +39,16 @@ expect(pagination.includes('public static final String SCROLL = "scroll"')
     && pagination.includes('category.contains("biblia")')
     && pagination.includes('category.contains("documentos")'),
   'Scroll/page reader engine is incomplete.');
+expect(pagination.includes('localStorage.setItem(storageKey')
+    && pagination.includes('localStorage.getItem(storageKey'),
+  'Page mode does not persist and restore its per-document page index.');
 expect(!pagination.includes('category.contains("liturgia")'),
   'Bilingual/liturgical readers must remain outside 4.1 page mode.');
 expect(readerChrome.includes('Modo de lectura · ')
     && readerChrome.includes('ReaderPagination.step')
-    && readerChrome.includes('ReaderPagination.arm'),
-  'Reader chrome does not expose or drive page mode.');
+    && readerChrome.includes('ReaderPagination.arm')
+    && readerChrome.includes('setDomStorageEnabled(true)'),
+  'Reader chrome does not expose, drive or persist page mode correctly.');
 
 const secondary = read('tools/check_secondary_liturgy_sources.py');
 expect(secondary.includes('LiturgicalCalendarAPI')
