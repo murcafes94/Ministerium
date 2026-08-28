@@ -8,22 +8,27 @@ Ministerium 4.1 continúa sobre la base funcional de 4.0 y mantiene el enfoque l
 
 ## Lotes de trabajo
 
-### 1. Interoperabilidad de Mi estudio — iniciado
+### 1. Interoperabilidad de Mi estudio — implementado, pendiente de prueba en dispositivo
 - Exportación Markdown normal.
 - Exportación JSON portable.
 - Exportación Obsidian con frontmatter, etiquetas, referencias, citas, `contentId` y anclas de Ministerium.
 - Mantener compatibilidad con anotaciones existentes.
 
-### 2. Lector desplazamiento / página — pendiente
-- Preferencia global `Desplazamiento` / `Página`.
-- Mantener selección, subrayados, notas, zoom y continuar leyendo en ambos modos.
-- Tablet: respetar ancho editorial y márgenes actuales.
-- Biblia, Magisterio y libros como primera cobertura; Liturgia bilingüe se mantiene inicialmente en desplazamiento sincronizado.
+### 2. Lector desplazamiento / página — primera cobertura implementada
+- Preferencia global `Desplazamiento` / `Página` desde el menú del lector.
+- Modo Página basado en columnas del ancho del viewport y gestos laterales.
+- Al llegar al borde del documento se conserva la navegación al capítulo/entrada anterior o siguiente.
+- Tablet: usa los márgenes editoriales configurados por `ReaderPreferences`.
+- Primera cobertura: Biblia, Magisterio y libros basados en WebView.
+- Liturgia bilingüe permanece en desplazamiento sincronizado.
+- Pendiente antes de cerrar el lote: probar reflujo con zoom, selección/subrayados y reanudación exacta de posición en teléfono/tablet.
 
-### 3. Validación secundaria del calendario — pendiente
-- El motor local de Ministerium sigue siendo la fuente runtime y debe funcionar sin red.
-- Añadir una comprobación de build/diagnóstico contra una fuente litúrgica secundaria estructurada.
-- Las discrepancias deben reportarse; nunca sustituir silenciosamente las reglas locales ni convertir una API externa en dependencia de uso diario.
+### 3. Validación secundaria del calendario — diagnóstico estructurado implementado
+- El motor local de Ministerium sigue siendo la fuente runtime y funciona sin red.
+- `check_secondary_liturgy_sources.py` consulta de forma informativa LiturgicalCalendarAPI cuando hay conexión.
+- La comprobación compara fechas universales reconocibles con el calendario local de Ecuador y reporta diferencias sin sustituir silenciosamente las reglas locales.
+- La indisponibilidad de la API o una discrepancia no bloquean la compilación.
+- Pendiente: ampliar los casos comparables después de verificar calendarios particulares de Ecuador disponibles en la fuente secundaria.
 
 ### 4. Sistema visual compartido — pendiente
 - Consolidar tokens de color, espaciado, radios, tipografía y anchos de lector.
