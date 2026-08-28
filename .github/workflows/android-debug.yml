@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - feature/ministerium-4.0
+      - feature/ministerium-4.1
   pull_request:
     branches:
       - main
@@ -156,14 +156,14 @@ jobs:
           test -s app/src/main/assets/magisterium-index.tsv
           test "$(grep -vc '^#' app/src/main/assets/magisterium-index.tsv)" -gt 20
 
-      - name: Validate Ministerium base and 4.0 contracts
+      - name: Validate Ministerium base and 4.1 contracts
         run: |
-          node tools/validate_stabilization_40.mjs
+          node tools/validate_stabilization_41.mjs
           node tools/validate_calendar_31.mjs
           node tools/validate_lectionary_40.mjs
           node tools/validate_magisterium_40.mjs
           node tools/validate_prayer_experience_40.mjs
-          node tools/validate_release_40.mjs
+          node tools/validate_release_41.mjs
           python - <<'PY'
           import hashlib, json, pathlib
           manifest = json.loads(pathlib.Path('app/src/main/assets/package-manifest.json').read_text(encoding='utf-8'))
@@ -213,7 +213,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: Ministerium-4.0.0-debug
+          name: Ministerium-4.1.0-debug
           path: |
             recovered-v3/app/build/outputs/apk/debug/app-debug.apk
             recovered-v3/app/build/outputs/apk/debug/app-debug.apk.sha256
