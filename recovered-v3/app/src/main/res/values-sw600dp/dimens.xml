@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Tablet-specific shared visual tokens. -->
+    <dimen name="ministerium_card_radius">20dp</dimen>
+    <dimen name="ministerium_card_horizontal_margin">28dp</dimen>
+    <dimen name="ministerium_card_vertical_gap">12dp</dimen>
+    <dimen name="ministerium_card_padding">18dp</dimen>
+    <dimen name="ministerium_card_icon_size">54dp</dimen>
+    <dimen name="ministerium_card_body_gap">18dp</dimen>
+
     <!-- Tablet baseline, tuned for devices such as Redmi Pad 2 without hard-coding one model. -->
     <dimen name="reader_header_padding">8dp</dimen>
     <dimen name="reader_icon_touch">54dp</dimen>
