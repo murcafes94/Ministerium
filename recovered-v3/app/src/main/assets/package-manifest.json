@@ -2,9 +2,9 @@
   "schema": 3,
   "channel": "testing",
   "app": {
-    "versionName": "4.0.0",
-    "versionCode": 40,
-    "released": "2026-08-27",
+    "versionName": "4.1.0",
+    "versionCode": 41,
+    "released": "2026-08-28",
     "url": "",
     "sha256": "",
     "installation": "user-confirmed"
