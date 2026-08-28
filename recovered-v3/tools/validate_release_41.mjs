@@ -43,12 +43,22 @@ expect(pagination.includes('localStorage.setItem(storageKey')
     && pagination.includes('localStorage.getItem(storageKey'),
   'Page mode does not persist and restore its per-document page index.');
 expect(!pagination.includes('category.contains("liturgia")'),
-  'Bilingual/liturgical readers must remain outside 4.1 page mode.');
+  'Liturgical readers must remain outside 4.1 page mode.');
 expect(readerChrome.includes('Modo de lectura · ')
     && readerChrome.includes('ReaderPagination.step')
     && readerChrome.includes('ReaderPagination.arm')
     && readerChrome.includes('setDomStorageEnabled(true)'),
   'Reader chrome does not expose, drive or persist page mode correctly.');
+
+const main = read('app/src/main/java/com/fabri/ministerium/MainActivity.java');
+const latinHours = read('app/src/main/java/com/fabri/ministerium/LatinHoursActivity.java');
+expect(main.includes('new Intent(this, LatinHoursActivity.class)')
+    && !main.includes('new Intent(this, BilingualHoursActivity.class)')
+    && main.includes('Liturgia de las Horas en latín'),
+  '4.1 must expose the Latin-only Hours entry and must not open the bilingual reader.');
+expect(latinHours.includes('LatinHoursReaderActivity.class')
+    && latinHours.includes('Liturgia Horarum'),
+  'Latin Hours runtime is not wired correctly.');
 
 const secondary = read('tools/check_secondary_liturgy_sources.py');
 expect(secondary.includes('LiturgicalCalendarAPI')
