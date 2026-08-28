@@ -107,9 +107,7 @@ public final class ReaderPreferences {
                 + maximumColumn + "px!important;"
                 + "margin-left:auto!important;margin-right:auto!important;padding-left:" + horizontal
                 + "px!important;padding-right:" + horizontal + "px!important;box-sizing:border-box!important;}"
-                + "body,body p,body span,body div,body li,body td,body th,body blockquote,"
-                + "body h1,body h2,body h3,body h4,body h5,body h6,body a,body summary,"
-                + "body small,body em,body strong{font-family:" + family + "!important;}"
+                + "body *{font-family:" + family + "!important;}"
                 + "[data-ministerium-block],[data-ministerium-align-key]{border-top:1px solid "
                 + palette.divider + "!important;padding-top:.72em!important;margin-top:1.05em!important;}"
                 + "[data-ministerium-block^='hymn'],[data-ministerium-align-key^='hymn'],"
