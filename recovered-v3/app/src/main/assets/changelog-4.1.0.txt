@@ -6,5 +6,6 @@ Ministerium 4.1.0 · en desarrollo
 • En modo Página, los gestos laterales avanzan por columnas de lectura y pasan al capítulo o entrada siguiente al llegar al borde del documento.
 • La Liturgia bilingüe permanece en desplazamiento vertical para conservar la sincronización semántica ES/LAT.
 • El proceso de build añade una comprobación secundaria estructurada contra LiturgicalCalendarAPI; el calendario local de Ecuador continúa siendo la fuente de ejecución y funciona sin red.
+• Comienza la migración a un sistema visual común con colores semánticos, espaciado, radios y geometría de tarjetas adaptados a teléfono y tablet.
 • Esta versión no incorpora IA ni dictado/transcripción por voz.
 • Se mantiene el enfoque local-first y la privacidad de la versión 4.0.
