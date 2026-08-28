@@ -1,0 +1,7 @@
+Ministerium 4.1.0 · en desarrollo
+
+• Mi estudio añade exportación compatible con Obsidian mediante Markdown con frontmatter, etiquetas, referencias y anclas de Ministerium.
+• Se conserva la exportación Markdown normal y JSON portable.
+• La rama 4.1 queda preparada para continuar con modo de lectura desplazamiento/página y validación secundaria del calendario litúrgico.
+• Esta versión no incorpora IA ni dictado/transcripción por voz.
+• Se mantiene el enfoque local-first y la privacidad de la versión 4.0.
