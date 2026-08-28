@@ -2,6 +2,9 @@ Ministerium 4.1.0 · en desarrollo
 
 • Mi estudio añade exportación compatible con Obsidian mediante Markdown con frontmatter, etiquetas, referencias y anclas de Ministerium.
 • Se conserva la exportación Markdown normal y JSON portable.
-• La rama 4.1 queda preparada para continuar con modo de lectura desplazamiento/página y validación secundaria del calendario litúrgico.
+• Biblia, Magisterio y libros incorporan un modo opcional Página además del desplazamiento continuo; el cambio se realiza desde el menú del lector.
+• En modo Página, los gestos laterales avanzan por columnas de lectura y pasan al capítulo o entrada siguiente al llegar al borde del documento.
+• La Liturgia bilingüe permanece en desplazamiento vertical para conservar la sincronización semántica ES/LAT.
+• El proceso de build añade una comprobación secundaria estructurada contra LiturgicalCalendarAPI; el calendario local de Ecuador continúa siendo la fuente de ejecución y funciona sin red.
 • Esta versión no incorpora IA ni dictado/transcripción por voz.
 • Se mantiene el enfoque local-first y la privacidad de la versión 4.0.
