@@ -62,6 +62,8 @@ const dimens = read('app/src/main/res/values/dimens.xml');
 const tabletDimens = read('app/src/main/res/values-sw600dp/dimens.xml');
 const styles = read('app/src/main/res/values/styles.xml');
 const card = read('app/src/main/res/drawable/bg_card.xml');
+const visualPalette = read('app/src/main/java/com/fabri/ministerium/ReaderVisualPalette.java');
+const readerPreferences = read('app/src/main/java/com/fabri/ministerium/ReaderPreferences.java');
 for (const token of ['ministerium_surface', 'ministerium_text_primary',
   'ministerium_text_secondary', 'ministerium_accent', 'ministerium_divider']) {
   expect(colors.includes(`name="${token}"`) && darkColors.includes(`name="${token}"`),
@@ -77,6 +79,11 @@ expect(styles.includes('@dimen/ministerium_card_horizontal_margin')
     && card.includes('@dimen/ministerium_card_radius')
     && card.includes('@color/ministerium_surface'),
   'Shared card styles are not consuming the 4.1 visual tokens.');
+expect(visualPalette.includes('ThemeUtils.SEPIA')
+    && visualPalette.includes('public final String background')
+    && visualPalette.includes('public final String accent')
+    && readerPreferences.includes('ReaderVisualPalette.from(context)'),
+  'WebView readers are not connected to the shared 4.1 palette including sepia.');
 
 const runtime = fs.readdirSync('app/src/main/java/com/fabri/ministerium')
   .filter(name => name.endsWith('.java'))
