@@ -44,10 +44,15 @@ expect(workflow.includes('feature/ministerium-4.1')
     && workflow.includes('validate_release_41.mjs'),
   '4.1 debug workflow is incomplete.');
 
+// El compilador local heredado de 4.0 puede seguir llamando temporalmente a los
+// nombres validate_*_40; en esta rama esos archivos delegan en los contratos 4.1.
 const local = read('tools/build_local_windows.ps1');
-expect(local.includes('Ministerium 4.1 - compilacion local Windows')
-    && local.includes('validate_stabilization_41.mjs')
-    && local.includes('validate_release_41.mjs'),
-  'Windows 4.1 build contract is incomplete.');
+const stabilizationAlias = read('tools/validate_stabilization_40.mjs');
+const releaseAlias = read('tools/validate_release_40.mjs');
+expect(local.includes('validate_stabilization_40.mjs')
+    && local.includes('validate_release_40.mjs')
+    && stabilizationAlias.includes('validate_stabilization_41.mjs')
+    && releaseAlias.includes('validate_release_41.mjs'),
+  'Windows local build is not bridged to the 4.1 validators.');
 
 console.log('Ministerium 4.1 initial release contract OK');
