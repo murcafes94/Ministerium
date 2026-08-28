@@ -30,6 +30,28 @@ expect(exportSource.includes('public static byte[] obsidian')
 expect(desk.includes('Obsidian (.md)') && desk.includes('StudyExport.obsidian'),
   'Mi estudio does not expose the Obsidian export.');
 
+const pagination = read('app/src/main/java/com/fabri/ministerium/ReaderPagination.java');
+const readerChrome = read('app/src/main/java/com/fabri/ministerium/ReaderChrome.java');
+expect(pagination.includes('public static final String SCROLL = "scroll"')
+    && pagination.includes('public static final String PAGE = "page"')
+    && pagination.includes('column-width:calc(100vw')
+    && pagination.includes('__ministeriumPageStep')
+    && pagination.includes('category.contains("biblia")')
+    && pagination.includes('category.contains("documentos")'),
+  'Scroll/page reader engine is incomplete.');
+expect(!pagination.includes('category.contains("liturgia")'),
+  'Bilingual/liturgical readers must remain outside 4.1 page mode.');
+expect(readerChrome.includes('Modo de lectura · ')
+    && readerChrome.includes('ReaderPagination.step')
+    && readerChrome.includes('ReaderPagination.arm'),
+  'Reader chrome does not expose or drive page mode.');
+
+const secondary = read('tools/check_secondary_liturgy_sources.py');
+expect(secondary.includes('LiturgicalCalendarAPI')
+    && secondary.includes('/api/v5/calendar/roman/')
+    && secondary.includes('local Ecuador calendar remains authoritative'),
+  'Structured secondary calendar validation is missing.');
+
 const runtime = fs.readdirSync('app/src/main/java/com/fabri/ministerium')
   .filter(name => name.endsWith('.java'))
   .map(name => read(`app/src/main/java/com/fabri/ministerium/${name}`)).join('\n');
