@@ -67,8 +67,6 @@ public final class ReaderPagination {
         boolean enabled = isPageMode(activity, context);
         int horizontal = Math.max(18, ReaderPreferences.horizontalPaddingPx(activity));
         int gap = Math.max(28, horizontal * 2);
-        int column = Math.max(220, activity.getResources().getDisplayMetrics().widthPixels
-                - horizontal * 2);
 
         String css;
         if (enabled) {
@@ -76,8 +74,9 @@ public final class ReaderPagination {
                     + "body{height:calc(100vh - 2px)!important;min-height:0!important;"
                     + "width:auto!important;max-width:none!important;margin:0!important;"
                     + "padding:18px " + horizontal + "px!important;"
-                    + "column-width:" + column + "px!important;column-gap:" + gap + "px!important;"
-                    + "column-fill:auto!important;overflow:visible!important;box-sizing:border-box!important;}"
+                    + "column-width:calc(100vw - " + (horizontal * 2) + "px)!important;"
+                    + "column-gap:" + gap + "px!important;column-fill:auto!important;"
+                    + "overflow:visible!important;box-sizing:border-box!important;}"
                     + "h1,h2,h3,h4,blockquote,figure,table,.ministerium-canticle,"
                     + ".ministerium-dictionary-card{break-inside:avoid-column!important;}"
                     + "img{max-height:82vh!important;object-fit:contain!important;}";
@@ -101,7 +100,7 @@ public final class ReaderPagination {
                 + "if(delta>0&&current>=max-4)return false;"
                 + "if(delta<0&&current<=4)return false;"
                 + "var target=Math.max(0,Math.min(max,current+(delta>0?width:-width)));"
-                + "sc.scrollTo(target,0);return true;};"
+                + "window.scrollTo(target,0);return true;};"
                 + "}else{root.classList.remove('ministerium-page-mode');"
                 + "window.__ministeriumPageStep=null;window.scrollTo(0,window.scrollY||0);}return true;})()";
         webView.evaluateJavascript(script, null);
