@@ -32,6 +32,7 @@ expect(desk.includes('Obsidian (.md)') && desk.includes('StudyExport.obsidian'),
 
 const pagination = read('app/src/main/java/com/fabri/ministerium/ReaderPagination.java');
 const readerChrome = read('app/src/main/java/com/fabri/ministerium/ReaderChrome.java');
+const textViewChrome = read('app/src/main/java/com/fabri/ministerium/TextViewReaderChrome.java');
 expect(pagination.includes('public static final String SCROLL = "scroll"')
     && pagination.includes('public static final String PAGE = "page"')
     && pagination.includes('column-width:calc(100vw')
@@ -49,6 +50,13 @@ expect(readerChrome.includes('Modo de lectura · ')
     && readerChrome.includes('ReaderPagination.arm')
     && readerChrome.includes('setDomStorageEnabled(true)'),
   'Reader chrome does not expose, drive or persist page mode correctly.');
+expect(readerChrome.includes('keepHeaderStatic')
+    && readerChrome.includes('setOnScrollChangeListener(null)')
+    && !readerChrome.includes('translationY(-height)'),
+  'WebView reader header must remain static.');
+expect(textViewChrome.includes('setOnScrollChangeListener(null)')
+    && !textViewChrome.includes('final boolean[] hidden'),
+  'TextView reader header must remain static.');
 
 const main = read('app/src/main/java/com/fabri/ministerium/MainActivity.java');
 const latinHours = read('app/src/main/java/com/fabri/ministerium/LatinHoursActivity.java');
@@ -59,6 +67,24 @@ expect(main.includes('new Intent(this, LatinHoursActivity.class)')
 expect(latinHours.includes('LatinHoursReaderActivity.class')
     && latinHours.includes('Liturgia Horarum'),
   'Latin Hours runtime is not wired correctly.');
+
+const themedActivity = read('app/src/main/java/com/fabri/ministerium/ThemedActivity.java');
+const prayerFocus = read('app/src/main/java/com/fabri/ministerium/PrayerFocusController.java');
+expect(themedActivity.includes('PrayerFocusController.enter(this)')
+    && themedActivity.includes('PrayerFocusController.exit(this)')
+    && themedActivity.includes('LatinHoursReaderActivity')
+    && themedActivity.includes('MissalSectionReaderActivity')
+    && themedActivity.includes('RitualReaderActivity')
+    && prayerFocus.includes('setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY)'),
+  'Prayer focus / No molestar lifecycle is not active in liturgical readers.');
+
+const bibleReader = read('app/src/main/java/com/fabri/ministerium/BibleReaderActivity.java');
+expect(bibleReader.includes('class BibleStudyBridge')
+    && bibleReader.includes('Nota", "Marcador", "Eliminar subrayado')
+    && bibleReader.includes('Eliminar marcador')
+    && bibleReader.includes('StudyStore.delete(this, entry.id)')
+    && bibleReader.includes('addBookmarkFor'),
+  'Bible annotations must be editable/deletable directly from the reader.');
 
 const secondary = read('tools/check_secondary_liturgy_sources.py');
 expect(secondary.includes('LiturgicalCalendarAPI')
@@ -94,6 +120,11 @@ expect(visualPalette.includes('ThemeUtils.SEPIA')
     && visualPalette.includes('public final String accent')
     && readerPreferences.includes('ReaderVisualPalette.from(context)'),
   'WebView readers are not connected to the shared 4.1 palette including sepia.');
+expect(readerPreferences.includes("'Noto Serif'")
+    && readerPreferences.includes("Roboto,'Helvetica Neue'")
+    && readerPreferences.includes('body *{font-family:')
+    && textViewChrome.includes('ReaderPreferences.PALATINO.equals(family)'),
+  'Reader typefaces are not normalized across prayers, Missal and Latin Hours.');
 
 const runtime = fs.readdirSync('app/src/main/java/com/fabri/ministerium')
   .filter(name => name.endsWith('.java'))
