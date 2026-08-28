@@ -64,11 +64,22 @@ public final class ReaderPreferences {
         if (MARGIN_NARROW.equals(value)) return 1040;
         return 880;
     }
-    public static String palatinoCssStack() { return "'Palatino Linotype','Book Antiqua',Palatino,serif"; }
-    private static String cssFamily(Context context) {
-        String selected = family(context);
-        return PALATINO.equals(selected) ? palatinoCssStack() : selected;
+
+    public static String palatinoCssStack() {
+        return "'Palatino Linotype','Book Antiqua','URW Palladio L',Palatino,serif";
     }
+
+    private static String cssFamily(Context context) {
+        return cssStack(family(context));
+    }
+
+    private static String cssStack(String selected) {
+        if (PALATINO.equals(selected)) return palatinoCssStack();
+        if (SANS.equals(selected)) return "Roboto,'Helvetica Neue',Arial,sans-serif";
+        if (MONO.equals(selected)) return "'Roboto Mono','Droid Sans Mono','Courier New',monospace";
+        return "'Noto Serif','Droid Serif',Georgia,'Times New Roman',serif";
+    }
+
     public static void reset(Context context) { values(context).edit().remove(SIZE).remove(FAMILY).remove(WEIGHT).remove(LINE).remove(MARGIN).apply(); }
     public static void apply(Context context, WebView webView, boolean ignoredLegacyPreserveTypeface) {
         if (webView == null) return;
@@ -78,13 +89,12 @@ public final class ReaderPreferences {
     public static void applyPalatino(Context context, WebView webView) {
         if (webView == null) return;
         webView.getSettings().setTextZoom(textZoom(context));
-        applyInternal(context, webView, cssFamily(context));
+        applyInternal(context, webView, palatinoCssStack());
     }
     public static void applyForSource(Context context, WebView webView, String sourceKey) {
         if (webView == null) return;
         webView.getSettings().setTextZoom(textZoom(context));
-        String selected = familyFor(context, sourceKey);
-        applyInternal(context, webView, PALATINO.equals(selected) ? palatinoCssStack() : selected);
+        applyInternal(context, webView, cssStack(familyFor(context, sourceKey)));
     }
 
     private static void applyInternal(Context context, WebView webView, String family) {
@@ -97,11 +107,9 @@ public final class ReaderPreferences {
                 + maximumColumn + "px!important;"
                 + "margin-left:auto!important;margin-right:auto!important;padding-left:" + horizontal
                 + "px!important;padding-right:" + horizontal + "px!important;box-sizing:border-box!important;}"
-                + "body,body p,body span,body div,body li,body td,body blockquote{font-family:"
-                + family + "!important;}"
-                // Clean Spanish Hours and semantic keys created in the Latin parallel reader
-                // share this visual divider. It intentionally resembles Divinum Officium's
-                // paired sections without reproducing its source code or layout verbatim.
+                + "body,body p,body span,body div,body li,body td,body th,body blockquote,"
+                + "body h1,body h2,body h3,body h4,body h5,body h6,body a,body summary,"
+                + "body small,body em,body strong{font-family:" + family + "!important;}"
                 + "[data-ministerium-block],[data-ministerium-align-key]{border-top:1px solid "
                 + palette.divider + "!important;padding-top:.72em!important;margin-top:1.05em!important;}"
                 + "[data-ministerium-block^='hymn'],[data-ministerium-align-key^='hymn'],"
