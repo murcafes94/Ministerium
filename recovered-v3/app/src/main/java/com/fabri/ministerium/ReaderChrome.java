@@ -26,6 +26,9 @@ public final class ReaderChrome {
                               boolean preserveBibleTypeface) {
         UniversalSelectionMenu.attach(activity, webView, context);
         ReaderPreferences.apply(activity, webView, preserveBibleTypeface);
+        // Page mode persists the current column in localStorage; enabling DOM
+        // storage here makes that behavior consistent across Android WebView versions.
+        webView.getSettings().setDomStorageEnabled(true);
         ReaderPagination.arm(activity, webView, context);
         attachGestures(activity, webView, context, navigator);
         attachAutoHideHeader(webView, header, context);
