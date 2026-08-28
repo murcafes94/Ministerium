@@ -39,24 +39,17 @@ public final class RitualTextFormatter {
                 continue;
             }
             String normalized = normalize(line);
-            boolean heading = isHeading(line, normalized);
             boolean assembly = isResponse(normalized);
-            boolean rubric = isRubric(normalized);
-            boolean celebrant = !rubric && isMinisterSpeech(normalized);
+            boolean rubric = !assembly && isRubric(normalized);
+            boolean celebrant = !assembly && !rubric && isMinisterSpeech(normalized);
+            boolean heading = !assembly && !rubric && !celebrant && isHeading(line, normalized);
 
             if (heading) ensureSectionBreak(out);
             int start = out.length();
             out.append(line).append('\n');
             int end = out.length() - 1;
 
-            if (heading) {
-                out.setSpan(new StyleSpan(Typeface.BOLD), start, end,
-                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                out.setSpan(new RelativeSizeSpan(1.15f), start, end,
-                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                out.setSpan(new ForegroundColorSpan(accent), start, end,
-                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            } else if (assembly) {
+            if (assembly) {
                 // Respuesta del pueblo/asamblea: bloque más visible y en negrita.
                 out.setSpan(new StyleSpan(Typeface.BOLD), start, end,
                         Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -86,6 +79,13 @@ public final class RitualTextFormatter {
                 out.setSpan(new StyleSpan(Typeface.BOLD), start, cueEnd,
                         Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 out.setSpan(new ForegroundColorSpan(accent), start, cueEnd,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            } else if (heading) {
+                out.setSpan(new StyleSpan(Typeface.BOLD), start, end,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                out.setSpan(new RelativeSizeSpan(1.15f), start, end,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                out.setSpan(new ForegroundColorSpan(accent), start, end,
                         Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
         }
