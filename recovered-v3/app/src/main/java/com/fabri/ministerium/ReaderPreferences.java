@@ -42,7 +42,7 @@ public final class ReaderPreferences {
     public static int weight(Context context) { return clamp(values(context).getInt(WEIGHT, 400), 300, 700); }
     public static void setWeight(Context context, int value) { values(context).edit().putInt(WEIGHT, clamp(value, 300, 700)).apply(); }
     public static float lineHeight(Context context) { return Math.max(1.25f, Math.min(2.1f, values(context).getFloat(LINE, 1.65f))); }
-    public static void setLineHeight(Context context, float value) { values(context).edit().putFloat(LINE, Math.max(1.25f, Math.min(2.1f, value))).apply(); }
+    public static void setLineHeight(Context context, float value) { values(context).edit().putFloat(LINE, Math.max(1.25f, Math.min(2.1f, value)).apply(); }
     public static String margin(Context context) {
         String value = values(context).getString(MARGIN, MARGIN_STANDARD);
         if (MARGIN_WIDE.equals(value) || MARGIN_NARROW.equals(value)) return value;
@@ -124,6 +124,7 @@ public final class ReaderPreferences {
                 + "s.innerHTML=" + JSONObject.quote(css) + ";})()";
         webView.evaluateJavascript(script, null);
         ReaderEditorialEnhancer.apply(context, webView);
+        SpanishGospelCanticleEnhancer.inject(webView);
         HoursSeasonFilter.apply(context, webView);
     }
 
