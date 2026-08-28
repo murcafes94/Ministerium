@@ -21,7 +21,7 @@ Ministerium 4.1 continúa sobre la base funcional de 4.0 y mantiene el enfoque l
 - La página actual se guarda por documento y se restaura al volver a abrirlo; DOM storage se habilita explícitamente para compatibilidad entre versiones de Android WebView.
 - Tablet: usa los márgenes editoriales configurados por `ReaderPreferences`.
 - Primera cobertura: Biblia, Magisterio y libros basados en WebView.
-- Liturgia bilingüe permanece en desplazamiento sincronizado.
+- La Liturgia de las Horas paralela ES/LAT queda retirada de la experiencia de la app; la segunda entrada litúrgica abre únicamente `Liturgia Horarum` en latín.
 - Pendiente antes de cerrar el lote: probar reflujo con zoom, selección/subrayados y restauración real de página en teléfono/tablet.
 
 ### 3. Validación secundaria del calendario — diagnóstico estructurado implementado
@@ -42,5 +42,6 @@ Ministerium 4.1 continúa sobre la base funcional de 4.0 y mantiene el enfoque l
 - IA/RAG/asistente conversacional.
 - Dictado o transcripción Whisper/voz.
 - Grabación continua.
+- Liturgia de las Horas bilingüe ES/LAT.
 
 Estas capacidades se estudiarán en otra versión y no deben introducirse accidentalmente en la rama 4.1.
