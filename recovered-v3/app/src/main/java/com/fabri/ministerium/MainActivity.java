@@ -23,6 +23,12 @@ public class MainActivity extends ThemedActivity {
         // restaura el filtro previo antes de iniciar una nueva sesión.
         PrayerFocusController.recoverStaleSession(this);
         replaceText(findViewById(R.id.cardPastoral), "Atención pastoral", "Ritual");
+        // La antigua entrada bilingüe queda sustituida por la Liturgia Horarum latina.
+        // Conservamos el id del layout para no romper instalaciones/recursos heredados.
+        replaceText(findViewById(R.id.cardBilingualHours), "Liturgia bilingüe", "Liturgia de las Horas en latín");
+        replaceText(findViewById(R.id.cardBilingualHours),
+                "Español y latín coordinados por fecha y Hora",
+                "Liturgia Horarum por fecha · versión únicamente en latín");
 
         findViewById(R.id.btnSearch).setOnClickListener(v ->
                 startActivity(new Intent(this, SearchActivity.class)));
@@ -47,7 +53,7 @@ public class MainActivity extends ThemedActivity {
         findViewById(R.id.cardHours).setOnClickListener(v ->
                 openToday());
         findViewById(R.id.cardBilingualHours).setOnClickListener(v ->
-                startActivity(new Intent(this, BilingualHoursActivity.class)));
+                startActivity(new Intent(this, LatinHoursActivity.class)));
         findViewById(R.id.cardMassReadings).setOnClickListener(v ->
                 startActivity(new Intent(this, MassReadingsActivity.class)));
         findViewById(R.id.cardMissal).setOnClickListener(v ->
