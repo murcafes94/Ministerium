@@ -26,7 +26,7 @@ public final class ReaderChrome {
                               boolean preserveBibleTypeface) {
         UniversalSelectionMenu.attach(activity, webView, context);
         ReaderPreferences.apply(activity, webView, preserveBibleTypeface);
-        ReaderPagination.apply(activity, webView, context);
+        ReaderPagination.arm(activity, webView, context);
         attachGestures(activity, webView, context, navigator);
         attachAutoHideHeader(webView, header);
     }
