@@ -39,6 +39,7 @@ Ministerium 4.1 continúa sobre la base funcional de 4.0 y mantiene el enfoque l
 - `ReaderVisualPalette` centraliza la paleta CSS de los lectores WebView y define explícitamente claro, oscuro y sepia; `ReaderPreferences` ya consume esta paleta común.
 - Las tipografías globales se normalizan con pilas de fuentes fiables en Android/WebView y se fuerzan también en descendientes HTML del Misal y de Liturgia Horarum.
 - Los lectores TextView de oraciones usan un fallback serif correcto cuando se selecciona Palatino, evitando que Android caiga en una fuente visual distinta.
+- `ReaderEditorialEnhancer` aplica a los lectores HTML una jerarquía común inspirada en Lecturas del día: títulos, subtítulos, divisores, respuestas y bloques litúrgicos.
 - Pendiente: comprobar visualmente claro/oscuro/sepia y las cuatro familias de lectura en Oraciones, Misal y Liturgia Horarum en teléfono y tablet.
 
 ### 5. Modo oración y anotaciones bíblicas — implementado, pendiente de prueba en dispositivo
@@ -47,6 +48,16 @@ Ministerium 4.1 continúa sobre la base funcional de 4.0 y mantiene el enfoque l
 - En la Biblia, tocar un subrayado abre directamente acciones de `Nota`, `Marcador` o `Eliminar subrayado`, sin mostrar primero una ficha del fragmento.
 - Tocar un marcador desde la propia Biblia permite añadir una nota o eliminar el marcador sin salir del capítulo.
 - Las acciones actualizan `StudyStore` y la anotación visible en el mismo lector.
+
+### 6. Presentación litúrgica enriquecida — implementado, pendiente de prueba visual
+- El Misal independiente continúa siendo monolingüe: `Español` o `Latín`, nunca columnas ES/LAT.
+- La sincronización de Guadalajara se limita al Misal español; el lector latino elimina de forma defensiva cualquier propio diario español que hubiese quedado cacheado de una sesión anterior.
+- Se mantienen `MissalAlternativeOptions31` y los botones/selectores ya existentes para fórmulas alternativas; la reorganización visual no los sustituye.
+- El Misal separa títulos, secciones, respuestas, texto del celebrante y rúbricas; las rúbricas opcionales pueden mostrarse u ocultarse sin convertir la celebración en un bloque continuo.
+- Liturgia Horarum elimina los colores inline heredados de la fuente y reutiliza la misma jerarquía visual de la Liturgia de las Horas española.
+- En la Liturgia de las Horas española se conserva la expansión completa del Benedictus en Laudes y del Magníficat en Vísperas dentro del bloque de cántico evangélico.
+- Ritual y Bendicional pasan por `RitualTextFormatter`: títulos en jerarquía propia, palabras del celebrante/ministro diferenciadas, respuestas de la asamblea destacadas y rúbricas en estilo secundario e itálico.
+- Pendiente: comprobar en APK real los formularios largos del Misal, Bautismo, Exequias y varias bendiciones para afinar heurísticas sin modificar el texto fuente.
 
 ## Fuera de 4.1
 
