@@ -88,14 +88,10 @@ public final class ReaderPreferences {
     }
 
     private static void applyInternal(Context context, WebView webView, String family) {
-        boolean dark = ThemeUtils.isDark(context);
-        String palette = ThemeUtils.SEPIA.equals(ThemeUtils.getMode(context))
-                ? "background:#F0E2C7!important;color:#30261E!important;" : "";
-        String divider = dark ? "#594D43" : "#D9CDBE";
-        String accent = dark ? "#D9B96F" : "#772233";
+        ReaderVisualPalette palette = ReaderVisualPalette.from(context);
         int horizontal = horizontalPaddingPx(context);
         int maximumColumn = maximumColumnWidthCss(context);
-        String css = "html,body{" + palette + "}body{font-family:" + family
+        String css = "html,body{" + palette.bodyPaletteCss() + "}body{font-family:" + family
                 + "!important;font-weight:" + weight(context) + "!important;line-height:"
                 + lineHeight(context) + "!important;width:100%!important;max-width:"
                 + maximumColumn + "px!important;"
@@ -107,12 +103,12 @@ public final class ReaderPreferences {
                 // share this visual divider. It intentionally resembles Divinum Officium's
                 // paired sections without reproducing its source code or layout verbatim.
                 + "[data-ministerium-block],[data-ministerium-align-key]{border-top:1px solid "
-                + divider + "!important;padding-top:.72em!important;margin-top:1.05em!important;}"
+                + palette.divider + "!important;padding-top:.72em!important;margin-top:1.05em!important;}"
                 + "[data-ministerium-block^='hymn'],[data-ministerium-align-key^='hymn'],"
                 + "[data-ministerium-block^='reading'],[data-ministerium-align-key^='reading'],"
                 + "[data-ministerium-block^='gospel'],[data-ministerium-align-key^='gospel'],"
                 + "[data-ministerium-block^='intercessions'],[data-ministerium-align-key^='intercessions']{"
-                + "color:" + accent + "!important;-webkit-text-fill-color:" + accent + "!important;"
+                + "color:" + palette.accent + "!important;-webkit-text-fill-color:" + palette.accent + "!important;"
                 + "font-weight:600!important;}"
                 + ".ministerium-align-spacer{max-height:360px!important;}"
                 + "@media(min-width:700px){body{padding-left:" + (horizontal + 12)
