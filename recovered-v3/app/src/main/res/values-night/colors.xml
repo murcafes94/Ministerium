@@ -8,4 +8,12 @@
     <color name="ink">#F3EDE4</color>
     <color name="muted">#C8BDB0</color>
     <color name="line">#4C433D</color>
+
+    <color name="ministerium_surface">@color/paper</color>
+    <color name="ministerium_surface_pressed">#3A3029</color>
+    <color name="ministerium_text_primary">@color/ink</color>
+    <color name="ministerium_text_secondary">@color/muted</color>
+    <color name="ministerium_accent">@color/wine</color>
+    <color name="ministerium_accent_secondary">@color/gold</color>
+    <color name="ministerium_divider">@color/line</color>
 </resources>
