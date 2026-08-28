@@ -62,17 +62,16 @@ expect(baseline40.includes("versionCode 40")
     && baseline40.includes("versionName '4.0.0'"),
   '4.0 stabilization adapter does not rewrite the legacy version assertions.');
 
-const bilingualActivity = read('app/src/main/java/com/fabri/ministerium/BilingualHoursActivity.java');
-const bilingualReader = read('app/src/main/java/com/fabri/ministerium/BilingualHoursReaderActivity.java');
+const main = read('app/src/main/java/com/fabri/ministerium/MainActivity.java');
+const latinHours = read('app/src/main/java/com/fabri/ministerium/LatinHoursActivity.java');
 const intermediate = read('app/src/main/java/com/fabri/ministerium/IntermediateHourResolver.java');
-expect(bilingualActivity.includes('EXTRA_HOUR_KEY')
-    && bilingualActivity.includes('EXTRA_SUNDAY_OR_SOLEMNITY'),
-  'Bilingual Hours must pass the selected hour/date context to its reader.');
-expect(bilingualReader.includes('loadSpanishCompline')
-    && bilingualReader.includes('ComplineSemanticRenderer.render')
-    && bilingualReader.includes('cleanLatinPrelude')
-    && bilingualReader.includes('IntermediateHourResolver.resolve'),
-  'Bilingual Hours must render semantic Compline, clean Latin prelude and resolve intermediate hours.');
+expect(main.includes('new Intent(this, LatinHoursActivity.class)')
+    && !main.includes('new Intent(this, BilingualHoursActivity.class)')
+    && main.includes('Liturgia de las Horas en latín'),
+  'The secondary Hours entry must be Latin-only and must not open the bilingual reader.');
+expect(latinHours.includes('LatinHoursReaderActivity.class')
+    && latinHours.includes('Liturgia Horarum'),
+  'Latin Hours runtime is not wired correctly.');
 expect(intermediate.includes('hymnRangeMatches')
     && intermediate.includes('ordinaryWeek'),
   'Intermediate Hours must resolve the I-XVII / XVIII-XXXIV hymn range.');
