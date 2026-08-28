@@ -60,6 +60,7 @@ expect(textViewChrome.includes('setOnScrollChangeListener(null)')
 
 const main = read('app/src/main/java/com/fabri/ministerium/MainActivity.java');
 const latinHours = read('app/src/main/java/com/fabri/ministerium/LatinHoursActivity.java');
+const latinHoursReader = read('app/src/main/java/com/fabri/ministerium/LatinHoursReaderActivity.java');
 expect(main.includes('new Intent(this, LatinHoursActivity.class)')
     && !main.includes('new Intent(this, BilingualHoursActivity.class)')
     && main.includes('Liturgia de las Horas en latín'),
@@ -67,6 +68,19 @@ expect(main.includes('new Intent(this, LatinHoursActivity.class)')
 expect(latinHours.includes('LatinHoursReaderActivity.class')
     && latinHours.includes('Liturgia Horarum'),
   'Latin Hours runtime is not wired correctly.');
+expect(latinHoursReader.includes('ReaderPreferences.apply')
+    && latinHoursReader.includes('LiturgicalWebStyle.apply')
+    && latinHoursReader.includes('applySourceCleanup')
+    && !latinHoursReader.includes("all[i].style.setProperty('color'"),
+  'Latin Hours must use the same editorial hierarchy as Spanish Hours without inline color overrides.');
+
+const hoursReader = read('app/src/main/java/com/fabri/ministerium/HoursReaderActivity.java');
+expect(hoursReader.includes('expandGospelCanticles()')
+    && hoursReader.includes('Benedictus')
+    && hoursReader.includes('Magníficat')
+    && hoursReader.includes('Bendito sea el Señor, Dios de Israel')
+    && hoursReader.includes('Proclama mi alma la grandeza del Señor'),
+  'Spanish Lauds/Vespers must expand the complete Benedictus/Magnificat gospel canticle.');
 
 const themedActivity = read('app/src/main/java/com/fabri/ministerium/ThemedActivity.java');
 const prayerFocus = read('app/src/main/java/com/fabri/ministerium/PrayerFocusController.java');
@@ -100,6 +114,7 @@ const styles = read('app/src/main/res/values/styles.xml');
 const card = read('app/src/main/res/drawable/bg_card.xml');
 const visualPalette = read('app/src/main/java/com/fabri/ministerium/ReaderVisualPalette.java');
 const readerPreferences = read('app/src/main/java/com/fabri/ministerium/ReaderPreferences.java');
+const editorial = read('app/src/main/java/com/fabri/ministerium/ReaderEditorialEnhancer.java');
 for (const token of ['ministerium_surface', 'ministerium_text_primary',
   'ministerium_text_secondary', 'ministerium_accent', 'ministerium_divider']) {
   expect(colors.includes(`name="${token}"`) && darkColors.includes(`name="${token}"`),
@@ -125,6 +140,54 @@ expect(readerPreferences.includes("'Noto Serif'")
     && readerPreferences.includes('body *{font-family:')
     && textViewChrome.includes('ReaderPreferences.PALATINO.equals(family)'),
   'Reader typefaces are not normalized across prayers, Missal and Latin Hours.');
+expect(readerPreferences.includes('ReaderEditorialEnhancer.apply(context, webView)')
+    && editorial.includes('ministerium-section-title')
+    && editorial.includes('ministerium-editorial-title')
+    && editorial.includes('ministerium-liturgical-response')
+    && editorial.includes('palette.panel')
+    && !editorial.includes('palette.surface'),
+  'Shared Lectionary-like editorial hierarchy is incomplete.');
+
+const ritualFormatter = read('app/src/main/java/com/fabri/ministerium/RitualTextFormatter.java');
+const ritualRepository = read('app/src/main/java/com/fabri/ministerium/RitualRepository.java');
+expect(ritualRepository.includes('COMMON_BLESSINGS_ID = "blessings"')
+    && ritualRepository.includes('Bendicional')
+    && ritualRepository.includes('blessing_family.txt'),
+  'Bendicional is not routed through the structured ritual repository.');
+expect(ritualFormatter.includes('isMinisterSpeech')
+    && ritualFormatter.includes('isResponse')
+    && ritualFormatter.includes('isRubric')
+    && ritualFormatter.includes('celebrantBg')
+    && ritualFormatter.includes('responseBg')
+    && ritualFormatter.includes('Rúbrica')
+    && ritualFormatter.includes('Palabras del sacerdote'),
+  'Ritual/Bendicional must visually distinguish celebrant, assembly and rubrics.');
+
+const missalActivity = read('app/src/main/java/com/fabri/ministerium/MissalActivity.java');
+const missalReader = read('app/src/main/java/com/fabri/ministerium/MissalSectionReaderActivity.java');
+const missalDocument = read('app/src/main/java/com/fabri/ministerium/MissalDocument31.java');
+const missalCompact = read('app/src/main/java/com/fabri/ministerium/MissalCompactView.java');
+const missalAlternatives = read('app/src/main/java/com/fabri/ministerium/MissalAlternativeOptions31.java');
+const missalGuard = read('app/src/main/java/com/fabri/ministerium/MissalLanguageGuard.java');
+expect(missalActivity.includes('String[] languages = {"Español", "Latín"}')
+    && missalDocument.includes('String lang = "la".equals(language) ? "la" : "es"')
+    && !missalDocument.includes('parallel-unit'),
+  'Missal must remain a single Spanish OR Latin document, never side-by-side.');
+expect(missalReader.includes('MissalAlternativeOptions31.inject')
+    && missalAlternatives.includes('ministerium-alt-button')
+    && missalAlternatives.includes('Altera formula'),
+  'Existing Missal alternative/language controls must remain available.');
+expect(missalReader.includes('"es".equals(language) && MassReadingsRepository.isCurrentMonth(date)')
+    && missalReader.includes('MissalLanguageGuard.sanitize')
+    && missalGuard.includes('arquidiocesis-gdl')
+    && missalGuard.includes('Proprium huius celebrationis'),
+  'Latin Missal must not mix Spanish Guadalajara daily propers.');
+expect(missalCompact.includes('ministerium-missal-heading')
+    && missalCompact.includes('ministerium-people-response')
+    && missalCompact.includes('ministerium-source-rubric')
+    && missalCompact.includes('ministerium-celebrant-speech')
+    && missalCompact.includes('ministerium-rubric-toggle'),
+  'Missal structure must distinguish headings, responses, celebrant text and rubrics.');
 
 const runtime = fs.readdirSync('app/src/main/java/com/fabri/ministerium')
   .filter(name => name.endsWith('.java'))
