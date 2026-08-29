@@ -96,7 +96,7 @@ function Test-ConfiguredSdk([string]$LocalProperties) {
         $line = Get-Content $LocalProperties | Where-Object { $_ -match '^\s*sdk\.dir\s*=' } | Select-Object -First 1
         if (-not $line) { return $false }
         $value = ($line -replace '^\s*sdk\.dir\s*=\s*', '').Trim()
-        $value = $value.Replace('\\:', ':').Replace('\\', '\')
+        $value = $value.Replace('\:', ':').Replace('\\', '\')
         return (Test-Path $value)
     } catch {
         return $false
@@ -110,14 +110,19 @@ function Configure-AndroidSdk {
         return
     }
 
+    # Fuerza siempre un array real. En Windows PowerShell 5.1, si el
+    # pipeline devuelve un solo SDK, la asignacion produce un String y, con
+    # Set-StrictMode, acceder a .Count provoca PropertyNotFoundStrict.
     $sdkCandidates = @(
-        $env:ANDROID_SDK_ROOT,
-        $env:ANDROID_HOME,
-        (Join-Path $env:LOCALAPPDATA 'Android\Sdk'),
-        'C:\portapps\android-studio-portable\data\sdk'
-    ) | Where-Object { $_ -and (Test-Path $_) }
+        @(
+            $env:ANDROID_SDK_ROOT,
+            $env:ANDROID_HOME,
+            (Join-Path $env:LOCALAPPDATA 'Android\Sdk'),
+            'C:\portapps\android-studio-portable\data\sdk'
+        ) | Where-Object { $_ -and (Test-Path $_) }
+    )
 
-    if (-not $sdkCandidates -or $sdkCandidates.Count -eq 0) {
+    if ($sdkCandidates.Count -eq 0) {
         Fail 'No se encontro Android SDK. Configura Android SDK Platform 30 / Build Tools 30.0.3 y vuelve a ejecutar.'
     }
 
