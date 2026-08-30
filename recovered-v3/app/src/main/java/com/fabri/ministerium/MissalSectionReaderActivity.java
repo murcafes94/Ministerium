@@ -51,8 +51,6 @@ public class MissalSectionReaderActivity extends ThemedActivity {
                 LiturgicalWebStyle.apply(MissalSectionReaderActivity.this, webView);
                 MissalCompactView.inject(webView);
                 MissalRuntimeFixes31.inject(webView);
-                // Se conservan los botones ESP/LAT y las alternativas internas
-                // de las fórmulas para las que ya estaban previstos.
                 MissalAlternativeOptions31.inject(webView);
                 ReaderContext context = readerContext();
                 UniversalSelectionMenu.restoreHighlights(MissalSectionReaderActivity.this,
@@ -70,17 +68,23 @@ public class MissalSectionReaderActivity extends ThemedActivity {
         webView.setVisibility(View.INVISIBLE);
         new Thread(() -> {
             try {
-                // Guadalajara aporta propios y lecturas en español. No se descarga
-                // ni mezcla esta fuente cuando el usuario abrió el Missale en latín.
-                if ("es".equals(language) && MassReadingsRepository.isCurrentMonth(date)) {
+                // El Leccionario diario se conserva en español también cuando el
+                // usuario lee el Missale en latín. Los propios de la Misa, en cambio,
+                // no se mezclan automáticamente con el texto latino.
+                if (MassReadingsRepository.isCurrentMonth(date)) {
                     if (!MassReadingsRepository.has(this, date)) {
                         try { MassReadingsRepository.syncDay(getApplicationContext(), date); }
                         catch (Exception ignored) {}
                     }
-                    DailyMassProperRepository.getOrSync(getApplicationContext(), date);
+                    if ("es".equals(language)) {
+                        DailyMassProperRepository.getOrSync(getApplicationContext(), date);
+                    }
                 }
-                MissalDocument31.Result raw = MissalDocument31.build(
-                        getApplicationContext(), date, section, language);
+                MissalDocument31.Result raw = "ordinary".equals(section)
+                        ? MissalOrdinaryDocument41.build(
+                                getApplicationContext(), date, language)
+                        : MissalDocument31.build(
+                                getApplicationContext(), date, section, language);
                 MissalDocument31.Result built = new MissalDocument31.Result(
                         raw.title, raw.subtitle, MissalLanguageGuard.sanitize(raw.html, language));
                 runOnUiThread(() -> show(built));
