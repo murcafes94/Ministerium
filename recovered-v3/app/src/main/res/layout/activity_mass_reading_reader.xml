@@ -1,101 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/cream"
-    android:orientation="vertical">
-
-    <LinearLayout
-        android:id="@+id/readerHeader"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/wine_dark"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:padding="@dimen/reader_header_padding">
-
-        <ImageButton
-            android:id="@+id/btnBack"
-            android:layout_width="@dimen/reader_icon_touch"
-            android:layout_height="@dimen/reader_icon_touch"
-            android:background="@android:color/transparent"
-            android:contentDescription="Volver"
-            android:padding="@dimen/reader_icon_padding"
-            android:src="@drawable/ic_nav_back"
-            android:tint="#FFFFFF" />
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/txtReaderTitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textColor="#FFFFFF"
-                android:textSize="@dimen/reader_title_size"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/txtReaderSubtitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textColor="#E9DBD7"
-                android:textSize="@dimen/reader_subtitle_size" />
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/cream" android:orientation="vertical">
+    <LinearLayout android:id="@+id/readerHeader" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:background="@color/wine_dark"
+        android:gravity="center_vertical" android:orientation="horizontal" android:padding="6dp">
+        <Button android:id="@+id/btnBack" android:layout_width="44dp" android:layout_height="46dp"
+            android:backgroundTint="@android:color/transparent" android:text="‹"
+            android:textColor="#FFFFFF" android:textSize="27sp" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical">
+            <TextView android:id="@+id/txtReaderTitle" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1"
+                android:textColor="#FFFFFF" android:textSize="17sp" android:textStyle="bold" />
+            <TextView android:id="@+id/txtReaderSubtitle" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:maxLines="1"
+                android:textColor="#E9DBD7" android:textSize="10sp" />
         </LinearLayout>
-
-        <ImageButton
-            android:id="@+id/btnOriginalSource"
-            android:layout_width="@dimen/reader_icon_touch"
-            android:layout_height="@dimen/reader_icon_touch"
-            android:background="@android:color/transparent"
-            android:contentDescription="Fuente original"
-            android:padding="@dimen/reader_icon_padding"
-            android:src="@drawable/ic_document_41"
-            android:tint="@color/gold" />
-
-        <ImageButton
-            android:id="@+id/btnReaderTheme"
-            android:layout_width="@dimen/reader_icon_touch"
-            android:layout_height="@dimen/reader_icon_touch"
-            android:background="@android:color/transparent"
-            android:contentDescription="Cambiar tema"
-            android:padding="@dimen/reader_icon_padding"
-            android:src="@drawable/ic_theme"
-            android:tint="@color/gold" />
-
-        <ImageButton
-            android:id="@+id/btnReaderMore"
-            android:layout_width="@dimen/reader_icon_touch"
-            android:layout_height="@dimen/reader_icon_touch"
-            android:background="@android:color/transparent"
-            android:contentDescription="Más opciones"
-            android:padding="@dimen/reader_icon_padding"
-            android:src="@drawable/ic_more_vert"
-            android:tint="@color/gold" />
-
-        <ImageButton
-            android:id="@+id/btnGlobalMenu"
-            android:layout_width="@dimen/reader_icon_touch"
-            android:layout_height="@dimen/reader_icon_touch"
-            android:background="@android:color/transparent"
-            android:contentDescription="Menú global"
-            android:padding="@dimen/reader_icon_padding"
-            android:src="@drawable/ic_menu"
-            android:tint="#FFFFFF" />
+        <Button android:id="@+id/btnOriginalSource" android:layout_width="40dp"
+            android:layout_height="46dp" android:backgroundTint="@android:color/transparent"
+            android:contentDescription="Fuente original" android:text="ⓘ"
+            android:textColor="@color/gold" android:textSize="19sp" />
+        <Button android:id="@+id/btnReaderTheme" android:layout_width="40dp"
+            android:layout_height="46dp" android:backgroundTint="@android:color/transparent"
+            android:contentDescription="Cambiar tema" android:text="◐"
+            android:textColor="@color/gold" android:textSize="20sp" />
+        <Button android:id="@+id/btnReaderMore" android:layout_width="40dp"
+            android:layout_height="46dp" android:backgroundTint="@android:color/transparent"
+            android:contentDescription="Más opciones" android:text="⋮"
+            android:textColor="@color/gold" android:textSize="24sp" />
+        <Button android:id="@+id/btnGlobalMenu" android:layout_width="40dp"
+            android:layout_height="46dp" android:backgroundTint="@android:color/transparent"
+            android:contentDescription="Menú global" android:text="☰"
+            android:textColor="#FFFFFF" android:textSize="19sp" />
     </LinearLayout>
-
-    <WebView
-        android:id="@+id/massWebView"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_margin="@dimen/reader_content_margin"
-        android:layout_weight="1"
+    <WebView android:id="@+id/massWebView" android:layout_width="match_parent"
+        android:layout_height="0dp" android:layout_margin="8dp" android:layout_weight="1"
         android:background="@drawable/bg_reading_surface" />
 </LinearLayout>
