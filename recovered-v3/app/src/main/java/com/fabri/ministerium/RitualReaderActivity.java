@@ -1,6 +1,8 @@
 package com.fabri.ministerium;
 
+import android.os.Build;
 import android.os.Bundle;
+import android.text.Layout;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -35,6 +37,7 @@ public class RitualReaderActivity extends ThemedActivity {
         position = Math.max(0, Math.min(document.entries.size() - 1,
                 getIntent().getIntExtra(EXTRA_ENTRY_INDEX, 0)));
         content = findViewById(R.id.txtContent);
+        configureReadingTypography(content);
         favorite = findViewById(R.id.btnFavorite);
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
@@ -46,6 +49,19 @@ public class RitualReaderActivity extends ThemedActivity {
         ReaderChrome.bindTheme(this, findViewById(R.id.btnReaderTheme));
         ReaderChrome.bindGlobalMenu(this, findViewById(R.id.btnGlobalMenu));
         showEntry();
+    }
+
+    private void configureReadingTypography(TextView view) {
+        view.setLineSpacing(0f, 1.12f);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            view.setBreakStrategy(Layout.BREAK_STRATEGY_HIGH_QUALITY);
+            view.setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_NORMAL);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Las líneas litúrgicas breves terminan como párrafos independientes,
+            // por lo que permanecen naturales; el beneficio se aplica al cuerpo largo.
+            view.setJustificationMode(Layout.JUSTIFICATION_MODE_INTER_WORD);
+        }
     }
 
     private void showEntry() {
