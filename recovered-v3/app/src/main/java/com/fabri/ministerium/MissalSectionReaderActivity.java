@@ -69,16 +69,15 @@ public class MissalSectionReaderActivity extends ThemedActivity {
         new Thread(() -> {
             try {
                 // El Leccionario diario se conserva en español también cuando el
-                // usuario lee el Missale en latín. Los propios de la Misa, en cambio,
-                // no se mezclan automáticamente con el texto latino.
+                // usuario lee el Missale en latín. Los propios de Guadalajara se
+                // preparan igualmente para poder usarlos como respaldo cuando el
+                // paquete latino no contenga el propio correspondiente.
                 if (MassReadingsRepository.isCurrentMonth(date)) {
                     if (!MassReadingsRepository.has(this, date)) {
                         try { MassReadingsRepository.syncDay(getApplicationContext(), date); }
                         catch (Exception ignored) {}
                     }
-                    if ("es".equals(language)) {
-                        DailyMassProperRepository.getOrSync(getApplicationContext(), date);
-                    }
+                    DailyMassProperRepository.getOrSync(getApplicationContext(), date);
                 }
                 MissalDocument31.Result raw = "ordinary".equals(section)
                         ? MissalOrdinaryDocument41.build(
@@ -121,7 +120,7 @@ public class MissalSectionReaderActivity extends ThemedActivity {
         String source = "missal31:" + date.get(Calendar.YEAR) + ":" + (date.get(Calendar.MONTH) + 1)
                 + ":" + date.get(Calendar.DAY_OF_MONTH) + ":" + section + ":" + language;
         String sourceName = "la".equals(language)
-                ? "Missale Romanum · Liturgia Papal"
+                ? "Missale Romanum · Liturgia Papal · respaldo Guadalajara cuando falte el propio latino"
                 : "Misal Romano · Liturgia Papal / Arquidiócesis de Guadalajara";
         return new ReaderContext(sourceName, source, title, subtitle, "Liturgia", true);
     }
