@@ -102,6 +102,8 @@ public final class IconConsistency41 {
         }
 
         // Glifos heredados usados como iconos en Inicio, Horas y módulos.
+        // ℣ se conserva: es un signo litúrgico real y no debe reinterpretarse
+        // globalmente como un icono de interfaz.
         int drawable = glyphDrawable(text);
         if (drawable != 0) setIcon(activity, view, drawable, true, false);
     }
@@ -111,7 +113,7 @@ public final class IconConsistency41 {
         if ("✎".equals(value)) return R.drawable.ic_edit_41;
         if ("☀".equals(value)) return R.drawable.ic_sun_41;
         if ("✝".equals(value) || "☩".equals(value) || "✠".equals(value)
-                || "✚".equals(value) || "℣".equals(value)) return R.drawable.ic_cross_41;
+                || "✚".equals(value)) return R.drawable.ic_cross_41;
         if ("✦".equals(value)) return R.drawable.ic_star_41;
         if ("⚙".equals(value)) return R.drawable.ic_settings_41;
         if ("›".equals(value)) return R.drawable.ic_chevron_right;
