@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/cream"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/wine"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="10dp">
+        <Button android:id="@+id/btnBack" android:layout_width="48dp" android:layout_height="48dp" android:backgroundTint="@android:color/transparent" android:text="‹" android:textColor="#FFFFFF" android:textSize="28sp" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+            <TextView android:id="@+id/txtTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="21sp" android:textStyle="bold" />
+            <TextView android:id="@+id/txtSubtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#E9DBD7" android:textSize="12sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="10dp">
+        <Button android:id="@+id/btnSearchDocument" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:backgroundTint="@color/wine" android:text="Buscar aquí" android:textColor="#FFFFFF" />
+        <Button android:id="@+id/btnOpenOriginal" android:layout_width="0dp" android:layout_height="48dp" android:layout_marginStart="8dp" android:layout_weight="1" android:backgroundTint="@color/gold" android:text="Ver PDF" android:textColor="@color/wine_dark" />
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/listCatalog"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="8dp"
+        android:paddingStart="10dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="12dp" />
+</LinearLayout>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/cream" android:fillViewport="true">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:paddingBottom="28dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:background="@color/wine_dark" android:gravity="center_vertical"
+            android:orientation="horizontal" android:padding="10dp">
+            <Button android:id="@+id/btnBack" android:layout_width="48dp"
+                android:layout_height="48dp" android:backgroundTint="@android:color/transparent"
+                android:text="‹" android:textColor="#FFFFFF" android:textSize="28sp" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Actualizaciones" android:textColor="#FFFFFF"
+                    android:textSize="21sp" android:textStyle="bold" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Estado de la app y contenidos instalados" android:textColor="#E9DBD7"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginStart="18dp" android:layout_marginTop="18dp"
+            android:layout_marginEnd="18dp" android:background="@drawable/bg_card"
+            android:orientation="vertical" android:padding="18dp">
+            <TextView android:id="@+id/txtUpdateStatus" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:textColor="@color/ink"
+                android:textSize="13sp" />
+            <Button android:id="@+id/btnCheckAll" android:layout_width="match_parent"
+                android:layout_height="50dp" android:layout_marginTop="12dp"
+                android:background="@drawable/bg_button" android:text="Verificar contenido instalado"
+                android:textAllCaps="false" android:textColor="#FFFFFF" />
+        </LinearLayout>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginStart="22dp" android:layout_marginTop="20dp"
+            android:text="INSTALADO EN LA APK" android:textColor="@color/wine" android:textSize="12sp"
+            android:textStyle="bold" />
+        <Button android:id="@+id/btnUpdateApp" android:layout_width="match_parent"
+            android:layout_height="50dp" android:layout_marginStart="22dp"
+            android:layout_marginTop="9dp" android:layout_marginEnd="22dp"
+            android:background="@drawable/bg_button_secondary" android:text="App · versión y cambios"
+            android:textAllCaps="false" android:textColor="@color/wine" />
+        <Button android:id="@+id/btnUpdateCalendar" android:layout_width="match_parent"
+            android:layout_height="50dp" android:layout_marginStart="22dp"
+            android:layout_marginTop="8dp" android:layout_marginEnd="22dp"
+            android:background="@drawable/bg_button_secondary" android:text="Calendario Ecuador · abrir"
+            android:textAllCaps="false" android:textColor="@color/wine" />
+        <Button android:id="@+id/btnUpdateLectionary" android:layout_width="match_parent"
+            android:layout_height="50dp" android:layout_marginStart="22dp"
+            android:layout_marginTop="8dp" android:layout_marginEnd="22dp"
+            android:background="@drawable/bg_button_secondary" android:text="Leccionario · abrir lecturas"
+            android:textAllCaps="false" android:textColor="@color/wine" />
+        <Button android:id="@+id/btnUpdateRituals" android:layout_width="match_parent"
+            android:layout_height="50dp" android:layout_marginStart="22dp"
+            android:layout_marginTop="8dp" android:layout_marginEnd="22dp"
+            android:background="@drawable/bg_button_secondary" android:text="Rituales y Bendicional · abrir"
+            android:textAllCaps="false" android:textColor="@color/wine" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginStart="22dp" android:layout_marginTop="20dp"
+            android:text="CONTENIDO OPCIONAL ACTUALIZABLE" android:textColor="@color/wine"
+            android:textSize="12sp" android:textStyle="bold" />
+        <Button android:id="@+id/btnUpdateBreviary" android:layout_width="match_parent"
+            android:layout_height="50dp" android:layout_marginStart="22dp"
+            android:layout_marginTop="8dp" android:layout_marginEnd="22dp"
+            android:background="@drawable/bg_button_secondary" android:text="Liturgia Horarum · año latino"
+            android:textAllCaps="false" android:textColor="@color/wine" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginStart="24dp" android:layout_marginTop="14dp"
+            android:layout_marginEnd="24dp" android:textColor="@color/muted" android:textSize="12sp"
+            android:text="Misal, Liturgia de las Horas en español, Rituales y Bendicional ya vienen dentro de la APK. Solo se descargan revisiones futuras cuando exista una versión nueva. Una APK nueva siempre requiere confirmación de Android." />
+    </LinearLayout>
+</ScrollView>

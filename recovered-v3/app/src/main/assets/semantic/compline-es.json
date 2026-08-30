@@ -1,0 +1,192 @@
+{
+  "schema": 2,
+  "language": "es",
+  "source": {
+    "description": "Liturgia de las Horas · formularios de Completas extraídos del tomo local incluido en la APK de prueba",
+    "ordinaryVolume": "LH - 5. TIEMPO ORDINARIO.epub",
+    "ordinaryVolumeSha256": "0ab18d080257e708a8bc809d426110a8fad770840e0b90e1c84a5e4b67ce8d14",
+    "lentVolume": "LH - 3. CUARESMA.epub"
+  },
+  "invocation": {
+    "verse": "℣. Dios mío, ven en mi auxilio.",
+    "response": "℟. Señor, date prisa en socorrerme.",
+    "doxology": "Gloria al Padre, y al Hijo, y al Espíritu Santo. Como era en el principio, ahora y siempre, por los siglos de los siglos. Amén.",
+    "alleluiaOutsideLent": "Aleluya."
+  },
+  "examinationRubric": "Es muy de alabar que, después de la invocación inicial, se haga el examen de conciencia, el cual en la celebración comunitaria puede concluirse con alguna de las fórmulas del acto penitencial de la misa.",
+  "penitentialFormulas": [
+    {
+      "id": "penance.1",
+      "title": "1.ª Fórmula",
+      "text": "Yo confieso ante Dios todopoderoso y ante ustedes, hermanos, que he pecado mucho de pensamiento, palabra, obra y omisión.\nPor mi culpa, por mi culpa, por mi gran culpa.\nPor eso ruego a santa María, siempre Virgen, a los ángeles, a los santos y a ustedes, hermanos, que intercedan por mí ante Dios, nuestro Señor."
+    },
+    {
+      "id": "penance.2",
+      "title": "2.ª Fórmula",
+      "text": "℣. Señor, ten misericordia de nosotros.\n℟. Porque hemos pecado contra ti.\n\n℣. Muéstranos, Señor, tu misericordia.\n℟. Y danos tu salvación."
+    },
+    {
+      "id": "penance.3",
+      "title": "3.ª Fórmula",
+      "text": "℣. Tú que has sido enviado a sanar los corazones afligidos: Señor, ten piedad.\n℟. Señor, ten piedad.\n\n℣. Tú que has venido a llamar a los pecadores: Cristo, ten piedad.\n℟. Cristo, ten piedad.\n\n℣. Tú que estás sentado a la derecha del Padre para interceder por nosotros: Señor, ten piedad.\n℟. Señor, ten piedad."
+    }
+  ],
+  "penitentialConclusion": "Dios todopoderoso tenga misericordia de nosotros, perdone nuestros pecados y nos lleve a la vida eterna.\n℟. Amén.",
+  "hymnSets": {
+    "ordinary": {
+      "source": "CoH.html",
+      "items": [
+        {
+          "id": "compline.hymn.ordinary.1",
+          "title": "Cuando el sol, Señor, se apaga",
+          "text": "Cuando el sol, Señor, se apaga,\ny las sombras todo llenan,\nilumina nuestras almas\ncon la luz de tu presencia.\n\nQue en las horas de la noche\nnos defiendas con tu brazo;\ny a la sombra de tus alas\nveles Tú nuestro descanso.\n\nGloria a ti, oh Padre bueno,\ny a tu Hijo Jesucristo,\ny al Espíritu divino\npor los siglos de los siglos. Amén."
+        },
+        {
+          "id": "compline.hymn.ordinary.2",
+          "title": "Cuando la luz del sol es ya poniente",
+          "text": "Cuando la luz del sol es ya poniente,\ngracias, Señor, es nuestra melodía;\nrecibe, como ofrenda, amablemente,\nnuestro dolor, trabajo y alegría.\n\nSi poco fue el amor en nuestro empeño\nde darle vida al día que fenece,\nconvierta en realidad lo que fue un sueño\ntu gran amor que todo lo engrandece.\n\nTu cruz, Señor, redime nuestra suerte\nde pecadora en justa, e ilumina\nla senda de la vida y de la muerte\ndel hombre que en la fe lucha y camina.\n\nJesús, Hijo del Padre, cuando avanza\nla noche oscura sobre nuestro día,\nconcédenos la paz y la esperanza\nde esperar cada noche tu gran día. Amén."
+        },
+        {
+          "id": "compline.hymn.ordinary.3",
+          "title": "Cristo, Señor de la noche",
+          "text": "Cristo, Señor de la noche,\nque disipas las tinieblas:\nmientras los cuerpos reposan,\nse tú nuestro centinela.\n\nDespués de tanta fatiga,\ndespués de tanta dureza,\nacógenos en tus brazos\ny danos noche serena.\n\nSi nuestros ojos se duermen,\nque el alma esté siempre en vela;\nen paz cierra nuestros párpados\npara que cesen las penas.\n\nY que al despuntar el alba,\notra vez con fuerzas nuevas,\nte demos gracias, oh Cristo,\npor la vida que comienza. Amén."
+        },
+        {
+          "id": "compline.hymn.ordinary.4",
+          "title": "Se inclina ya mi frente",
+          "text": "Se inclina ya mi frente,\nsellado está el trabajo;\nSeñor, tu pecho sea\nla gracia del descanso.\n\nMis ojos se retiran,\nla voz deja su canto,\npero el amor enciende\nsu lámpara velando.\n\nLucero que te fuiste,\ncon gran amor amado,\nen tu gloria dormimos\ny en sueños te adoramos. Amén."
+        },
+        {
+          "id": "compline.hymn.ordinary.5",
+          "title": "Cuando acabamos el día",
+          "text": "Cuando acabamos el día\nte suplicamos, Señor,\nnos hagas de centinela\ny otorgues tu protección.\n\nQue te sintamos: contigo\nsueñe nuestro corazón\npara cantar tus loores\nde nuevo al salir el sol.\n\nDanos vida saludable,\nalienta nuestro calor,\ntu claridad ilumine\nla oscuridad que llegó.\n\nDánoslo, Padre piadoso,\npor Jesucristo, el Señor,\nque reina con el Espíritu\nSanto vivificador. Amén."
+        }
+      ]
+    },
+    "advent": {
+      "source": "LH - 1. ADVIENTO.epub / CoH.html",
+      "reuse": "ordinary"
+    },
+    "christmas": {
+      "source": "LH - 2. NAVIDAD.epub / CoH.html",
+      "reuse": "ordinary"
+    },
+    "lent": {
+      "source": "LH - 3. CUARESMA.epub / Section0035.html",
+      "items": [
+        {
+          "id": "compline.hymn.lent.1",
+          "title": "Cuando el sol, Señor, se apaga",
+          "text": "Cuando el sol, Señor, se apaga,\ny las sombras todo llenan,\nilumina nuestras almas\ncon la luz de tu presencia.\n\nQue en las horas de la noche\nnos defiendas con tu brazo;\ny a la sombra de tus alas\nveles Tú nuestro descanso.\n\nGloria a ti, oh Padre bueno,\ny a tu Hijo Jesucristo,\ny al Espíritu divino\npor los siglos de los siglos. Amén."
+        },
+        {
+          "id": "compline.hymn.lent.2",
+          "title": "Cuando llegó el instante de tu muerte",
+          "text": "Cuando llegó el instante de tu muerte\ninclinaste la frente hacia la tierra,\ncomo todos los mortales;\nmas no eras tú el hombre derribado,\nsino el Hijo que muerto nos contempla.\n\nCuando me llegue el tránsito esperado\ny siga sin retorno por mi senda,\ncomo todos los mortales,\nel sueño de tu rostro será lumbre\ny tu gloria mi gloria venidera.\n\nEl silencio sagrado de la noche\ntu paz y tu venida nos recuerdan,\nCristo, luz de los mortales;\nacepta nuestro sueño necesario\ncomo secreto amor que a ti se llega. Amén."
+        },
+        {
+          "id": "compline.hymn.lent.3",
+          "title": "Tú, a quien he buscado, Señor",
+          "text": "Tú, a quien he buscado, Señor,\nen este día,\na quien he escuchado,\ndame el reposo de esta noche.\n\nTú, a quien he cantado, Señor,\nen este día,\na quien he orado,\ndame el reposo de esta noche.\n\nTú, a quien yo he negado, Señor,\nen este día,\na quien he amado,\ndame el reposo de esta noche. Amén."
+        }
+      ]
+    },
+    "easter": {
+      "sourceStatus": "El EPUB pascual incluido en la APK no contiene el bloque de Completas; mantener pendiente de fuente española verificada.",
+      "reuse": "ordinary"
+    }
+  },
+  "forms": [
+    {
+      "id": "compline.form.1",
+      "sourceFile": "Co1.html",
+      "calendarDayOfWeek": 7,
+      "title": "Domingo después de las I Vísperas",
+      "psalmody": [
+        {"kind":"antiphon","text":"Ant. 1. Ten piedad de mí, Señor, y escucha mi oración."},
+        {"kind":"psalm_title","text":"Salmo 4\nACCIÓN DE GRACIAS"},
+        {"kind":"subtitle","text":"El Señor hizo maravillas al resucitar\na Jesucristo de entre los muertos.\n(S. Agustín)"},
+        {"kind":"text","text":"Escúchame cuando te invoco, Dios, defensor mío;\ntú que en el aprieto me diste anchura,\nten piedad de mí y escucha mi oración."},
+        {"kind":"text","text":"Y vosotros, ¿hasta cuándo ultrajaréis mi honor,\namaréis la falsedad y buscaréis el engaño?\nSabedlo: el Señor hizo milagros en mi favor,\ny el Señor me escuchará cuando lo invoque."},
+        {"kind":"text","text":"Temblad y no pequéis, reflexionad\nen el silencio de vuestro lecho;\nofreced sacrificios legítimos\ny confiad en el Señor."},
+        {"kind":"text","text":"Hay muchos que dicen:\n«¿Quién nos hará ver la dicha,\nsi la luz de tu rostro ha huido de nosotros?»"},
+        {"kind":"text","text":"Pero tú, Señor,\nhas puesto en mi corazón más alegría\nque si abundara en trigo y en vino."},
+        {"kind":"text","text":"En paz me acuesto y en seguida me duermo,\nporque tú solo, Señor, me haces vivir tranquilo."},
+        {"kind":"antiphon","text":"Ant. 1. Ten piedad de mí, Señor, y escucha mi oración."},
+        {"kind":"antiphon","text":"Ant. 2. Durante la noche, bendecid al Señor."},
+        {"kind":"psalm_title","text":"Salmo 133\nORACIÓN VESPERTINA EN EL TEMPLO"},
+        {"kind":"subtitle","text":"Alabad al Señor, sus siervos todos,\nlos que le teméis, pequeños y\ngrandes. (Ap 19, 5)"},
+        {"kind":"text","text":"Y ahora bendecid al Señor,\nlos siervos del Señor,\nlos que pasáis la noche\nen la casa del Señor:"},
+        {"kind":"text","text":"Levantad las manos hacia el santuario,\ny bendecid al Señor."},
+        {"kind":"text","text":"El Señor te bendiga desde Sión:\nel que hizo cielo y tierra."},
+        {"kind":"antiphon","text":"Ant. 2. Durante la noche, bendecid al Señor."}
+      ],
+      "shortReading":{"reference":"Dt 6, 4-7","text":"Escucha, Israel: El Señor, nuestro Dios, es solamente uno. Amarás al Señor, tu Dios, con todo el corazón, con toda el alma, con todas las fuerzas. Las palabras que hoy te digo quedarán en tu memoria; se las repetirás a tus hijos y hablarás de ellas estando en casa y yendo de camino, acostado y levantado."},
+      "responsory":["V. En tus manos, Señor, encomiendo mi espíritu.","R. En tus manos, Señor, encomiendo mi espíritu.","V. Tú, el Dios leal, nos librarás.","R. Te encomiendo mi espíritu.","V. Gloria al Padre, y al Hijo, y al Espíritu Santo.","R. En tus manos, Señor, encomiendo mi espíritu."],
+      "gospelCanticle":[{"kind":"antiphon","text":"Ant. Sálvanos, Señor, despiertos, protégenos mientras dormimos, para que velemos con Cristo y descansemos en paz."},{"kind":"title","text":"Cántico de Simeón Lc 2, 29-32\nCRISTO, LUZ DE LAS NACIONES Y GLORIA DE ISRAEL"},{"kind":"text","text":"Ahora, Señor, según tu promesa,\npuedes dejar a tu siervo irse en paz,"},{"kind":"text","text":"porque mis ojos han visto a tu Salvador,\na quien has presentado ante todos los pueblos:"},{"kind":"text","text":"luz para alumbrar a las naciones\ny gloria de tu pueblo Israel."},{"kind":"antiphon","text":"Ant. Sálvanos, Señor, despiertos, protégenos mientras dormimos, para que velemos con Cristo y descansemos en paz."}],
+      "prayer":"Guárdanos, Señor, durante esta noche y haz que mañana, ya al clarear el nuevo día, la celebración del domingo nos llene con la alegría de la resurrección de tu Hijo. Que vive y reina por los siglos de los siglos.",
+      "conclusion":["V. El Señor todopoderoso nos conceda una noche tranquila y una santa muerte.","R. Amén."]
+    },
+    {
+      "id":"compline.form.2","sourceFile":"Co2.html","calendarDayOfWeek":1,"title":"Domingo después de las II Vísperas",
+      "psalmody":[{"kind":"antiphon","text":"Ant. Al amparo del Altísimo no temo el espanto nocturno."},{"kind":"psalm_title","text":"Salmo 90\nA LA SOMBRA DEL OMNIPOTENTE"},{"kind":"subtitle","text":"Os he dado potestad para pisotear\nserpientes y escorpiones. (Lc 10, 19)"},{"kind":"text","text":"Tú que habitas al amparo del Altísimo,\nque vives a la sombra del Omnipotente,\ndi al Señor: «Refugio mío, alcázar mío.\nDios mío, confío en ti.»"},{"kind":"text","text":"Él te librará de la red del cazador,\nde la peste funesta.\nTe cubrirá con sus plumas,\nbajo sus alas te refugiarás:\nsu brazo es escudo y armadura."},{"kind":"text","text":"No temerás el espanto nocturno,\nni la flecha que vuela de día,\nni la peste que se desliza en las tinieblas,\nni la epidemia que devasta a mediodía."},{"kind":"text","text":"Caerán a tu izquierda mil,\ndiez mil a tu derecha;\na ti no te alcanzará."},{"kind":"text","text":"Tan sólo abre tus ojos\ny verás la paga de los malvados,\nporque hiciste del Señor tu refugio,\ntomaste al Altísimo por defensa."},{"kind":"text","text":"No se te acercará la desgracia,\nni la plaga llegará hasta tu tienda,\nporque a sus ángeles ha dado órdenes\npara que te guarden en tus caminos;\nte llevarán en sus palmas,\npara que tu pie no tropiece en la piedra;\ncaminarás sobre áspides y víboras,\npisotearás leones y dragones."},{"kind":"text","text":"«Se puso junto a mí: lo libraré;\nlo protegeré porque conoce mi nombre,\nme invocará y lo escucharé.\nCon él estaré en la tribulación,\nlo defenderé, lo glorificaré;\nlo saciaré de largos días,\ny le haré ver mi salvación.»"},{"kind":"antiphon","text":"Ant. Al amparo del Altísimo no temo el espanto nocturno."}],
+      "shortReading":{"reference":"Ap 22, 4-5","text":"Verán el rostro del Señor, y tendrán su nombre en la frente. Y no habrá más noche, y no necesitarán luz de lámpara ni de sol, porque el Señor Dios alumbrará sobre ellos, y reinarán por los siglos de los siglos."},
+      "responsory":["V. En tus manos, Señor, encomiendo mi espíritu.","R. En tus manos, Señor, encomiendo mi espíritu.","V. Tú, el Dios leal, nos librarás.","R. Te encomiendo mi espíritu.","V. Gloria al Padre, y al Hijo, y al Espíritu Santo.","R. En tus manos, Señor, encomiendo mi espíritu."],
+      "gospelCanticle":[{"kind":"antiphon","text":"Ant. Sálvanos, Señor, despiertos, protégenos mientras dormimos, para que velemos con Cristo y descansemos en paz."},{"kind":"title","text":"Cántico de Simeón Lc 2, 29-32\nCRISTO, LUZ DE LAS NACIONES Y GLORIA DE ISRAEL"},{"kind":"text","text":"Ahora, Señor, según tu promesa,\npuedes dejar a tu siervo irse en paz,"},{"kind":"text","text":"porque mis ojos han visto a tu Salvador,\na quien has presentado ante todos los pueblos:"},{"kind":"text","text":"luz para alumbrar a las naciones\ny gloria de tu pueblo Israel."},{"kind":"antiphon","text":"Ant. Sálvanos, Señor, despiertos, protégenos mientras dormimos, para que velemos con Cristo y descansemos en paz."}],
+      "prayer":"Humildemente te pedimos, Señor, que después de haber celebrado en este día los misterios de la resurrección de tu Hijo, sin temor alguno, descansemos en tu paz, y mañana nos levantemos alegres para cantar nuevamente tus alabanzas. Por Cristo nuestro Señor.",
+      "conclusion":["V. El Señor todopoderoso nos conceda una noche tranquila y una santa muerte.","R. Amén."]
+    },
+    {
+      "id":"compline.form.3","sourceFile":"Co3.html","calendarDayOfWeek":2,"title":"Lunes",
+      "psalmody":[{"kind":"antiphon","text":"Ant. Tú, Señor, eres clemente y rico en misericordia."},{"kind":"psalm_title","text":"Salmo 85\nORACIÓN DE UN POBRE ANTE LAS DIFICULTADES"},{"kind":"subtitle","text":"Bendito sea Dios, que nos consuela\nen todas nuestras luchas. (2Co 1, 3. 4)"},{"kind":"text","text":"Inclina tu oído, Señor; escúchame,\nque soy un pobre desamparado;\nprotege mi vida, que soy un fiel tuyo;\nsalva a tu siervo, que confía en ti."},{"kind":"text","text":"Tú eres mi Dios, piedad de mí, Señor,\nque a ti te estoy llamando todo el día;\nalegra el alma de tu siervo,\npues levanto mi alma hacia ti;"},{"kind":"text","text":"porque tú, Señor, eres bueno y clemente,\nrico en misericordia con los que te invocan.\nSeñor, escucha mi oración,\natiende a la voz de mi súplica."},{"kind":"text","text":"En el día del peligro te llamo,\ny tú me escuchas.\nNo tienes igual entre los dioses, Señor,\nni hay obras como las tuyas."},{"kind":"text","text":"Todos los pueblos vendrán\na postrarse en tu presencia, Señor;\nbendecirán tu nombre:\n«Grande eres tú, y haces maravillas;\ntú eres el único Dios.»"},{"kind":"text","text":"Enséñame, Señor, tu camino,\npara que siga tu verdad;\nmantén mi corazón entero\nen el temor de tu nombre."},{"kind":"text","text":"Te alabaré de todo corazón, Dios mío;\ndaré gloria a tu nombre por siempre,\npor tu grande piedad para conmigo,\nporque me salvaste del abismo profundo."},{"kind":"text","text":"Dios mío, unos soberbios se levantan contra mí,\nuna banda de insolentes atenta contra mi vida,\nsin tenerte en cuenta a ti."},{"kind":"text","text":"Pero tú, Señor, Dios clemente y misericordioso,\nlento a la cólera, rico en piedad y leal,\nmírame, ten compasión de mí."},{"kind":"text","text":"Da fuerza a tu siervo,\nsalva al hijo de tu esclava;\ndame una señal propicia,\nque la vean mis adversarios y se avergüencen,\nporque tú, Señor, me ayudas y consuelas."},{"kind":"antiphon","text":"Ant. Tú, Señor, eres clemente y rico en misericordia."}],
+      "shortReading":{"reference":"1Ts 5, 9-10","text":"Dios nos ha puesto para obtener la salvación por nuestro Señor Jesucristo, que murió por nosotros, para que, velando o durmiendo, vivamos junto con él."},
+      "responsory":["V. En tus manos, Señor, encomiendo mi espíritu.","R. En tus manos, Señor, encomiendo mi espíritu.","V. Tú, el Dios leal, nos librarás.","R. Te encomiendo mi espíritu.","V. Gloria al Padre, y al Hijo, y al Espíritu Santo.","R. En tus manos, Señor, encomiendo mi espíritu."],
+      "gospelCanticle":[{"kind":"antiphon","text":"Ant. Sálvanos, Señor, despiertos, protégenos mientras dormimos, para que velemos con Cristo y descansemos en paz."},{"kind":"title","text":"Cántico de Simeón Lc 2, 29-32\nCRISTO, LUZ DE LAS NACIONES Y GLORIA DE ISRAEL"},{"kind":"text","text":"Ahora, Señor, según tu promesa,\npuedes dejar a tu siervo irse en paz,"},{"kind":"text","text":"porque mis ojos han visto a tu Salvador,\na quien has presentado ante todos los pueblos:"},{"kind":"text","text":"luz para alumbrar a las naciones\ny gloria de tu pueblo Israel."},{"kind":"antiphon","text":"Ant. Sálvanos, Señor, despiertos, protégenos mientras dormimos, para que velemos con Cristo y descansemos en paz."}],
+      "prayer":"Concede, Señor, a nuestros cuerpos fatigados el descanso necesario, y haz que la simiente del reino que con nuestro trabajo hemos sembrado hoy crezca y germine para la cosecha de la vida eterna. Por Cristo nuestro Señor.",
+      "conclusion":["V. El Señor todopoderoso nos conceda una noche tranquila y una santa muerte.","R. Amén."]
+    },
+    {
+      "id":"compline.form.4","sourceFile":"Co4.html","calendarDayOfWeek":3,"title":"Martes",
+      "psalmody":[{"kind":"antiphon","text":"Ant. No me escondas tu rostro, ya que confío en ti."},{"kind":"psalm_title","text":"Salmo 142, 1-11\nLAMENTACIÓN Y SÚPLICA ANTE LA ANGUSTIA"},{"kind":"subtitle","text":"El hombre no se justifica por cumplir la ley, sino por creer en Cristo Jesús. (Ga 2, 16)"},{"kind":"text","text":"Señor, escucha mi oración;\ntú, que eres fiel, atiende a mi súplica;\ntú, que eres justo, escúchame."},{"kind":"text","text":"No llames a juicio a tu siervo,\npues ningún hombre vivo es inocente frente a ti."},{"kind":"text","text":"El enemigo me persigue a muerte,\nempuja mi vida al sepulcro,\nme confina a las tinieblas\ncomo a los muertos ya olvidados.\nMi aliento desfallece,\nmi corazón dentro de mí está yerto."},{"kind":"text","text":"Recuerdo los tiempos antiguos,\nmedito todas tus acciones,\nconsidero las obras de tus manos\ny extiendo mis brazos hacia ti:\ntengo sed de ti como tierra reseca."},{"kind":"text","text":"Escúchame en seguida, Señor,\nque me falta el aliento.\nNo me escondas tu rostro,\nigual que a los que bajan a la fosa."},{"kind":"text","text":"En la mañana hazme escuchar tu gracia,\nya que confío en ti.\nIndícame el camino que he de seguir,\npues levanto mi alma a ti."},{"kind":"text","text":"Líbrame del enemigo, Señor,\nque me refugio en ti.\nEnséñame a cumplir tu voluntad,\nya que tú eres mi Dios.\nTu espíritu, que es bueno,\nme guíe por tierra llana."},{"kind":"text","text":"Por tu nombre, Señor, consérvame vivo;\npor tu clemencia, sácame de la angustia."},{"kind":"antiphon","text":"Ant. No me escondas tu rostro, ya que confío en ti."}],
+      "shortReading":{"reference":"1Pe 5, 8-9","text":"Sed sobrios, estad alerta, que vuestro enemigo, el diablo, como león rugiente, ronda buscando a quién devorar; resistidle firmes en la fe."},
+      "responsory":["V. En tus manos, Señor, encomiendo mi espíritu.","R. En tus manos, Señor, encomiendo mi espíritu.","V. Tú, el Dios leal, nos librarás.","R. Te encomiendo mi espíritu.","V. Gloria al Padre, y al Hijo, y al Espíritu Santo.","R. En tus manos, Señor, encomiendo mi espíritu."],
+      "gospelCanticle":[{"kind":"antiphon","text":"Ant. Sálvanos, Señor, despiertos, protégenos mientras dormimos, para que velemos con Cristo y descansemos en paz."},{"kind":"title","text":"Cántico de Simeón Lc 2, 29-32\nCRISTO, LUZ DE LAS NACIONES Y GLORIA DE ISRAEL"},{"kind":"text","text":"Ahora, Señor, según tu promesa,\npuedes dejar a tu siervo irse en paz,"},{"kind":"text","text":"porque mis ojos han visto a tu Salvador,\na quien has presentado ante todos los pueblos:"},{"kind":"text","text":"luz para alumbrar a las naciones\ny gloria de tu pueblo Israel."},{"kind":"antiphon","text":"Ant. Sálvanos, Señor, despiertos, protégenos mientras dormimos, para que velemos con Cristo y descansemos en paz."}],
+      "prayer":"Ilumina, Señor, nuestra noche y concédenos un descanso tranquilo; que mañana nos levantemos en tu nombre y podamos contemplar, con salud y gozo, el clarear del nuevo día. Por Cristo nuestro Señor.",
+      "conclusion":["V. El Señor todopoderoso nos conceda una noche tranquila y una santa muerte.","R. Amén."]
+    },
+    {
+      "id":"compline.form.5","sourceFile":"Co5.html","calendarDayOfWeek":4,"title":"Miércoles",
+      "psalmody":[{"kind":"antiphon","text":"Ant. 1. Sé tú, Señor, la roca de mi refugio, un baluarte donde me salve."},{"kind":"psalm_title","text":"Salmo 30, 2-6\nSÚPLICA CONFIADA Y ACCIÓN DE GRACIAS"},{"kind":"subtitle","text":"Padre, en tus manos encomiendo\nmi espíritu. (Lc 23, 46)"},{"kind":"text","text":"A ti, Señor, me acojo:\nno quede yo nunca defraudado;\ntú, que eres justo, ponme a salvo,\ninclina tu oído hacia mí;\nven aprisa a librarme,\nsé la roca de mi refugio,\nun baluarte donde me salve,\ntú que eres mi roca y mi baluarte;\npor tu nombre dirígeme y guíame:\nsácame de la red que me han tendido,\nporque tú eres mi amparo."},{"kind":"text","text":"En tus manos encomiendo mi espíritu:\ntú, el Dios leal, me librarás."},{"kind":"antiphon","text":"Ant. 1. Sé tú, Señor, la roca de mi refugio, un baluarte donde me salve."},{"kind":"antiphon","text":"Ant. 2. Desde lo hondo a ti grito, Señor."},{"kind":"psalm_title","text":"Salmo 129\nDESDE LO HONDO A TI GRITO, SEÑOR"},{"kind":"subtitle","text":"Él salvará a su pueblo de\nlos pecados. (Mt 1, 21)"},{"kind":"text","text":"Desde lo hondo a ti grito, Señor;\nSeñor, escucha mi voz;\nestén tus oídos atentos\na la voz de mi súplica."},{"kind":"text","text":"Si llevas cuenta de los delitos, Señor,\n¿quién podrá resistir?\nPero de ti procede el perdón,\ny así infundes respeto."},{"kind":"text","text":"Mi alma espera en el Señor,\nespera en su palabra;\nmi alma aguarda al Señor,\nmás que el centinela la aurora."},{"kind":"text","text":"Aguarde Israel al Señor,\ncomo el centinela la aurora;\nporque del Señor viene la misericordia,\nla redención copiosa;\ny él redimirá a Israel\nde todos sus delitos."},{"kind":"antiphon","text":"Ant. 2. Desde lo hondo a ti grito, Señor."}],
+      "shortReading":{"reference":"Ef 4, 26-27","text":"No lleguéis a pecar; que la puesta del sol no os sorprenda en vuestro enojo. No dejéis lugar al diablo."},
+      "responsory":["V. En tus manos, Señor, encomiendo mi espíritu.","R. En tus manos, Señor, encomiendo mi espíritu.","V. Tú, el Dios leal, nos librarás.","R. Te encomiendo mi espíritu.","V. Gloria al Padre, y al Hijo, y al Espíritu Santo.","R. En tus manos, Señor, encomiendo mi espíritu."],
+      "gospelCanticle":[{"kind":"antiphon","text":"Ant. Sálvanos, Señor, despiertos, protégenos mientras dormimos, para que velemos con Cristo y descansemos en paz."},{"kind":"title","text":"Cántico de Simeón Lc 2, 29-32\nCRISTO, LUZ DE LAS NACIONES Y GLORIA DE ISRAEL"},{"kind":"text","text":"Ahora, Señor, según tu promesa,\npuedes dejar a tu siervo irse en paz,"},{"kind":"text","text":"porque mis ojos han visto a tu Salvador,\na quien has presentado ante todos los pueblos:"},{"kind":"text","text":"luz para alumbrar a las naciones\ny gloria de tu pueblo Israel."},{"kind":"antiphon","text":"Ant. Sálvanos, Señor, despiertos, protégenos mientras dormimos, para que velemos con Cristo y descansemos en paz."}],
+      "prayer":"Señor Jesucristo, tú que eres manso y humilde de corazón ofreces a los que vienen a ti un yugo llevadero y una carga ligera; dígnate, pues, aceptar los deseos y las acciones del día que hemos terminado: que podamos descansar durante la noche para que así, renovado nuestro cuerpo y nuestro espíritu, perseveremos constantes en tu servicio. Tú que vives y reinas por los siglos de los siglos.",
+      "conclusion":["V. El Señor todopoderoso nos conceda una noche tranquila y una santa muerte.","R. Amén."]
+    },
+    {
+      "id":"compline.form.6","sourceFile":"Co6.html","calendarDayOfWeek":5,"title":"Jueves",
+      "psalmody":[{"kind":"antiphon","text":"Ant. Mi carne descansa serena."},{"kind":"psalm_title","text":"Salmo 15\nCRISTO Y SUS MIEMBROS ESPERAN LA RESURRECCIÓN"},{"kind":"subtitle","text":"Dios resucitó a Jesús, rompiendo\nlas ataduras de la muerte.\n(Hch 2, 24)"},{"kind":"text","text":"Protégeme, Dios mío, que me refugio en ti;\nyo digo al Señor: «Tú eres mi bien.»\nLos dioses y señores de la tierra\nno me satisfacen."},{"kind":"text","text":"Multiplican las estatuas\nde dioses extraños;\nno derramaré sus libaciones con mis manos,\nni tomaré sus nombres en mis labios."},{"kind":"text","text":"El Señor es mi heredad y mi copa;\nmi suerte está en tu mano:\nme ha tocado un lote hermoso,\nme encanta mi heredad."},{"kind":"text","text":"Bendeciré al Señor, que me aconseja,\nhasta de noche me instruye internamente.\nTengo siempre presente al Señor,\ncon él a mi derecha no vacilaré."},{"kind":"text","text":"Por eso se me alegra el corazón,\nse gozan mis entrañas,\ny mi carne descansa serena."},{"kind":"text","text":"Porque no me entregarás a la muerte,\nni dejarás a tu fiel conocer la corrupción."},{"kind":"text","text":"Me enseñarás el sendero de la vida,\nme saciarás de gozo en tu presencia,\nde alegría perpetua a tu derecha."},{"kind":"antiphon","text":"Ant. Mi carne descansa serena."}],
+      "shortReading":{"reference":"1Ts 5, 23","text":"Que el mismo Dios de la Paz os consagre totalmente y que todo vuestro ser, alma y cuerpo, sea custodiado sin reproche hasta la Parusía de nuestro Señor Jesucristo."},
+      "responsory":["V. En tus manos, Señor, encomiendo mi espíritu.","R. En tus manos, Señor, encomiendo mi espíritu.","V. Tú, el Dios leal, nos librarás.","R. Te encomiendo mi espíritu.","V. Gloria al Padre, y al Hijo, y al Espíritu Santo.","R. En tus manos, Señor, encomiendo mi espíritu."],
+      "gospelCanticle":[{"kind":"antiphon","text":"Ant. Sálvanos, Señor, despiertos, protégenos mientras dormimos, para que velemos con Cristo y descansemos en paz."},{"kind":"title","text":"Cántico de Simeón Lc 2, 29-32\nCRISTO, LUZ DE LAS NACIONES Y GLORIA DE ISRAEL"},{"kind":"text","text":"Ahora, Señor, según tu promesa,\npuedes dejar a tu siervo irse en paz,"},{"kind":"text","text":"porque mis ojos han visto a tu Salvador,\na quien has presentado ante todos los pueblos:"},{"kind":"text","text":"luz para alumbrar a las naciones\ny gloria de tu pueblo Israel."},{"kind":"antiphon","text":"Ant. Sálvanos, Señor, despiertos, protégenos mientras dormimos, para que velemos con Cristo y descansemos en paz."}],
+      "prayer":"Señor, Dios nuestro, concédenos un descanso tranquilo que restaure nuestras fuerzas, desgastadas ahora por el trabajo del día; así, fortalecidos con tu ayuda, te serviremos siempre con todo nuestro cuerpo y nuestro espíritu. Por Cristo nuestro Señor.",
+      "conclusion":["V. El Señor todopoderoso nos conceda una noche tranquila y una santa muerte.","R. Amén."]
+    },
+    {
+      "id":"compline.form.7","sourceFile":"Co7.html","calendarDayOfWeek":6,"title":"Viernes",
+      "psalmody":[{"kind":"antiphon","text":"Ant. Señor, Dios mío, de día te pido auxilio, de noche grito en tu presencia. †"},{"kind":"psalm_title","text":"Salmo 87\nORACIÓN DE UN HOMBRE GRAVEMENTE ENFERMO"},{"kind":"subtitle","text":"Ésta es vuestra hora,\nla del poder de las tinieblas.\n(Lc 22, 53)"},{"kind":"text","text":"Señor, Dios mío, de día te pido auxilio,\nde noche grito en tu presencia;\n† llegue hasta ti mi súplica,\ninclina tu oído a mi clamor."},{"kind":"text","text":"Porque mi alma está colmada de desdichas,\ny mi vida está al borde del abismo;\nya me cuentan con los que bajan a la fosa,\nsoy como un inválido."},{"kind":"text","text":"Tengo mi cama entre los muertos,\ncomo los caídos que yacen en el sepulcro,\nde los cuales ya no guardas memoria,\nporque fueron arrancados de tu mano."},{"kind":"text","text":"Me has colocado en lo hondo de la fosa,\nen las tinieblas del fondo;\ntú cólera pesa sobre mí,\nme echas encima todas tus olas."},{"kind":"text","text":"Has alejado de mí a mis conocidos,\nme has hecho repugnante para ellos:\nencerrado, no puedo salir,\ny los ojos se me nublan de pesar."},{"kind":"text","text":"Todo el día te estoy invocando,\ntendiendo las manos hacia ti.\n¿Harás tú maravillas por los muertos?\n¿Se alzarán las sombras para darte gracias?\n¿Se anuncia en el sepulcro tu misericordia,\no tu fidelidad en el reino de la muerte?\n¿Se conocen tus maravillas en la tiniebla\no tu justicia en el país del olvido?"},{"kind":"text","text":"Pero yo te pido auxilio,\npor la mañana irá a tu encuentro mi súplica.\n¿Por qué, Señor, me rechazas\ny me escondes tu rostro?"},{"kind":"text","text":"Desde niño fui desgraciado y enfermo,\nme doblo bajo el peso de tus terrores,\npasó sobre mí tu incendio,\ntus espantos me han consumido:\nme rodean como las aguas todo el día,\nme envuelven todos a una;\nalejaste de mí amigos y compañeros:\nmi compañía son las tinieblas."},{"kind":"antiphon","text":"Ant. Señor, Dios mío, de día te pido auxilio, de noche grito en tu presencia."}],
+      "shortReading":{"reference":"Jr 14, 9","text":"Tú estás en medio de nosotros, Señor, tu nombre ha sido invocado sobre nosotros: no nos abandones, Señor Dios nuestro."},
+      "responsory":["V. En tus manos, Señor, encomiendo mi espíritu.","R. En tus manos, Señor, encomiendo mi espíritu.","V. Tú, el Dios leal, nos librarás.","R. Te encomiendo mi espíritu.","V. Gloria al Padre, y al Hijo, y al Espíritu Santo.","R. En tus manos, Señor, encomiendo mi espíritu."],
+      "gospelCanticle":[{"kind":"antiphon","text":"Ant. Sálvanos, Señor, despiertos, protégenos mientras dormimos, para que velemos con Cristo y descansemos en paz."},{"kind":"title","text":"Cántico de Simeón Lc 2, 29-32\nCRISTO, LUZ DE LAS NACIONES Y GLORIA DE ISRAEL"},{"kind":"text","text":"Ahora, Señor, según tu promesa,\npuedes dejar a tu siervo irse en paz,"},{"kind":"text","text":"porque mis ojos han visto a tu Salvador,\na quien has presentado ante todos los pueblos:"},{"kind":"text","text":"luz para alumbrar a las naciones\ny gloria de tu pueblo Israel."},{"kind":"antiphon","text":"Ant. Sálvanos, Señor, despiertos, protégenos mientras dormimos, para que velemos con Cristo y descansemos en paz."}],
+      "prayer":"Señor, Dios todopoderoso: ya que con nuestro descanso vamos a imitar a tu Hijo que reposó en el sepulcro, te pedimos que, al levantarnos mañana, lo imitemos también resucitando a una vida nueva. Por Cristo nuestro Señor.",
+      "conclusion":["V. El Señor todopoderoso nos conceda una noche tranquila y una santa muerte.","R. Amén."]
+    }
+  ],
+  "marianAntiphons": [
+    {"id":"marian.alma-redemptoris","title":"Madre del Redentor","text":"Madre del Redentor, virgen fecunda,\npuerta del cielo siempre abierta,\nestrella del mar,\nven a librar al pueblo que tropieza\ny se quiere levantar.\nAnte la admiración de cielo y tierra,\nengendraste a tu santo Creador,\ny permaneces siempre virgen.\nRecibe el saludo del ángel Gabriel,\ny ten piedad de nosotros, pecadores."},
+    {"id":"marian.ave-regina","title":"Salve, Reina de los cielos","text":"Salve, Reina de los cielos\ny Señora de los ángeles;\nsalve raíz, salve puerta,\nque dio paso a nuestra luz.\n\nAlégrate, virgen gloriosa,\nentre todas la más bella;\nsalve, agraciada doncella,\nruega a Cristo por nosotros."},
+    {"id":"marian.salve-regina","title":"Dios te salve, Reina","text":"Dios te salve, Reina y Madre de misericordia,\nvida, dulzura y esperanza nuestra, Dios te salve.\nA ti llamamos los desterrados hijos de Eva,\na ti suspiramos, gimiendo y llorando,\nen este valle de lágrimas.\n\nEa, pues, Señora, abogada nuestra,\nvuelve a nosotros tus ojos misericordiosos,\ny después de este destierro muéstranos a Jesús,\nfruto bendito de tu vientre.\n¡Oh clemente, oh piadosa, oh dulce Virgen María!"},
+    {"id":"marian.sub-tuum","title":"Bajo tu amparo","text":"Bajo tu amparo nos acogemos,\nsanta Madre de Dios,\nno desprecies las oraciones\nque te dirigimos en nuestras necesidades,\nantes bien líbranos de todo peligro,\noh Virgen gloriosa y bendita."}
+  ],
+  "easterMarianAntiphon": {"id":"marian.regina-caeli","title":"Regina caeli","text":"Reina del cielo, alégrate, aleluya,\nporque el Señor, a quien mereciste llevar, aleluya,\nha resucitado según su palabra, aleluya.\nRuega al Señor por nosotros, aleluya."}
+}

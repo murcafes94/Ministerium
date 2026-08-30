@@ -1,0 +1,27 @@
+* text=auto eol=lf
+
+*.bat text eol=crlf
+*.gradle text
+*.java text
+*.xml text
+*.json text
+*.md text
+*.txt text
+*.yml text
+*.yaml text
+*.mjs text
+*.py text
+*.tsv text
+*.ics text
+
+*.jar binary
+*.epub binary
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.ttf binary
+*.otf binary

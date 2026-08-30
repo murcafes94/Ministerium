@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/cream" android:fillViewport="true">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:paddingBottom="28dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:background="@color/wine_dark" android:gravity="center_vertical"
+            android:orientation="horizontal" android:padding="10dp">
+            <Button android:id="@+id/btnBack" android:layout_width="48dp"
+                android:layout_height="48dp" android:backgroundTint="@android:color/transparent"
+                android:text="‹" android:textColor="#FFFFFF" android:textSize="28sp" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Copia de seguridad" android:textColor="#FFFFFF"
+                    android:textSize="21sp" android:textStyle="bold" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Tus datos personales, bajo tu control" android:textColor="#E9DBD7"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginStart="18dp" android:layout_marginTop="22dp"
+            android:layout_marginEnd="18dp" android:background="@drawable/bg_card"
+            android:orientation="vertical" android:padding="18dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Una copia íntegra y privada" android:textColor="@color/ink"
+                android:textSize="19sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="6dp" android:textColor="@color/muted" android:textSize="14sp"
+                android:text="Incluye meditaciones, notas, subrayados, favoritos, oraciones, planes, progreso y preferencias. No incluye los libros que ya vienen con la app." />
+            <TextView android:id="@+id/txtBackupStatus" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:layout_marginTop="14dp"
+                android:textColor="@color/wine" android:textStyle="bold" />
+        </LinearLayout>
+        <Button android:id="@+id/btnCreateBackup" android:layout_width="match_parent"
+            android:layout_height="52dp" android:layout_marginStart="22dp"
+            android:layout_marginTop="18dp" android:layout_marginEnd="22dp"
+            android:background="@drawable/bg_button" android:text="Crear copia ahora"
+            android:textAllCaps="false" android:textColor="#FFFFFF" android:textStyle="bold" />
+        <Button android:id="@+id/btnDriveBackup" android:layout_width="match_parent"
+            android:layout_height="52dp" android:layout_marginStart="22dp"
+            android:layout_marginTop="10dp" android:layout_marginEnd="22dp"
+            android:background="@drawable/bg_button_secondary"
+            android:text="Guardar en Drive (opcional)" android:textAllCaps="false"
+            android:textColor="@color/wine" android:textStyle="bold" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginStart="26dp" android:layout_marginTop="7dp"
+            android:layout_marginEnd="26dp" android:textColor="@color/muted" android:textSize="12sp"
+            android:text="Se abrirá el selector seguro de Android. Elige Drive solo si ya está disponible en tu dispositivo; Ministerium funciona sin vincularlo." />
+        <Button android:id="@+id/btnRestoreBackup" android:layout_width="match_parent"
+            android:layout_height="52dp" android:layout_marginStart="22dp"
+            android:layout_marginTop="16dp" android:layout_marginEnd="22dp"
+            android:background="@drawable/bg_button_secondary" android:text="Restaurar una copia"
+            android:textAllCaps="false" android:textColor="@color/wine" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginStart="26dp" android:layout_marginTop="10dp"
+            android:layout_marginEnd="26dp" android:textColor="@color/muted" android:textSize="12sp"
+            android:text="Antes de restaurar se comprueban el formato y la integridad SHA-256. Los datos se reemplazan solo cuando la copia es válida." />
+    </LinearLayout>
+</ScrollView>

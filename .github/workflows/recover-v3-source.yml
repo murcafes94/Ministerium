@@ -3,7 +3,7 @@ name: Recover Ministerium 3.0 source
 on:
   push:
     branches:
-      - main
+      - planning/ministerium-3.0-recovery
     paths:
       - ".github/workflows/recover-v3-source.yml"
 
@@ -51,7 +51,7 @@ jobs:
           find recovered-v3 -type f | sort > docs/RECOVERED_V3_FILES.txt
           echo "Recovered $(wc -l < docs/RECOVERED_V3_FILES.txt) files"
 
-      - name: Commit recovered source to recovery branch
+      - name: Commit recovered source
         shell: bash
         run: |
           set -euo pipefail
@@ -63,4 +63,4 @@ jobs:
             exit 0
           fi
           git commit -m "recovery: desplegar código fuente Ministerium 3.0"
-          git push origin HEAD:planning/ministerium-3.0-recovery
+          git push origin planning/ministerium-3.0-recovery

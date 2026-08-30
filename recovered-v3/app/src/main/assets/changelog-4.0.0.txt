@@ -1,0 +1,15 @@
+Ministerium 4.0.0
+
+Oración, Magisterio y fidelidad litúrgica:
+
+• Leccionario: la aplicación identifica el año litúrgico y los ciclos dominicales A/B/C desde el primer domingo de Adviento. El ciclo ferial I/II sigue correctamente el año civil, y los tiempos fuertes conservan su ciclo anual.
+• Ordenación de las Lecturas de la Misa: se incorporan reglas trazables de los nn. 65, 69, 79, 82–89 y 103–109, sin sustituir ni inventar las perícopas del Leccionario.
+• Hoy: desde el oficio diario se abren las lecturas de la Misa conservando exactamente la misma fecha.
+• Magisterio: biblioteca temática para Concilio, Catequesis, Doctrina Social, Derecho y Liturgia.
+• Búsqueda del Magisterio: índice local del texto completo, resultados ordenados por relevancia y apertura directa del fragmento encontrado.
+• Oraciones personales: tocar abre un modo de oración y lectura; editar y eliminar quedan como acciones separadas.
+• Intenciones: pueden presentarse juntas en una sesión privada y continúan integrándose en las preces de Laudes y Vísperas.
+• Privacidad: intenciones, oraciones, notas y estudios quedan fuera de las copias automáticas de Android. Solo salen del dispositivo cuando el usuario crea o comparte una copia.
+• Lectores: cabeceras autoocultables con histéresis, sin parpadeos; columna editorial adaptada a teléfono y tablet; controles globales de tipografía, tamaño, grosor, interlineado y márgenes.
+• Compatibilidad: Android 6.0 o superior; Gradle 6.7.1, Android Gradle Plugin 4.2.1, JDK 11 y SDK 30.
+• Compilación local: el script de Windows detecta JDK 11 con seguridad, genera los índices y ejecuta todos los contratos 4.0 antes de construir la APK.

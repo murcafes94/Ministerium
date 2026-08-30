@@ -1,0 +1,25 @@
+name: Calificación
+description: Valorar una experiencia o módulo
+title: "[Calificación] "
+labels: ["type:rating"]
+body:
+  - type: dropdown
+    id: score
+    attributes:
+      label: Calificación
+      options: ["1/5", "2/5", "3/5", "4/5", "5/5"]
+    validations:
+      required: true
+  - type: dropdown
+    id: module
+    attributes:
+      label: Módulo
+      options: [General, Biblia, Liturgia, Misal, Leccionario, Derecho canónico, Estudio, Planes, Actualizaciones]
+  - type: textarea
+    id: message
+    attributes:
+      label: Comentario
+  - type: input
+    id: version
+    attributes:
+      label: Versión de Ministerium

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/cream" android:orientation="vertical">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:background="@color/wine_dark" android:gravity="center_vertical"
+        android:orientation="horizontal" android:padding="8dp">
+        <Button android:id="@+id/btnBack" android:layout_width="48dp"
+            android:layout_height="48dp" android:backgroundTint="@android:color/transparent"
+            android:text="‹" android:textColor="#FFFFFF" android:textSize="28sp" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Mi estudio" android:textColor="#FFFFFF"
+                android:textSize="21sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Resaltados, notas y meditaciones" android:textColor="#E9DBD7"
+                android:textSize="12sp" />
+        </LinearLayout>
+        <Button android:id="@+id/btnNewMeditation" android:layout_width="wrap_content"
+            android:layout_height="46dp" android:backgroundTint="@color/gold"
+            android:text="+ Nueva meditación" android:textAllCaps="false"
+            android:textColor="@color/wine_dark" />
+    </LinearLayout>
+    <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:scrollbars="none">
+        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:padding="10dp">
+            <Button android:id="@+id/btnStudyHighlights" android:layout_width="wrap_content"
+                android:layout_height="44dp" android:background="@drawable/bg_button_secondary"
+                android:text="Resaltados" android:textAllCaps="false" android:textColor="@color/wine" />
+            <Button android:id="@+id/btnStudyNotes" android:layout_width="wrap_content"
+                android:layout_height="44dp" android:layout_marginStart="7dp"
+                android:background="@drawable/bg_button_secondary" android:text="Notas"
+                android:textAllCaps="false" android:textColor="@color/wine" />
+            <Button android:id="@+id/btnStudyMeditations" android:layout_width="wrap_content"
+                android:layout_height="44dp" android:layout_marginStart="7dp"
+                android:background="@drawable/bg_button" android:text="Meditaciones"
+                android:textAllCaps="false" android:textColor="#FFFFFF" />
+        </LinearLayout>
+    </HorizontalScrollView>
+    <FrameLayout android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1">
+        <ListView android:id="@+id/listStudyEntries" android:layout_width="match_parent"
+            android:layout_height="match_parent" android:clipToPadding="false"
+            android:divider="@android:color/transparent" android:dividerHeight="8dp"
+            android:paddingStart="10dp" android:paddingTop="6dp" android:paddingEnd="10dp"
+            android:paddingBottom="18dp" />
+        <TextView android:id="@+id/txtStudyEmpty" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_gravity="center"
+            android:gravity="center" android:padding="28dp" android:textColor="@color/muted"
+            android:textSize="16sp" />
+    </FrameLayout>
+</LinearLayout>

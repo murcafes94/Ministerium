@@ -1,0 +1,26 @@
+name: Sugerencia
+description: Proponer una mejora concreta
+title: "[Sugerencia] "
+labels: ["type:suggestion"]
+body:
+  - type: dropdown
+    id: module
+    attributes:
+      label: Módulo
+      options: [General, Biblia, Liturgia, Misal, Leccionario, Derecho canónico, Estudio, Planes, Actualizaciones]
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qué problema o necesidad resolvería
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Propuesta
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versión de Ministerium

@@ -1,0 +1,85 @@
+{
+  "schema": 3,
+  "channel": "testing",
+  "app": {
+    "versionName": "4.1.0",
+    "versionCode": 41,
+    "released": "2026-08-28",
+    "url": "",
+    "sha256": "",
+    "installation": "user-confirmed"
+  },
+  "packages": [
+    {
+      "id": "calendar-ec",
+      "title": "Calendario Ecuador",
+      "version": "2026.1",
+      "updated": "2026-01-01",
+      "asset": "calendar/gcatholic-2026-es-EC.ics",
+      "verification": "sha256",
+      "sha256": "00d4d2259fb5ffef1df40014ec69b4a6628962b362c402e901ab2ce3e83dfd35",
+      "delivery": "bundled"
+    },
+    {
+      "id": "hours-es-clean",
+      "title": "Liturgia de las Horas · español",
+      "version": "3.1.1",
+      "updated": "2026-08-24",
+      "asset": "hours-clean/manifest.json",
+      "verification": "generated-build",
+      "delivery": "bundled",
+      "runtimeFormat": "clean-html"
+    },
+    {
+      "id": "hours-la-2026-clean",
+      "title": "Liturgia Horarum · latín 2026",
+      "version": "2026.1",
+      "updated": "2026-08-24",
+      "asset": "hours-clean/latin/2026/manifest.json",
+      "verification": "generated-build",
+      "delivery": "bundled",
+      "runtimeFormat": "clean-html"
+    },
+    {
+      "id": "missal-liturgiapapal",
+      "title": "Misal · Liturgia Papal México",
+      "version": "3.1.1",
+      "updated": "2026-08-24",
+      "asset": "missal/manifest.json",
+      "verification": "generated-build",
+      "delivery": "bundled"
+    },
+    {
+      "id": "rituals-liturgiapapal",
+      "title": "Rituales y Bendicional · Liturgia Papal",
+      "version": "3.1.1",
+      "updated": "2026-08-24",
+      "asset": "rituals/liturgiapapal/manifest.json",
+      "verification": "generated-build",
+      "delivery": "bundled"
+    },
+    {
+      "id": "magisterium-search",
+      "title": "Índice completo del Magisterio",
+      "version": "4.0.0",
+      "updated": "2026-08-27",
+      "asset": "magisterium-index.tsv",
+      "verification": "generated-build",
+      "delivery": "bundled",
+      "runtimeFormat": "ranked-full-text"
+    }
+  ],
+  "optionalUpdates": [
+    {
+      "id": "latin-future-year",
+      "title": "Liturgia Horarum · años latinos futuros",
+      "delivery": "downloadable",
+      "source": "breviar.sk"
+    },
+    {
+      "id": "lectionary-month",
+      "title": "Leccionario · lecturas futuras",
+      "delivery": "downloadable-when-available"
+    }
+  ]
+}

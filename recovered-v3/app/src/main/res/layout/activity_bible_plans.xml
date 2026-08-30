@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/cream" android:fillViewport="true">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:paddingBottom="28dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:background="@color/wine_dark" android:gravity="center_vertical"
+            android:orientation="horizontal" android:padding="10dp">
+            <Button android:id="@+id/btnBack" android:layout_width="48dp"
+                android:layout_height="48dp" android:backgroundTint="@android:color/transparent"
+                android:text="‹" android:textColor="#FFFFFF" android:textSize="28sp" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Planes de lectura" android:textColor="#FFFFFF"
+                    android:textSize="21sp" android:textStyle="bold" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Progreso y recordatorio local" android:textColor="#E9DBD7"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginStart="22dp" android:layout_marginTop="22dp"
+            android:text="PLAN ACTIVO" android:textColor="@color/wine"
+            android:textSize="12sp" android:textStyle="bold" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginStart="22dp" android:layout_marginTop="9dp"
+            android:layout_marginEnd="22dp" android:background="@drawable/bg_card"
+            android:orientation="vertical" android:padding="18dp">
+            <TextView android:id="@+id/txtPlanStatus" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:textColor="@color/ink"
+                android:textSize="18sp" android:textStyle="bold" />
+            <TextView android:id="@+id/txtPlanToday" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="10dp"
+                android:textColor="@color/wine" android:textSize="16sp" />
+            <TextView android:id="@+id/txtPlanProgress" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="8dp"
+                android:textColor="@color/muted" android:textSize="13sp" />
+            <Button android:id="@+id/btnOpenPlanReading" android:layout_width="match_parent"
+                android:layout_height="50dp" android:layout_marginTop="16dp"
+                android:background="@drawable/bg_button" android:text="Abrir lectura de hoy"
+                android:textAllCaps="false" android:textColor="#FFFFFF" />
+            <Button android:id="@+id/btnCompletePlanDay" android:layout_width="match_parent"
+                android:layout_height="50dp" android:layout_marginTop="8dp"
+                android:background="@drawable/bg_button_secondary" android:text="Marcar día como completado"
+                android:textAllCaps="false" android:textColor="@color/wine" />
+            <Button android:id="@+id/btnCancelPlan" android:layout_width="match_parent"
+                android:layout_height="50dp" android:layout_marginTop="8dp"
+                android:background="@drawable/bg_button_secondary" android:text="Cancelar plan"
+                android:textAllCaps="false" android:textColor="@color/wine"
+                android:visibility="gone" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/rowPlanReminder" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginStart="22dp"
+            android:layout_marginTop="12dp" android:layout_marginEnd="22dp"
+            android:background="@drawable/bg_card" android:gravity="center_vertical"
+            android:orientation="horizontal" android:padding="16dp">
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Recordatorio del plan" android:textColor="@color/ink"
+                    android:textStyle="bold" />
+                <TextView android:id="@+id/txtPlanReminderTime" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textColor="@color/muted"
+                    android:textSize="12sp" />
+            </LinearLayout>
+            <Switch android:id="@+id/switchPlanReminder" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginStart="22dp" android:layout_marginTop="24dp"
+            android:text="ELEGIR PLAN" android:textColor="@color/wine"
+            android:textSize="12sp" android:textStyle="bold" />
+        <Button android:id="@+id/btnPlanBible365" android:layout_width="match_parent"
+            android:layout_height="58dp" android:layout_marginStart="22dp"
+            android:layout_marginTop="10dp" android:layout_marginEnd="22dp"
+            android:background="@drawable/bg_button_secondary"
+            android:text="Biblia completa en 365 días" android:textAllCaps="false"
+            android:textColor="@color/ink" android:textStyle="bold" />
+        <Button android:id="@+id/btnPlanGospels89" android:layout_width="match_parent"
+            android:layout_height="58dp" android:layout_marginStart="22dp"
+            android:layout_marginTop="9dp" android:layout_marginEnd="22dp"
+            android:background="@drawable/bg_button_secondary"
+            android:text="Los cuatro Evangelios en 89 días" android:textAllCaps="false"
+            android:textColor="@color/ink" android:textStyle="bold" />
+        <Button android:id="@+id/btnPlanBook" android:layout_width="match_parent"
+            android:layout_height="58dp" android:layout_marginStart="22dp"
+            android:layout_marginTop="9dp" android:layout_marginEnd="22dp"
+            android:background="@drawable/bg_button_secondary"
+            android:text="Completar un libro de la Biblia" android:textAllCaps="false"
+            android:textColor="@color/ink" android:textStyle="bold" />
+        <Button android:id="@+id/btnPlanCustom" android:layout_width="match_parent"
+            android:layout_height="58dp" android:layout_marginStart="22dp"
+            android:layout_marginTop="9dp" android:layout_marginEnd="22dp"
+            android:background="@drawable/bg_button_secondary"
+            android:text="Plan personalizado de toda la Biblia" android:textAllCaps="false"
+            android:textColor="@color/ink" android:textStyle="bold" />
+    </LinearLayout>
+</ScrollView>

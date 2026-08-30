@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.fabri.ministerium">
+
+    <!-- Solo se usa para actualizar las lecturas mensuales y el año latino. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+
+    <application
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:usesCleartextTraffic="false"
+        android:theme="@style/Theme.Ministerium">
+
+        <activity android:name=".PdfReaderActivity" android:exported="false" />
+        <activity android:name=".AssetPdfReaderActivity" android:exported="false" />
+        <activity android:name=".CanonLawActivity" android:exported="false" />
+        <activity android:name=".BibleActivity" android:exported="false" />
+        <activity android:name=".BibleChaptersActivity" android:exported="false" />
+        <activity android:name=".BibleReaderActivity" android:exported="false" />
+        <activity android:name=".BibleSearchActivity" android:exported="false" />
+        <activity android:name=".MarkersActivity" android:exported="false" />
+        <activity android:name=".BibleDictionaryActivity" android:exported="false" />
+        <activity android:name=".BiblePlansActivity" android:exported="false" />
+        <activity android:name=".ReflectionsActivity" android:exported="false" />
+        <activity android:name=".MagisteriumActivity" android:exported="false" />
+        <activity android:name=".DevotionalHubActivity" android:exported="false" />
+        <activity android:name=".PersonalPrayersActivity" android:exported="false" />
+        <activity android:name=".AdditionalPrayersActivity" android:exported="false" />
+        <activity android:name=".ConscienceActivity" android:exported="false" />
+        <activity android:name=".ConscienceReaderActivity" android:exported="false" />
+        <activity android:name=".TextReaderActivity" android:exported="false" />
+        <activity android:name=".PrayerReaderActivity" android:exported="false" />
+        <activity android:name=".BasicPrayersActivity" android:exported="false" />
+        <activity android:name=".DocumentSectionReaderActivity" android:exported="false" />
+        <activity android:name=".HoursReaderActivity" android:exported="false" />
+        <activity android:name=".ComplineReaderActivity" android:exported="false" />
+        <activity android:name=".CombinedHoursActivity" android:exported="false" />
+        <activity android:name=".PrayerIntentionsActivity" android:exported="false" />
+        <activity android:name=".HoursTodayActivity" android:exported="false" />
+        <activity android:name=".HoursTocActivity" android:exported="false" />
+        <activity android:name=".HoursActivity" android:exported="false" />
+        <activity android:name=".RitualReaderActivity" android:exported="false" />
+        <activity android:name=".RitualCatalogActivity" android:exported="false" />
+        <activity android:name=".PastoralActivity" android:exported="false" />
+        <activity android:name=".SearchActivity" android:exported="false" />
+        <activity android:name=".FavoritesActivity" android:exported="false" />
+        <activity android:name=".CatalogActivity" android:exported="false" />
+        <activity android:name=".SettingsActivity" android:exported="false" />
+        <activity android:name=".ReaderSettingsActivity" android:exported="false" />
+        <activity android:name=".BackupActivity" android:exported="false" />
+        <activity android:name=".UpdateCenterActivity" android:exported="false" />
+        <activity android:name=".FeedbackActivity" android:exported="false" />
+        <activity android:name=".MyStudyActivity" android:exported="false" />
+        <activity android:name=".StudyEditorActivity" android:exported="false" />
+        <activity android:name=".StudyDeskActivity" android:exported="false" />
+        <activity android:name=".BilingualHoursActivity" android:exported="false" />
+        <activity android:name=".BilingualHoursReaderActivity" android:exported="false" />
+        <activity android:name=".LatinHoursActivity" android:exported="false" />
+        <activity android:name=".LatinHoursReaderActivity" android:exported="false" />
+        <activity android:name=".MassReadingsActivity" android:exported="false" />
+        <activity android:name=".MassReadingReaderActivity" android:exported="false" />
+        <activity android:name=".MissalActivity" android:exported="false" />
+        <activity android:name=".MissalSectionReaderActivity" android:exported="false" />
+        <activity android:name=".CombinedMassActivity" android:exported="false" />
+        <activity android:name=".LiturgicalCalendarActivity" android:exported="false" />
+        <service android:name=".TtsPlaybackService" android:exported="false" />
+        <receiver android:name=".PrayerReminderReceiver" android:exported="false" />
+        <receiver android:name=".GospelReminderReceiver" android:exported="false" />
+        <receiver android:name=".BiblePlanReminderReceiver" android:exported="false" />
+        <receiver android:name=".BootReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

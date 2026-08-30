@@ -1,0 +1,22 @@
+name: Opinión
+description: Compartir una impresión sobre Ministerium
+title: "[Opinión] "
+labels: ["type:opinion"]
+body:
+  - type: dropdown
+    id: module
+    attributes:
+      label: Módulo
+      options: [General, Biblia, Liturgia, Misal, Leccionario, Derecho canónico, Estudio, Planes, Actualizaciones]
+    validations:
+      required: true
+  - type: textarea
+    id: message
+    attributes:
+      label: Opinión
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versión de Ministerium

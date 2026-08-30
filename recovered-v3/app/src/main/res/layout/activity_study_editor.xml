@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/cream" android:orientation="vertical">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:background="@color/wine_dark" android:gravity="center_vertical"
+        android:orientation="horizontal" android:padding="8dp">
+        <Button android:id="@+id/btnBack" android:layout_width="48dp"
+            android:layout_height="48dp" android:backgroundTint="@android:color/transparent"
+            android:text="‹" android:textColor="#FFFFFF" android:textSize="28sp" />
+        <TextView android:id="@+id/txtStudyEditorTitle" android:layout_width="0dp"
+            android:layout_height="wrap_content" android:layout_weight="1"
+            android:text="Nueva meditación" android:textColor="#FFFFFF"
+            android:textSize="19sp" android:textStyle="bold" />
+        <Button android:id="@+id/btnSaveStudy" android:layout_width="wrap_content"
+            android:layout_height="46dp" android:backgroundTint="@color/gold"
+            android:text="Guardar" android:textAllCaps="false" android:textColor="@color/wine_dark" />
+    </LinearLayout>
+    <ScrollView android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" android:fillViewport="true">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:paddingStart="22dp" android:paddingTop="20dp"
+            android:paddingEnd="22dp" android:paddingBottom="40dp">
+            <TextView android:id="@+id/txtStudyContext" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:background="@drawable/bg_card"
+                android:padding="14dp" android:textColor="@color/muted" android:textSize="14sp" />
+            <EditText android:id="@+id/inputStudyTitle" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="16dp"
+                android:backgroundTint="@color/wine" android:hint="Título"
+                android:inputType="textCapSentences" android:textColor="@color/ink"
+                android:textColorHint="@color/muted" android:textSize="21sp" />
+            <EditText android:id="@+id/inputStudyTags" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="8dp"
+                android:backgroundTint="@color/wine" android:hint="Etiquetas: oración, estudio, tema…"
+                android:inputType="text" android:singleLine="true" android:textColor="@color/ink"
+                android:textColorHint="@color/muted" android:textSize="14sp" />
+            <EditText android:id="@+id/inputStudyBody" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="12dp"
+                android:backgroundTint="@color/wine" android:gravity="top"
+                android:hint="Escribe aquí…" android:inputType="textCapSentences|textMultiLine"
+                android:minHeight="330dp" android:minLines="11" android:textColor="@color/ink"
+                android:textColorHint="@color/muted" android:textSize="18sp" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="El borrador se guarda automáticamente. Las etiquetas se separan con comas."
+                android:textColor="@color/muted" android:textSize="12sp" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

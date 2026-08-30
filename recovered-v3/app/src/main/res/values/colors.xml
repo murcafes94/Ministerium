@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="wine">#6E1D2A</color>
+    <color name="wine_dark">#4A111B</color>
+    <color name="gold">#C9A55C</color>
+    <color name="cream">#F8F3E8</color>
+    <color name="paper">#FFFDF7</color>
+    <color name="ink">#2A2521</color>
+    <color name="muted">#6F665E</color>
+    <color name="line">#DED3C3</color>
+    <color name="dark_bg">#171412</color>
+    <color name="dark_surface">#26211E</color>
+    <color name="dark_ink">#F3EDE4</color>
+    <color name="dark_muted">#C8BDB0</color>
+
+    <!-- 4.1 semantic visual tokens. Components should prefer these names so
+         palette changes do not require editing every layout/drawable. -->
+    <color name="ministerium_surface">@color/paper</color>
+    <color name="ministerium_surface_pressed">#EADFCB</color>
+    <color name="ministerium_text_primary">@color/ink</color>
+    <color name="ministerium_text_secondary">@color/muted</color>
+    <color name="ministerium_accent">@color/wine</color>
+    <color name="ministerium_accent_secondary">@color/gold</color>
+    <color name="ministerium_divider">@color/line</color>
+</resources>

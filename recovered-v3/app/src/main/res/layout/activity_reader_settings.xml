@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/cream">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:paddingBottom="28dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:background="@color/wine_dark" android:gravity="center_vertical"
+            android:orientation="horizontal" android:padding="8dp">
+            <Button android:id="@+id/btnBack" android:layout_width="48dp"
+                android:layout_height="48dp" android:backgroundTint="@android:color/transparent"
+                android:text="‹" android:textColor="#FFFFFF" android:textSize="28sp" />
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:text="Preferencias de lectura"
+                android:textColor="#FFFFFF" android:textSize="21sp" android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_margin="18dp" android:background="@drawable/bg_card"
+            android:orientation="vertical" android:padding="18dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Tipografía general" android:textColor="@color/ink" android:textSize="18sp"
+                android:textStyle="bold" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="La tipografía elegida se aplica a Biblia, Liturgia de las Horas, Misal, Rituales, Magisterio y demás lectores."
+                android:textColor="@color/muted" android:textSize="13sp" />
+            <RadioGroup android:id="@+id/readerFamilyGroup" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:orientation="vertical">
+                <RadioButton android:id="@+id/readerSerif" android:layout_width="match_parent"
+                    android:layout_height="44dp" android:text="Serif (editorial)" android:textColor="@color/ink" />
+                <RadioButton android:id="@+id/readerPalatino" android:layout_width="match_parent"
+                    android:layout_height="44dp" android:text="Palatino (libro clásico)" android:textColor="@color/ink" />
+                <RadioButton android:id="@+id/readerSans" android:layout_width="match_parent"
+                    android:layout_height="44dp" android:text="Sans serif" android:textColor="@color/ink" />
+                <RadioButton android:id="@+id/readerMono" android:layout_width="match_parent"
+                    android:layout_height="44dp" android:text="Monoespaciada" android:textColor="@color/ink" />
+            </RadioGroup>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="14dp" android:text="Márgenes" android:textColor="@color/ink"
+                android:textSize="17sp" android:textStyle="bold" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="Elige el ancho de la columna de lectura como en un lector de libros."
+                android:textColor="@color/muted" android:textSize="13sp" />
+            <RadioGroup android:id="@+id/readerMarginGroup" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:orientation="horizontal"
+                android:weightSum="3">
+                <RadioButton android:id="@+id/readerMarginWide" android:layout_width="0dp"
+                    android:layout_height="52dp" android:layout_weight="1" android:gravity="center"
+                    android:button="@null" android:text="Amplio" android:textColor="@color/ink" />
+                <RadioButton android:id="@+id/readerMarginStandard" android:layout_width="0dp"
+                    android:layout_height="52dp" android:layout_weight="1" android:gravity="center"
+                    android:button="@null" android:text="Estándar" android:textColor="@color/ink" />
+                <RadioButton android:id="@+id/readerMarginNarrow" android:layout_width="0dp"
+                    android:layout_height="52dp" android:layout_weight="1" android:gravity="center"
+                    android:button="@null" android:text="Estrecho" android:textColor="@color/ink" />
+            </RadioGroup>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="12dp" android:text="Tamaño" android:textColor="@color/ink" />
+            <SeekBar android:id="@+id/seekReaderSize" android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" android:text="Grosor" android:textColor="@color/ink" />
+            <SeekBar android:id="@+id/seekReaderWeight" android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" android:text="Interlineado" android:textColor="@color/ink" />
+            <SeekBar android:id="@+id/seekReaderLine" android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+            <TextView android:id="@+id/txtReaderValues" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:layout_marginTop="8dp"
+                android:textColor="@color/muted" android:textSize="12sp" />
+            <TextView android:id="@+id/txtReaderPreview" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="18dp"
+                android:background="@color/paper" android:padding="16dp"
+                android:text="En el principio creó Dios el cielo y la tierra. Esta muestra refleja tus ajustes de lectura."
+                android:textColor="@color/ink" />
+            <Button android:id="@+id/btnReaderReset" android:layout_width="match_parent"
+                android:layout_height="48dp" android:layout_marginTop="18dp"
+                android:background="@drawable/bg_button_secondary" android:text="Restablecer lectura"
+                android:textAllCaps="false" android:textColor="@color/wine" />
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginStart="18dp" android:layout_marginEnd="18dp"
+            android:layout_marginBottom="18dp" android:background="@drawable/bg_card"
+            android:orientation="vertical" android:padding="18dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Concentración durante la oración" android:textColor="@color/ink"
+                android:textSize="18sp" android:textStyle="bold" />
+            <Switch android:id="@+id/switchPrayerFocus" android:layout_width="match_parent"
+                android:layout_height="52dp" android:layout_marginTop="4dp"
+                android:text="Activar No molestar automáticamente"
+                android:textColor="@color/ink" android:textSize="15sp" />
+            <TextView android:id="@+id/txtPrayerFocusStatus" android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Se usa en Liturgia, Misa, Ritual y sesiones del plan bíblico."
+                android:textColor="@color/muted" android:textSize="12sp" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

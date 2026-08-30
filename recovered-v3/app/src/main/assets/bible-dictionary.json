@@ -1,0 +1,40 @@
+{
+  "format": 3,
+  "language": "es",
+  "sources": [
+    {
+      "id": "biblical_pdf",
+      "title": "Diccionario bíblico",
+      "entryCount": 2843,
+      "presentation": "text-card",
+      "index": "dictionary-biblical-index.tsv",
+      "epub": "epubs/Diccionario-Biblico-Texto.epub"
+    },
+    {
+      "id": "biblical_san_pablo",
+      "title": "Diccionario bíblico abreviado",
+      "author": "Equipo editorial San Pablo",
+      "entryCount": 881,
+      "presentation": "text-card",
+      "index": "dictionary-biblical-san-pablo-index.tsv",
+      "epub": "epubs/Diccionario-Biblico-Abreviado-San-Pablo.epub"
+    },
+    {
+      "id": "theology_eunsa",
+      "title": "Diccionario de Teología EUNSA",
+      "edition": "2006",
+      "entryCount": 94,
+      "index": "dictionary-theology-index.tsv",
+      "epub": "epubs/Diccionario-Teologia-Eunsa-2006.epub"
+    },
+    {
+      "id": "rae_15",
+      "title": "Diccionario de la lengua española",
+      "edition": "15.ª edición",
+      "author": "Real Academia Española",
+      "entryCount": 85811,
+      "index": "dictionary-rae-index.tsv",
+      "epub": "epubs/Diccionario-RAE-15-edicion.epub"
+    }
+  ]
+}
