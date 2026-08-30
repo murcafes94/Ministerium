@@ -16,7 +16,6 @@ import java.util.Locale;
 public class BackupActivity extends ThemedActivity {
     private static final int CREATE_BACKUP = 81;
     private static final int RESTORE_BACKUP = 82;
-    private static final String GOOGLE_DRIVE_PACKAGE = "com.google.android.apps.docs";
     private TextView status;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +35,8 @@ public class BackupActivity extends ThemedActivity {
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("application/json");
         intent.putExtra(Intent.EXTRA_TITLE, backupFileName());
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
+                | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
         return intent;
     }
 
@@ -45,34 +46,46 @@ public class BackupActivity extends ThemedActivity {
     }
 
     private void createBackup() {
-        startActivityForResult(backupDocumentIntent(), CREATE_BACKUP);
+        launchBackupPicker(false);
     }
 
     /**
-     * Abre directamente Google Drive cuando está instalado. Drive gestiona su
-     * propia cuenta/inicio de sesión; Ministerium no necesita ni almacena claves
-     * OAuth. Si Drive no expone la acción en ese dispositivo, se usa el selector
-     * seguro de documentos de Android, donde Drive puede elegirse como proveedor.
+     * Drive se expone a Android como proveedor del Storage Access Framework.
+     * No se fuerza el paquete de la app de Drive: hacerlo es frágil en Android
+     * moderno y puede impedir que aparezca el selector. El usuario conserva el
+     * control de la cuenta y de la carpeta, sin OAuth ni credenciales en Ministerium.
      */
     private void createDriveBackup() {
-        Intent drive = backupDocumentIntent();
-        drive.setPackage(GOOGLE_DRIVE_PACKAGE);
-        if (drive.resolveActivity(getPackageManager()) != null) {
-            try {
-                startActivityForResult(drive, CREATE_BACKUP);
-                return;
-            } catch (Exception ignored) {}
+        launchBackupPicker(true);
+    }
+
+    private void launchBackupPicker(boolean preferDrive) {
+        Intent intent = backupDocumentIntent();
+        if (intent.resolveActivity(getPackageManager()) == null) {
+            Toast.makeText(this,
+                    "No hay un proveedor de almacenamiento disponible en este dispositivo.",
+                    Toast.LENGTH_LONG).show();
+            return;
         }
-        Toast.makeText(this,
-                "Abriendo el selector de archivos. Elige Google Drive como ubicación.",
-                Toast.LENGTH_LONG).show();
-        createBackup();
+        if (preferDrive) {
+            Toast.makeText(this,
+                    "En el selector, abre el menú de ubicaciones y elige Google Drive.",
+                    Toast.LENGTH_LONG).show();
+        }
+        startActivityForResult(intent, CREATE_BACKUP);
     }
 
     private void chooseRestore() {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("application/json");
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        if (intent.resolveActivity(getPackageManager()) == null) {
+            Toast.makeText(this,
+                    "No hay un proveedor de archivos disponible para restaurar la copia.",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
         startActivityForResult(intent, RESTORE_BACKUP);
     }
 
