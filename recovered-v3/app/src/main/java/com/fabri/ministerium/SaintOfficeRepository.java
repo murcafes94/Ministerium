@@ -113,9 +113,6 @@ public final class SaintOfficeRepository {
         String saintSection = saintSection(saintHtml, saintEntry.fragment);
         String properHour = properHourSection(saintRoot, saintEntry.filePath,
                 saintSection, temporal.key);
-        // Control editorial 3.0: Santa María Reina (22 de agosto) es memoria;
-        // conserva siempre la salmodia del salterio, aunque la fuente local
-        // contenga una remisión material al domingo I.
         boolean forceTemporalPsalmody = isMaryQueen(saint);
         if (!forceTemporalPsalmody) {
             properHour = expandReferencedPsalmody(saintRoot, saintEntry.filePath, properHour);
@@ -123,9 +120,6 @@ public final class SaintOfficeRepository {
 
         String commonHour = commonHourSection(saintRoot, common, temporal.key);
 
-        // OGLH 235 a): también en una memoria se conservan los salmos y las
-        // antífonas propios cuando el formulario los indica expresamente.
-        // Esto cubre, por ejemplo, propios marianos que remiten al domingo I.
         if (!forceTemporalPsalmody && hasPsalmody(properHour)) {
             String fullHour = properHour;
             String properAntiphon = properGospelAntiphon(saintSection, temporal.key);
@@ -451,17 +445,11 @@ public final class SaintOfficeRepository {
         int ant2 = paragraphStart(hour, "ANT. 2.");
         int ant3 = paragraphStart(hour, "ANT. 3.");
         int reading = paragraphStart(hour, "LECTURA BREVE");
-        // Algunos propios comienzan directamente con la primera antífona y
-        // omiten el rótulo «SALMODIA». La rúbrica y sus tres enlaces siguen
-        // indicando Salmo 62, Daniel 3 y Salmo 149 completos.
         if (salmodia < 0) salmodia = ant1;
         if (salmodia < 0 || ant1 < 0 || ant2 < 0 || ant3 < 0 || reading < 0) return hour;
         List<HourTarget> targets = new ArrayList<>();
         String rubric = normalize(hour.substring(ant1, reading).replaceAll("<[^>]+>", " "));
         if (rubric.contains("LOS SALMOS Y EL CANTICO SE TOMAN DEL DOMINGO I DEL SALTERIO")) {
-            // El Santoral emplea estos tres anclajes para los propios que llevan
-            // la salmodia del domingo I (por ejemplo, María Reina, 22 de agosto).
-            // Resolverlos expresamente evita dejar visibles sólo los enlaces de la rúbrica.
             targets.add(new HourTarget("OEBPS/Text/Section0002.html", "filepos2256303"));
             targets.add(new HourTarget("OEBPS/Text/Section0002.html", "filepos2257391"));
             targets.add(new HourTarget("OEBPS/Text/Section0002.html", "filepos2260088"));
@@ -607,20 +595,15 @@ public final class SaintOfficeRepository {
         Pattern markerPattern = Pattern.compile(
                 "<(?:p|h[1-6])\\b[^>]*>.*?Invitatorio.*?</(?:p|h[1-6])>",
                 Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-        Pattern antiphonPattern = Pattern.compile(
-                "<p\\b[^>]*>\\s*<span\\b[^>]*>\\s*Ant\\.?\\s*</span>(.*?)</p>",
-                Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
         Matcher marker = markerPattern.matcher(section);
-        while (marker.find()) {
-            int end = Math.min(section.length(), marker.end() + 1800);
-            Matcher antiphon = antiphonPattern.matcher(
-                    section.substring(marker.end(), end));
-            if (!antiphon.find()) continue;
-            return antiphon.group(1)
-                    .replaceAll("(?is)<a\\b[^>]*>.*?</a>", "")
-                    .trim();
-        }
-        return "";
+        if (!marker.find()) return "";
+        String tail = section.substring(marker.end(), Math.min(section.length(), marker.end() + 1800));
+        Pattern antPattern = Pattern.compile(
+                "<p\\b[^>]*>\\s*(?:<span\\b[^>]*>)?\\s*Ant\\.\\s*(?:</span>)?\\s*(.*?)</p>",
+                Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+        Matcher ant = antPattern.matcher(tail);
+        if (!ant.find()) return "";
+        return ant.group(1).replaceAll("(?is)<a\\b[^>]*>.*?</a>", "").trim();
     }
 
     private static String replaceInvitatoryAntiphon(String temporalBody,
@@ -693,14 +676,14 @@ public final class SaintOfficeRepository {
     }
 
     private static String properPrayer(String section) {
+        // La oración propia pertenece al formulario actual. Tomar la última
+        // cabecera «Oración» puede saltar al santo siguiente cuando varios
+        // formularios comparten el mismo XHTML (p. ej. san Agustín / santa Rosa).
+        // Por eso se toma la primera oración válida dentro del bloque del santo.
         Matcher matcher = PRAYER_HEADING.matcher(section);
-        int headingStart = -1;
-        int headingEnd = -1;
-        while (matcher.find()) {
-            headingStart = matcher.start();
-            headingEnd = matcher.end();
-        }
-        if (headingStart < 0) return "";
+        if (!matcher.find()) return "";
+        int headingStart = matcher.start();
+        int headingEnd = matcher.end();
         Pattern paragraph = Pattern.compile("<p\\b[^>]*>.*?</p>",
                 Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
         Matcher following = paragraph.matcher(section);
