@@ -17,6 +17,9 @@ public abstract class ThemedActivity extends Activity {
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
+        // 4.1: sustituye glifos/emoji heredados por vectores centrados y
+        // garantiza zonas táctiles consistentes antes de fijar la cabecera.
+        IconConsistency41.apply(this);
         // Las pantallas basadas en ScrollView conservan su barra superior visible.
         // Los lectores tienen además su protección específica en ReaderChrome.
         StaticTopBarController.attach(this);
