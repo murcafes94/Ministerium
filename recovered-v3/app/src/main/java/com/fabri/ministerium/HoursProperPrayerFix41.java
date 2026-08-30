@@ -37,12 +37,27 @@ public final class HoursProperPrayerFix41 {
         if (webView == null) return;
         Context context = webView.getContext();
         if (!(context instanceof Activity)) return;
+        // En el lector bilingüe la oración propia española jamás se inyecta
+        // en el panel latino.
+        if (context instanceof BilingualHoursReaderActivity
+                && webView.getId() != R.id.spanishWebView) return;
+
         Intent intent = ((Activity) context).getIntent();
         String hour = value(intent.getStringExtra(HoursReaderActivity.EXTRA_MEMORY_HOUR_KEY));
+        if (hour.isEmpty()) {
+            hour = value(intent.getStringExtra(BilingualHoursReaderActivity.EXTRA_MEMORY_HOUR));
+        }
         if (!("lauds".equals(hour) || "vespers".equals(hour))) return;
+
         String volumeId = value(intent.getStringExtra(
                 HoursReaderActivity.EXTRA_MEMORY_SAINT_VOLUME_ID));
+        if (volumeId.isEmpty()) {
+            volumeId = value(intent.getStringExtra(BilingualHoursReaderActivity.EXTRA_MEMORY_VOLUME));
+        }
         int tocIndex = intent.getIntExtra(HoursReaderActivity.EXTRA_MEMORY_SAINT_TOC_INDEX, -1);
+        if (tocIndex < 0) {
+            tocIndex = intent.getIntExtra(BilingualHoursReaderActivity.EXTRA_MEMORY_INDEX, -1);
+        }
         if (volumeId.isEmpty() || tocIndex < 0) return;
 
         try {
