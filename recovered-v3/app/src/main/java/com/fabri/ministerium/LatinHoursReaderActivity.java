@@ -10,8 +10,6 @@ import android.webkit.WebViewClient;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.json.JSONObject;
-
 import java.io.File;
 
 /** Liturgia Horarum en latín con la misma jerarquía visual del lector español. */
@@ -66,21 +64,48 @@ public class LatinHoursReaderActivity extends ThemedActivity {
     }
 
     /**
-     * El paquete latino conserva a veces restos editoriales de la fuente. Se
-     * limpian sin imponer colores inline para que la paleta compartida pueda
-     * presentar himno, salmodia, lectura, responsorio, cántico, preces y oración
-     * exactamente con la jerarquía del lector español.
+     * El EPUB latino conserva reglas de maquetación pensadas para páginas fijas.
+     * Aquí se eliminan anchos, centrados, flotados y espaciadores editoriales sin
+     * alterar el texto. Después se aplica la misma jerarquía visual de la Liturgia
+     * de las Horas española.
      */
     private void applySourceCleanup() {
         String script = "(function(){"
+                + "document.body.classList.add('ministerium-latin-hours');"
                 + "var old=document.getElementById('ministerium-latin-source-cleanup');"
                 + "if(!old){old=document.createElement('style');old.id='ministerium-latin-source-cleanup';"
-                + "old.textContent='.patka{display:none!important}img,table{max-width:100%!important;height:auto!important}';"
+                + "old.textContent='"
+                + ".patka{display:none!important}"
+                + "html,body{width:100%!important;max-width:none!important;min-width:0!important;margin:0!important;}"
+                + "body{padding:22px!important;}"
+                + "body div,body section,body article,body main,body header,body footer,body blockquote{width:auto!important;max-width:100%!important;min-width:0!important;margin-left:0!important;margin-right:0!important;float:none!important;position:static!important;}"
+                + "body p,body li{max-width:100%!important;margin-left:0!important;margin-right:0!important;}"
+                + "img,table{max-width:100%!important;height:auto!important;}"
+                + "table{width:100%!important;}"
+                + ".ministerium-latin-prose{text-align:justify!important;text-align-last:left!important;line-height:1.68!important;-webkit-hyphens:auto!important;hyphens:auto!important;}"
+                + ".ministerium-latin-heading{font-weight:700!important;text-align:left!important;margin:1.45em 0 .65em!important;}"
+                + ".ministerium-latin-rubric{font-style:italic!important;text-align:left!important;font-size:.9em!important;}"
+                + ".ministerium-latin-psalm,.ministerium-latin-antiphon{text-align:left!important;text-align-last:auto!important;-webkit-hyphens:none!important;hyphens:none!important;}';"
                 + "document.head.appendChild(old);}"
+                + "var blocks=document.querySelectorAll('div,section,article,main,header,footer,blockquote,p');"
+                + "for(var b=0;b<blocks.length;b++){var e=blocks[b];"
+                + "e.style.removeProperty('width');e.style.removeProperty('min-width');e.style.removeProperty('max-width');"
+                + "e.style.removeProperty('margin-left');e.style.removeProperty('margin-right');e.style.removeProperty('float');"
+                + "e.style.removeProperty('left');e.style.removeProperty('right');"
+                + "if((e.tagName==='DIV'||e.tagName==='P')&&!(e.textContent||'').trim()&&!e.querySelector('img,table,svg,audio,video')){"
+                + "e.style.display='none';}}"
+                + "function norm(v){return(v||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/\\s+/g,' ').trim().toUpperCase();}"
+                + "var ps=document.querySelectorAll('p');for(var p=0;p<ps.length;p++){var t=norm(ps[p].textContent);if(!t)continue;"
+                + "if(/^(HYMNUS|SALMODIA|LECTIO BREVIS|LECTIO|RESPONSORIUM BREVE|RESPONSORIUM|CANTICUM EVANGELICUM|PRECES|ORATIO)$/.test(t)||"
+                + "/^(PSALMUS|CANTICUM)\\s+[0-9IVXLCDM]/.test(t)){ps[p].classList.add('ministerium-latin-heading');}"
+                + "else if(/^ANT\\.|^ANTIPHONA\\b/.test(t)){ps[p].classList.add('ministerium-latin-antiphon');}"
+                + "else if(/^PS\\.|^℟\\.|^℣\\.|^V\\.|^R\\./.test(t)){ps[p].classList.add('ministerium-latin-psalm');}"
+                + "else if(/^(SACERDOS|DIACONUS|DEINDE|TUNC|POSTEA|SI |UBI |OMNES |POPULUS )/.test(t)){ps[p].classList.add('ministerium-latin-rubric');}"
+                + "else if(t.length>95){ps[p].classList.add('ministerium-latin-prose');}}"
                 + "var links=document.querySelectorAll('a');for(var i=0;i<links.length;i++){"
                 + "var t=(links[i].textContent||'').trim();if(t==='↑'||t==='←'||t==='→'){"
-                + "var p=links[i].parentElement;links[i].style.display='none';"
-                + "if(p&&p.tagName==='P'&&(p.textContent||'').trim().length<12)p.style.display='none';}}"
+                + "var parent=links[i].parentElement;links[i].style.display='none';"
+                + "if(parent&&parent.tagName==='P'&&(parent.textContent||'').trim().length<12)parent.style.display='none';}}"
                 + "})()";
         webView.evaluateJavascript(script, null);
     }
