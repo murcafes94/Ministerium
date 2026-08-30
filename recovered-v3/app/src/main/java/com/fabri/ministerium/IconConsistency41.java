@@ -14,12 +14,11 @@ import android.widget.TextView;
  * Normaliza la iconografía heredada que todavía estaba construida con glifos
  * Unicode/emoji. Esos glifos dependen de la fuente del fabricante y pueden
  * verse cortados, sobrepuestos o descentrados. En 4.1 se sustituyen al cargar
- * cada pantalla por vectores de 24dp y se garantiza una zona táctil mínima de
- * 48dp, sin obligar a reescribir todos los layouts históricos a la vez.
+ * cada pantalla por vectores coherentes y se usan dimensiones adaptativas para
+ * teléfono/tablet, sin obligar a reescribir todos los layouts históricos a la vez.
  */
 public final class IconConsistency41 {
     private static final int ICON_DP = 24;
-    private static final int TOUCH_DP = 48;
 
     private IconConsistency41() {}
 
@@ -34,6 +33,8 @@ public final class IconConsistency41 {
         if (view instanceof ImageButton) {
             ImageButton button = (ImageButton) view;
             button.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            int padding = dimension(activity, R.dimen.reader_icon_padding, 12);
+            button.setPadding(padding, padding, padding, padding);
             ensureTouchTarget(activity, button);
         }
         if (view instanceof TextView) {
@@ -78,25 +79,31 @@ public final class IconConsistency41 {
         }
         if ("btnSearch".equals(id) && !text.isEmpty()) {
             setIcon(activity, view, R.drawable.ic_search, false, true);
+            ensureTouchTarget(activity, view);
             return;
         }
 
-        // Iconos de tarjetas que antes eran letras. Solo se reemplazan cuando
-        // el contenedor permite identificar inequívocamente el módulo.
+        // Iconos de tarjetas que antes eran letras. Se reemplazan por símbolos
+        // semánticos del mismo juego vectorial para evitar una mezcla de estilos.
         String parent = entryName(view.getParent() instanceof View ? (View) view.getParent() : null);
-        if ("B".equals(text) && parent.contains("Bible")) {
+        String parentLower = parent.toLowerCase();
+        if ("B".equals(text) && parentLower.contains("bible")) {
             setIcon(activity, view, R.drawable.ic_book_41, true, false);
             return;
         }
-        if ("M".equals(text) && parent.contains("Magisterium")) {
+        if ("M".equals(text) && parentLower.contains("magisterium")) {
             setIcon(activity, view, R.drawable.ic_document_41, true, false);
             return;
         }
-        if ("M".equals(text) && parent.contains("Missal")) {
+        if ("M".equals(text) && parentLower.contains("missal")) {
             setIcon(activity, view, R.drawable.ic_book_41, true, false);
             return;
         }
-        if ("31".equals(text) && parent.toLowerCase().contains("calendar")) {
+        if ("LA".equalsIgnoreCase(text) && parentLower.contains("bilingualhours")) {
+            setIcon(activity, view, R.drawable.ic_book_41, true, false);
+            return;
+        }
+        if ("31".equals(text) && parentLower.contains("calendar")) {
             setIcon(activity, view, R.drawable.ic_calendar, true, false);
             return;
         }
@@ -145,12 +152,12 @@ public final class IconConsistency41 {
             ensureTouchTarget(activity, view);
         } else if (atStart) {
             view.setCompoundDrawables(drawable, null, null, null);
-            view.setCompoundDrawablePadding(dp(activity, 8));
+            view.setCompoundDrawablePadding(dimension(activity, R.dimen.ministerium_space_sm, 8));
         }
     }
 
     private static void ensureTouchTarget(Activity activity, View view) {
-        int min = dp(activity, TOUCH_DP);
+        int min = dimension(activity, R.dimen.reader_icon_touch, 48);
         view.setMinimumWidth(Math.max(view.getMinimumWidth(), min));
         view.setMinimumHeight(Math.max(view.getMinimumHeight(), min));
         ViewGroup.LayoutParams params = view.getLayoutParams();
@@ -173,6 +180,14 @@ public final class IconConsistency41 {
             return view.getResources().getResourceEntryName(view.getId());
         } catch (Exception ignored) {
             return "";
+        }
+    }
+
+    private static int dimension(Activity activity, int resourceId, int fallbackDp) {
+        try {
+            return activity.getResources().getDimensionPixelSize(resourceId);
+        } catch (Exception ignored) {
+            return dp(activity, fallbackDp);
         }
     }
 
