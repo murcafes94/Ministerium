@@ -181,9 +181,22 @@ public final class BibleChapterDocument {
         String lower = html.toLowerCase(Locale.ROOT);
         int start = lower.indexOf("<head");
         int end = start < 0 ? -1 : lower.indexOf("</head>", start);
-        return start < 0 || end < 0
-                ? "<head><meta charset=\"utf-8\"></head>"
-                : html.substring(start, end + 7);
+        String style = "<style id=\"ministerium-bible-chapter-style\">"
+                + "#ministerium-chapter{width:100%;max-width:100%;margin:0 auto;}"
+                + "#ministerium-chapter p{font-size:1.06em!important;line-height:1.72!important;margin:.82em 0!important;"
+                + "text-align:justify!important;text-align-last:left!important;-webkit-hyphens:auto!important;hyphens:auto!important;}"
+                + "#ministerium-chapter h1,#ministerium-chapter h2,#ministerium-chapter h3,#ministerium-chapter h4,#ministerium-chapter h5,#ministerium-chapter h6{"
+                + "text-align:left!important;line-height:1.34!important;margin:1.35em 0 .62em!important;-webkit-hyphens:none!important;hyphens:none!important;}"
+                + "#ministerium-chapter sup[id]{font-size:.72em!important;font-weight:700!important;vertical-align:super!important;"
+                + "line-height:1!important;padding:2px 3px!important;margin-right:1px!important;cursor:pointer!important;}"
+                + "#ministerium-chapter .poetry,#ministerium-chapter .poesia,#ministerium-chapter .poem,#ministerium-chapter .salmo,"
+                + "#ministerium-chapter .verso,#ministerium-chapter .versiculo{"
+                + "text-align:left!important;text-align-last:auto!important;-webkit-hyphens:none!important;hyphens:none!important;}"
+                + "</style>";
+        if (start < 0 || end < 0) {
+            return "<head><meta charset=\"utf-8\">" + style + "</head>";
+        }
+        return html.substring(start, end) + style + "</head>";
     }
 
     private static String bodyOpeningTag(String html) {
