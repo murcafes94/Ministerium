@@ -1,1 +1,1 @@
-Trigger GitHub Actions build from main after static top-bar validation fix.
+Trigger GitHub Actions build from updated main after static top-bar validation fix.
