@@ -33,5 +33,13 @@ public final class LiturgyConclusionEnhancer {
                 + ".ministerium-conclusion-options button.ministerium-conclusion-active{background:var(--ministerium-accent)!important;color:#FFF!important;-webkit-text-fill-color:#FFF!important;}"
                 + ".ministerium-conclusion-text{white-space:pre-line;line-height:1.65;margin:0;}';document.head.appendChild(s);})()";
         webView.evaluateJavascript(script, null);
+
+        // OGLH 235 c: la oración conclusiva de la memoria es la del santo.
+        // Este guard cubre fuentes EPUB en las que no había un placeholder que sustituir.
+        HoursProperPrayerFix41.inject(webView);
+
+        // Las alternativas editoriales «O bien» se presentan como elección compacta
+        // también en Laudes y Vísperas, igual que en el Misal.
+        MissalAlternativeOptions31.inject(webView);
     }
 }
