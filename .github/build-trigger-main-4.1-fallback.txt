@@ -1,0 +1,1 @@
+Trigger GitHub Actions build after enabling Guadalajara fallback for Latin Missal.
