@@ -50,15 +50,18 @@ expect(today.includes('openMassReadings()')
 const webChrome = read('app/src/main/java/com/fabri/ministerium/ReaderChrome.java');
 const textChrome = read('app/src/main/java/com/fabri/ministerium/TextViewReaderChrome.java');
 const preferences = read('app/src/main/java/com/fabri/ministerium/ReaderPreferences.java');
-expect(webChrome.includes('attachAutoHideHeader')
-    && webChrome.includes('final boolean[] hidden'),
-  'Web readers must use stable auto-hide chrome.');
-expect(textChrome.includes('final boolean[] hidden')
-    && textChrome.includes('header.animate().cancel()'),
-  'Text readers must suppress repeated header animations.');
+expect(webChrome.includes('keepHeaderStatic')
+    && webChrome.includes('header.setVisibility(View.VISIBLE)')
+    && webChrome.includes('header.setTranslationY(0f)')
+    && webChrome.includes('webView.setOnScrollChangeListener(null)'),
+  'Web readers must keep the 4.1 top bar static and visible.');
+expect(textChrome.includes('header.setVisibility(View.VISIBLE)')
+    && textChrome.includes('header.setTranslationY(0f)')
+    && textChrome.includes('scroll.setOnScrollChangeListener(null)'),
+  'Text readers must keep the 4.1 top bar static and visible.');
 expect(preferences.includes('maximumColumnWidthCss')
     && preferences.includes('return 780')
     && preferences.includes('return 880'),
   'Tablet reader measure must follow the selected margin.');
 
-console.log('Ministerium 4.0 prayer, privacy, Today and reader contract OK');
+console.log('Ministerium 4.1 prayer, privacy, Today and static reader chrome contract OK');
