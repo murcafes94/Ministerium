@@ -177,11 +177,12 @@ expect(missalReader.includes('MissalAlternativeOptions31.inject')
     && missalAlternatives.includes('ministerium-alt-button')
     && missalAlternatives.includes('Altera formula'),
   'Existing Missal alternative/language controls must remain available.');
-expect(missalReader.includes('"es".equals(language) && MassReadingsRepository.isCurrentMonth(date)')
+expect(missalReader.includes('DailyMassProperRepository.getOrSync(getApplicationContext(), date)')
     && missalReader.includes('MissalLanguageGuard.sanitize')
-    && missalGuard.includes('arquidiocesis-gdl')
-    && missalGuard.includes('Proprium huius celebrationis'),
-  'Latin Missal must not mix Spanish Guadalajara daily propers.');
+    && missalDocument.includes('Propio del día · fuente española')
+    && missalDocument.includes('"la".equals(lang)')
+    && missalGuard.includes('Spanish proper as a fallback'),
+  'Latin Missal must allow a clearly labeled Guadalajara fallback when the Latin proper is unavailable.');
 expect(missalCompact.includes('ministerium-missal-heading')
     && missalCompact.includes('ministerium-people-response')
     && missalCompact.includes('ministerium-source-rubric')
