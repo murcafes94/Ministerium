@@ -104,18 +104,31 @@ jobs:
             app/src/main/assets/hours-clean/ordinary \
             --include='*.htm' --include='*.html' --include='*.xhtml'
 
-      - name: Build Liturgia Papal packages
+      - name: Refresh Liturgia Papal packages with local fallback
+        shell: bash
         run: |
-          python tools/build_liturgiapapal_missal_31.py --language all
-          python tools/build_liturgiapapal_rituals_31.py
-          test -f app/src/main/assets/missal/es/initial.txt
-          test -f app/src/main/assets/missal/es/word.txt
-          test -f app/src/main/assets/missal/es/proper_ordinary.txt
-          test -f app/src/main/assets/missal/la/initial.txt
-          test -f app/src/main/assets/rituals/liturgiapapal/baptism_one_child.txt
-          test -f app/src/main/assets/rituals/liturgiapapal/unction.txt
-          test -f app/src/main/assets/rituals/liturgiapapal/funeral_typical.txt
-          test -f app/src/main/assets/rituals/liturgiapapal/blessing_house.txt
+          set -u
+          if python tools/build_liturgiapapal_missal_31.py --language all; then
+            echo "Liturgia Papal Missal refreshed from source."
+          else
+            echo "WARNING: Liturgia Papal Missal refresh failed; using committed local package."
+          fi
+          if python tools/build_liturgiapapal_rituals_31.py; then
+            echo "Liturgia Papal Ritual package refreshed from source."
+          else
+            echo "WARNING: Liturgia Papal Ritual refresh failed; using committed local package."
+          fi
+          set -e
+          test -s app/src/main/assets/missal/es/initial.txt
+          test -s app/src/main/assets/missal/es/word.txt
+          test -s app/src/main/assets/missal/es/proper_ordinary.txt
+          test -s app/src/main/assets/missal/la/initial.txt
+          test -s app/src/main/assets/missal/manifest.json
+          test -s app/src/main/assets/rituals/liturgiapapal/baptism_one_child.txt
+          test -s app/src/main/assets/rituals/liturgiapapal/unction.txt
+          test -s app/src/main/assets/rituals/liturgiapapal/funeral_typical.txt
+          test -s app/src/main/assets/rituals/liturgiapapal/blessing_house.txt
+          test -s app/src/main/assets/rituals/liturgiapapal/manifest.json
 
       - name: Enrich structural Missal catalog
         run: |
