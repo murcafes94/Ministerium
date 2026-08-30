@@ -126,6 +126,16 @@ public final class ReaderPreferences {
         ReaderEditorialEnhancer.apply(context, webView);
         SpanishGospelCanticleEnhancer.inject(webView);
         HoursSeasonFilter.apply(context, webView);
+
+        // En los lectores de la Liturgia de las Horas, las variantes «O bien» / «Vel»
+        // se presentan como opciones compactas y no como fórmulas apiladas. El guard
+        // de oración propia actúa sólo cuando el contexto contiene un santo seleccionado.
+        if (context instanceof HoursReaderActivity
+                || context instanceof BilingualHoursReaderActivity
+                || context instanceof LatinHoursReaderActivity) {
+            MissalAlternativeOptions31.inject(webView);
+            HoursProperPrayerFix41.inject(webView);
+        }
     }
 
     private static String sanitizeFamily(String value) {
