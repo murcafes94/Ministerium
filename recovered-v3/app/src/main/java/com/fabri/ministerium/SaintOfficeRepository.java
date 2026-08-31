@@ -59,8 +59,8 @@ public final class SaintOfficeRepository {
         if (saint == null) return Collections.emptyList();
         EpubTocEntry saintEntry = tocEntry(context, saint);
         File root = EpubUtils.ensureExtracted(context, saint.volume);
-        String section = saintSection(read(new File(root, saintEntry.filePath)),
-                saintEntry.fragment);
+        String section = saintSection(context, saint, saintEntry,
+                read(new File(root, saintEntry.filePath)));
         String normalized = normalize(section.replaceAll("<[^>]+>", " "));
         List<LocatedChoice> located = new ArrayList<>();
         for (CommonCandidate candidate : COMMONS) {
@@ -110,7 +110,7 @@ public final class SaintOfficeRepository {
         File saintRoot = EpubUtils.ensureExtracted(context, santoral);
         EpubTocEntry saintEntry = tocEntry(context, saint);
         String saintHtml = read(new File(saintRoot, saintEntry.filePath));
-        String saintSection = saintSection(saintHtml, saintEntry.fragment);
+        String saintSection = saintSection(context, saint, saintEntry, saintHtml);
         String properHour = properHourSection(saintRoot, saintEntry.filePath,
                 saintSection, temporal.key);
         boolean forceTemporalPsalmody = isMaryQueen(saint);
@@ -211,8 +211,8 @@ public final class SaintOfficeRepository {
 
         EpubTocEntry saintEntry = tocEntry(context, saint);
         File saintRoot = EpubUtils.ensureExtracted(context, saint.volume);
-        String saintSection = saintSection(
-                read(new File(saintRoot, saintEntry.filePath)), saintEntry.fragment);
+        String saintSection = saintSection(context, saint, saintEntry,
+                read(new File(saintRoot, saintEntry.filePath)));
         String antiphon = properInvitatoryAntiphon(saintSection);
         String source = "propia del santo";
 
@@ -251,7 +251,7 @@ public final class SaintOfficeRepository {
         EpubTocEntry saintEntry = tocEntry(context, saint);
         File saintRoot = EpubUtils.ensureExtracted(context, saint.volume);
         String saintHtml = read(new File(saintRoot, saintEntry.filePath));
-        String saintSection = saintSection(saintHtml, saintEntry.fragment);
+        String saintSection = saintSection(context, saint, saintEntry, saintHtml);
         String properOffice = properHourSection(saintRoot, saintEntry.filePath,
                 saintSection, "office");
         String commonOffice = commonHourSection(saintRoot, common, "office");
@@ -314,7 +314,7 @@ public final class SaintOfficeRepository {
         EpubTocEntry saintEntry = tocEntry(context, saint);
         File saintRoot = EpubUtils.ensureExtracted(context, saint.volume);
         String saintHtml = read(new File(saintRoot, saintEntry.filePath));
-        String saintSection = saintSection(saintHtml, saintEntry.fragment);
+        String saintSection = saintSection(context, saint, saintEntry, saintHtml);
         String proper = properHourSection(saintRoot, saintEntry.filePath,
                 saintSection, "middle");
         String commonHour = commonHourSection(saintRoot, common, "middle");
@@ -665,21 +665,32 @@ public final class SaintOfficeRepository {
         return html.substring(start, tagStart(html, end));
     }
 
-    private static String saintSection(String html, String fragment) {
-        int start = idPosition(html, fragment);
+    private static String saintSection(Context context, HoursLink saint,
+                                       EpubTocEntry currentEntry, String html)
+            throws Exception {
+        int start = idPosition(html, currentEntry.fragment);
         if (start < 0) return body(html);
         start = tagStart(html, start);
-        int next = html.indexOf("id=\"sigil_toc_id_", start + 20);
-        if (next < 0) next = html.indexOf("id='sigil_toc_id_", start + 20);
-        int end = next < 0 ? bodyEnd(html) : tagStart(html, next);
+
+        int end = bodyEnd(html);
+        List<EpubTocEntry> entries = EpubUtils.tableOfContents(context, saint.volume);
+        for (int i = saint.tocIndex + 1; i < entries.size(); i++) {
+            EpubTocEntry candidate = entries.get(i);
+            if (candidate.depth > currentEntry.depth) continue;
+
+            // The next sibling/ancestor entry marks the end of this saint.
+            // If both entries share the same XHTML (as San Agustín and Santa Rosa
+            // de Lima do in the source EPUB), cut exactly at the next TOC fragment.
+            if (currentEntry.filePath.equals(candidate.filePath)) {
+                int next = idPosition(html, candidate.fragment);
+                if (next > start) end = tagStart(html, next);
+            }
+            break;
+        }
         return html.substring(start, Math.max(start, end));
     }
 
     private static String properPrayer(String section) {
-        // La oración propia pertenece al formulario actual. Tomar la última
-        // cabecera «Oración» puede saltar al santo siguiente cuando varios
-        // formularios comparten el mismo XHTML (p. ej. san Agustín / santa Rosa).
-        // Por eso se toma la primera oración válida dentro del bloque del santo.
         Matcher matcher = PRAYER_HEADING.matcher(section);
         if (!matcher.find()) return "";
         int headingStart = matcher.start();
