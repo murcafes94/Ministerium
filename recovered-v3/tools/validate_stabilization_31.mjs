@@ -80,7 +80,9 @@ forbidText(missalDocument + composer, 'MassReadingsRepository.syncDay', 'descarg
 // Liturgia Papal/Rituals and explicit update contract.
 requireText(ritualRepository, 'rituals/liturgiapapal/', 'Rituales Liturgia Papal');
 forbidText(ritualRepository, 'argentina', 'fuente ritual argentina heredada');
-requireText(backup, 'com.google.android.apps.docs', 'proveedor Google Drive');
+requireText(backup, 'Intent.ACTION_CREATE_DOCUMENT', 'backup mediante Storage Access Framework');
+requireText(backup, 'Intent.CATEGORY_OPENABLE', 'selector de documentos del sistema');
+forbidText(backup, 'com.google.android.apps.docs', 'dependencia rígida del paquete Google Drive');
 requireText(backupManager, 'ministerium-study-v3.json', 'Mi estudio dentro del backup');
 forbidText(mainActivity, 'LiturgicalCalendarRepository.ensureCurrentYear', 'actualización del calendario al iniciar');
 requireText(updateCenter, 'LiturgicalCalendarRepository.updateYear', 'actualización explícita del calendario');
