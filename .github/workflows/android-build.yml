@@ -2,10 +2,14 @@ name: Android Build
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feature/bible-semantic-v3.1 ]
     paths:
       - 'app/**'
-      - 'bootstrap/v3/ministerium-v3.zip.part-*'
+      - 'migration/**'
+      - 'tools/bible_import/**'
+      - 'tools/calendar_regression/**'
+      - 'bootstrap/v3/**'
+      - 'ministerium-v3.zip (1).part-*'
       - 'gradle/**'
       - 'gradlew'
       - 'gradlew.bat'
@@ -24,27 +28,102 @@ jobs:
   build:
     name: Compile Ministerium APK
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Reconstruct full v3 project when bootstrap parts exist
+      - name: Test Roman calendar arithmetic
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/calendar-test"
+          javac -d "$RUNNER_TEMP/calendar-test" \
+            app/src/main/java/com/fabri/ministerium/RomanCalendarMath.java \
+            tools/calendar_regression/RomanCalendarMathTest.java
+          java -cp "$RUNNER_TEMP/calendar-test" com.fabri.ministerium.RomanCalendarMathTest
+
+      - name: Reconstruct and verify full v3 project
         shell: bash
         run: |
           set -euo pipefail
-          if compgen -G 'bootstrap/v3/ministerium-v3.zip.part-*' > /dev/null; then
-            cat bootstrap/v3/ministerium-v3.zip.part-* > "$RUNNER_TEMP/ministerium-v3.zip"
-            if [ -f bootstrap/v3/ministerium-v3.zip.sha256 ]; then
-              EXPECTED=$(awk '{print $1}' bootstrap/v3/ministerium-v3.zip.sha256)
-              ACTUAL=$(sha256sum "$RUNNER_TEMP/ministerium-v3.zip" | awk '{print $1}')
-              test "$EXPECTED" = "$ACTUAL"
-            fi
-            rm -rf "$RUNNER_TEMP/ministerium-v3"
-            mkdir -p "$RUNNER_TEMP/ministerium-v3"
-            unzip -q "$RUNNER_TEMP/ministerium-v3.zip" -d "$RUNNER_TEMP/ministerium-v3"
-            rsync -a --exclude='.git/' "$RUNNER_TEMP/ministerium-v3/" ./
-          fi
+          OUT="$RUNNER_TEMP/ministerium-v3.zip"
+          : > "$OUT"
+          cat "ministerium-v3.zip (1).part-00" >> "$OUT"
+          cat "ministerium-v3.zip (1).part-01" >> "$OUT"
+          cat "bootstrap/v3/ministerium-v3.zip (1).part-02" >> "$OUT"
+          cat bootstrap/v3/ministerium-v3.zip.part-03 >> "$OUT"
+          cat bootstrap/v3/ministerium-v3.zip.part-04 >> "$OUT"
+          cat bootstrap/v3/ministerium-v3.zip.part-05 >> "$OUT"
+          cat bootstrap/v3/ministerium-v3.zip.part-06 >> "$OUT"
+          EXPECTED=$(awk '{print $1}' bootstrap/v3/ministerium-v3.zip.sha256)
+          ACTUAL=$(sha256sum "$OUT" | awk '{print $1}')
+          test "$EXPECTED" = "$ACTUAL"
+          unzip -tq "$OUT"
+          rm -rf "$RUNNER_TEMP/ministerium-v3"
+          mkdir -p "$RUNNER_TEMP/ministerium-v3"
+          unzip -q "$OUT" -d "$RUNNER_TEMP/ministerium-v3"
+          rsync -a --exclude='.git/' "$RUNNER_TEMP/ministerium-v3/" ./
+
+      - name: Apply Android SDK compatibility fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          universal = Path("app/src/main/java/com/fabri/ministerium/UniversalSelectionMenu.java")
+          if universal.exists():
+              text = universal.read_text()
+              if "import java.lang.reflect.Method;" not in text:
+                  text = text.replace("import java.util.UUID;", "import java.lang.reflect.Method;\nimport java.util.UUID;", 1)
+              if "webView.setCustomSelectionActionModeCallback(" in text:
+                  text = text.replace("webView.setCustomSelectionActionModeCallback(", "installSelectionCallback(webView, ", 1)
+              helper = """
+
+              private static void installSelectionCallback(WebView webView, ActionMode.Callback callback) {
+                  try {
+                      Method method = WebView.class.getMethod("setCustomSelectionActionModeCallback", ActionMode.Callback.class);
+                      method.invoke(webView, callback);
+                  } catch (Exception ignored) {}
+              }
+          """
+              if "installSelectionCallback(webView, " in text and "private static void installSelectionCallback" not in text:
+                  text = text.rsplit("\n}", 1)[0] + helper + "\n}"
+              universal.write_text(text)
+          continue_store = Path("app/src/main/java/com/fabri/ministerium/ContinueReadingStore.java")
+          if continue_store.exists():
+              text = continue_store.read_text()
+              if "import org.json.JSONArray;" not in text:
+                  text = text.replace("import org.json.JSONObject;", "import org.json.JSONArray;\nimport org.json.JSONObject;", 1)
+              text = text.replace("JSONObject.getNames(position.extras)", "jsonNames(position.extras)", 1)
+              helper = """
+
+              private static String[] jsonNames(JSONObject object) {
+                  JSONArray names = object == null ? null : object.names();
+                  if (names == null) return new String[0];
+                  String[] result = new String[names.length()];
+                  for (int i = 0; i < names.length(); i++) result[i] = names.optString(i, "");
+                  return result;
+              }
+          """
+              if "jsonNames(position.extras)" in text and "private static String[] jsonNames" not in text:
+                  text = text.rsplit("\n}", 1)[0] + helper + "\n}"
+              continue_store.write_text(text)
+          PY
+
+      - name: Apply Ministerium 3.1 migration
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("migration/v3.1/apply.py")
+          text = path.read_text(encoding="utf-8")
+          text = text.replace("    patch_bible_visual_line()\n", "", 1)
+          path.write_text(text, encoding="utf-8")
+          PY
+          python3 migration/v3.1/apply.py
+          python3 migration/v3.1/post_apply.py
+
+      - name: Test Bible semantic importers
+        run: python3 tools/bible_import/test_import.py
 
       - name: Set up JDK 17 for Android SDK tools
         uses: actions/setup-java@v4
@@ -64,12 +143,18 @@ jobs:
           java-version: '11'
           cache: gradle
 
-      - name: Validate Ministerium 3.0 project
+      - name: Validate Ministerium 3.1 project
         shell: bash
         run: |
           test -f app/build.gradle
           test -f app/src/main/AndroidManifest.xml
-          grep -q "versionName '3.0.0'" app/build.gradle
+          grep -q "versionCode 31" app/build.gradle
+          grep -q "versionName '3.1.0'" app/build.gradle
+          grep -q "SemanticBibleCompat.chapterHtml" app/src/main/java/com/fabri/ministerium/BibleReaderActivity.java
+          grep -q "preserve the Bible EPUB's own graphic line" app/src/main/java/com/fabri/ministerium/BibleReaderActivity.java
+          grep -q "RomanCalendarMath.ordinaryWeekNumber" app/src/main/java/com/fabri/ministerium/LiturgicalResolver.java
+          grep -q "activity_combined_continuous" app/src/main/java/com/fabri/ministerium/CombinedMassActivity.java
+          grep -q '"versionCode": 31' app/src/main/assets/package-manifest.json
           if [ -f tools/validate_project.mjs ]; then node tools/validate_project.mjs; fi
           if [ -f tools/validate_content.mjs ]; then node tools/validate_content.mjs; fi
 
@@ -80,13 +165,12 @@ jobs:
         run: ./gradlew --no-daemon clean assembleDebug
 
       - name: Calculate SHA-256
-        shell: bash
         run: sha256sum app/build/outputs/apk/debug/*.apk | tee apk-sha256.txt
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: Ministerium-3.0.0-debug
+          name: Ministerium-3.1.0-debug
           path: |
             app/build/outputs/apk/debug/*.apk
             apk-sha256.txt

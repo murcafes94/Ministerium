@@ -1,0 +1,56 @@
+name: LitCal Calendar Cross-check
+
+on:
+  push:
+    branches: [ feature/bible-semantic-v3.1 ]
+    paths:
+      - 'tools/calendar_validation/**'
+      - '.github/workflows/calendar-litcal-validation.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'tools/calendar_validation/**'
+      - '.github/workflows/calendar-litcal-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-year:
+    name: Validate ${{ matrix.year }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        year: [2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compare General Roman temporal cycle
+        shell: bash
+        run: |
+          set +e
+          python3 tools/calendar_validation/validate_litcal.py \
+            --start ${{ matrix.year }} \
+            --end ${{ matrix.year }} \
+            --epiphany SUNDAY_JAN2_JAN8
+          code=$?
+          set -e
+          if [ "$code" -eq 75 ]; then
+            echo "::warning::LitCal is temporarily unavailable; external cross-check deferred for ${{ matrix.year }}."
+            exit 0
+          fi
+          exit "$code"
+
+  note-ecuador-scope:
+    name: Ecuador scope note
+    runs-on: ubuntu-latest
+    steps:
+      - name: Explain validation scope
+        run: |
+          echo 'This workflow validates the General Roman temporal cycle only.'
+          echo 'Ecuadorian proper celebrations remain in Ministerium local data.'
+          echo 'LiturgicalCalendarAPI currently has no Ecuador national calendar profile to use as an authoritative replacement.'

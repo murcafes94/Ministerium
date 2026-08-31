@@ -1,0 +1,29 @@
+name: Semantic Core 3.1 Inspect
+on:
+  push:
+    branches: [ feature/bible-semantic-v3.1 ]
+    paths: ['.github/workflows/bible-v3.1-inspect.yml']
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reconstruct
+        shell: bash
+        run: |
+          OUT="$RUNNER_TEMP/v3.zip"; : > "$OUT"
+          cat "ministerium-v3.zip (1).part-00" "ministerium-v3.zip (1).part-01" "bootstrap/v3/ministerium-v3.zip (1).part-02" bootstrap/v3/ministerium-v3.zip.part-03 bootstrap/v3/ministerium-v3.zip.part-04 bootstrap/v3/ministerium-v3.zip.part-05 bootstrap/v3/ministerium-v3.zip.part-06 >> "$OUT"
+          unzip -q "$OUT" -d "$RUNNER_TEMP/v3"
+          rsync -a --exclude='.git/' "$RUNNER_TEMP/v3/" ./
+      - name: Inspect adaptive margin validation
+        shell: bash
+        run: |
+          echo '===== validate_content margins ====='
+          sed -n '100,150p' tools/validate_content.mjs || true
+          echo '===== matching checks ====='
+          grep -n -A18 -B10 -Ei 'margen|margin|padding|BibleReaderActivity' tools/validate_content.mjs | head -260 || true
