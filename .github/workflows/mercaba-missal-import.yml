@@ -1,0 +1,69 @@
+name: Mercaba Missal Import
+
+on:
+  workflow_dispatch:
+    inputs:
+      page_limit:
+        description: 'Número de páginas para prueba; 0 = todas'
+        required: false
+        default: '0'
+      delay:
+        description: 'Pausa entre peticiones en segundos'
+        required: false
+        default: '0.5'
+
+permissions:
+  contents: read
+
+jobs:
+  import-for-review:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: recovered-v3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Importar Misal de Mercaba
+        run: |
+          python tools/import_mercaba_missal.py \
+            --output build/mercaba-missal/index.json \
+            --limit '${{ inputs.page_limit }}' \
+            --delay '${{ inputs.delay }}'
+
+      - name: Resumen de auditoria
+        run: |
+          python - <<'PY'
+          import json
+          from collections import Counter
+          from pathlib import Path
+          p = Path('build/mercaba-missal/index.json')
+          data = json.loads(p.read_text(encoding='utf-8'))
+          entries = data.get('entries', [])
+          sources = data.get('sources', [])
+          sections = Counter(e.get('section', 'unknown') for e in entries)
+          errors = [s for s in sources if s.get('error')]
+          print('Formularios:', len(entries))
+          print('Fuentes:', len(sources))
+          print('Errores:', len(errors))
+          for key, value in sorted(sections.items()):
+              print(f'  {key}: {value}')
+          if errors:
+              print('\nErrores de descarga/parseo:')
+              for item in errors:
+                  print('-', item.get('url'), item.get('error'))
+          PY
+
+      - name: Subir paquete para revision
+        uses: actions/upload-artifact@v4
+        with:
+          name: mercaba-missal-review
+          path: recovered-v3/build/mercaba-missal/index.json
+          if-no-files-found: error
+          retention-days: 14
