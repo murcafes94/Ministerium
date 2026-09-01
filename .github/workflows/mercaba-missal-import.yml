@@ -11,6 +11,11 @@ on:
         description: 'Pausa entre peticiones en segundos'
         required: false
         default: '0.5'
+  push:
+    branches: [main]
+    paths:
+      - 'recovered-v3/tools/import_mercaba_missal.py'
+      - '.github/workflows/mercaba-missal-import.yml'
 
 permissions:
   contents: read
@@ -21,6 +26,9 @@ jobs:
     defaults:
       run:
         working-directory: recovered-v3
+    env:
+      PAGE_LIMIT: ${{ inputs.page_limit || '0' }}
+      REQUEST_DELAY: ${{ inputs.delay || '0.5' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,8 +42,8 @@ jobs:
         run: |
           python tools/import_mercaba_missal.py \
             --output build/mercaba-missal/index.json \
-            --limit '${{ inputs.page_limit }}' \
-            --delay '${{ inputs.delay }}'
+            --limit "$PAGE_LIMIT" \
+            --delay "$REQUEST_DELAY"
 
       - name: Resumen de auditoria
         run: |
