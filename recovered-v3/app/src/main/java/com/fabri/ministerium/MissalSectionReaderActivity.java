@@ -76,13 +76,17 @@ public class MissalSectionReaderActivity extends ThemedActivity {
                     }
                     DailyMassProperRepository.getOrSync(getApplicationContext(), date);
                 }
+                LiturgicalDay resolvedDay = LiturgicalResolver.resolve(getApplicationContext(), date);
                 MissalDocument31.Result raw = "ordinary".equals(section)
                         ? MissalOrdinaryDocument41.build(
                                 getApplicationContext(), date, language)
                         : MissalDocument31.build(
                                 getApplicationContext(), date, section, language);
+                String fallbackHtml = MercabaMissalFallback.apply(getApplicationContext(),
+                        raw.html, section, language,
+                        resolvedDay == null ? "" : resolvedDay.celebration);
                 MissalDocument31.Result built = new MissalDocument31.Result(
-                        raw.title, raw.subtitle, MissalLanguageGuard.sanitize(raw.html, language));
+                        raw.title, raw.subtitle, MissalLanguageGuard.sanitize(fallbackHtml, language));
                 runOnUiThread(() -> show(built));
             } catch (Exception error) {
                 runOnUiThread(() -> {
@@ -118,7 +122,7 @@ public class MissalSectionReaderActivity extends ThemedActivity {
                 + ":" + date.get(Calendar.DAY_OF_MONTH) + ":" + section + ":" + language;
         String sourceName = "la".equals(language)
                 ? "Missale Romanum · Liturgia Papal · respaldo Guadalajara cuando falte el propio latino"
-                : "Misal Romano · Liturgia Papal / Arquidiócesis de Guadalajara";
+                : "Misal Romano · Liturgia Papal / Guadalajara · respaldo Mercabá verificado";
         return new ReaderContext(sourceName, source, title, subtitle, "Liturgia", true);
     }
 
