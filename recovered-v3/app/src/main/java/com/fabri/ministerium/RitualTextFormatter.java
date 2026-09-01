@@ -12,6 +12,8 @@ import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 
 import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -23,6 +25,7 @@ public final class RitualTextFormatter {
 
     public static CharSequence format(Context context, String source) {
         if (source == null) return "";
+        source = joinBrokenProseContinuations(source);
         boolean dark = ThemeUtils.isDark(context);
         int accent = Color.parseColor(dark ? "#D9B96F" : "#6E1D2A");
         int ink = Color.parseColor(dark ? "#F3EDE4" : "#2A2521");
@@ -50,7 +53,6 @@ public final class RitualTextFormatter {
             int end = out.length() - 1;
 
             if (assembly) {
-                // Respuesta del pueblo/asamblea: bloque más visible y en negrita.
                 out.setSpan(new StyleSpan(Typeface.BOLD), start, end,
                         Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 out.setSpan(new BackgroundColorSpan(responseBg), start, end,
@@ -60,7 +62,6 @@ public final class RitualTextFormatter {
                 out.setSpan(new LeadingMarginSpan.Standard(22, 22), start, end,
                         Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             } else if (rubric) {
-                // Rúbrica: menor, cursiva y secundaria; nunca parece texto proclamado.
                 out.setSpan(new StyleSpan(Typeface.ITALIC), start, end,
                         Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 out.setSpan(new RelativeSizeSpan(.90f), start, end,
@@ -70,7 +71,6 @@ public final class RitualTextFormatter {
                 out.setSpan(new LeadingMarginSpan.Standard(28, 28), start, end,
                         Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             } else if (celebrant) {
-                // Palabras del sacerdote/diácono/ministro: bloque propio, distinto del pueblo.
                 out.setSpan(new BackgroundColorSpan(celebrantBg), start, end,
                         Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                 out.setSpan(new LeadingMarginSpan.Standard(12, 12), start, end,
@@ -90,6 +90,52 @@ public final class RitualTextFormatter {
             }
         }
         return out;
+    }
+
+    /**
+     * Algunos TXT del Ritual/Bendicional conservan saltos editoriales del PDF en mitad
+     * de una oración. Solo se unen continuaciones inequívocas de prosa; nunca títulos,
+     * rúbricas, respuestas ni intervenciones marcadas del ministro.
+     */
+    private static String joinBrokenProseContinuations(String source) {
+        String[] raw = source.replace("\r", "").split("\n", -1);
+        List<String> out = new ArrayList<>();
+        for (String value : raw) {
+            String line = value.trim();
+            if (line.isEmpty()) {
+                out.add("");
+                continue;
+            }
+            if (!out.isEmpty()) {
+                int last = out.size() - 1;
+                String previous = out.get(last).trim();
+                if (!previous.isEmpty() && shouldJoin(previous, line)) {
+                    out.set(last, previous + " " + line);
+                    continue;
+                }
+            }
+            out.add(line);
+        }
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < out.size(); i++) {
+            if (i > 0) result.append('\n');
+            result.append(out.get(i));
+        }
+        return result.toString();
+    }
+
+    private static boolean shouldJoin(String previous, String next) {
+        if (!(previous.endsWith(",") || previous.endsWith(";") || previous.endsWith(":"))) {
+            return false;
+        }
+        if (next.isEmpty() || !Character.isLowerCase(next.codePointAt(0))) return false;
+        String left = normalize(previous);
+        String right = normalize(next);
+        if (isResponse(left) || isRubric(left) || isMinisterSpeech(left)
+                || isHeading(previous, left)) return false;
+        if (isResponse(right) || isRubric(right) || isMinisterSpeech(right)
+                || isHeading(next, right)) return false;
+        return true;
     }
 
     private static void appendBreak(SpannableStringBuilder out) {
