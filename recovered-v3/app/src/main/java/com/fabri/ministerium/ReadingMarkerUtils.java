@@ -58,6 +58,14 @@ public final class ReadingMarkerUtils {
     public static void injectHighlights(Activity activity, WebView webView, String sourceKey) {
         List<ReadingMarker> entries = ReadingMarkerStore.forSource(activity, sourceKey);
         for (ReadingMarker entry : entries) injectQuote(webView, entry.quote);
+        injectStudyMarkers(activity, webView, sourceKey);
+    }
+
+    private static void injectStudyMarkers(Activity activity, WebView webView, String sourceKey) {
+        for (StudyEntry entry : StudyStore.forSource(activity, sourceKey)) {
+            if (!(StudyEntry.NOTE.equals(entry.type) || StudyEntry.BOOKMARK.equals(entry.type))) continue;
+            injectStudyMarker(webView, entry);
+        }
     }
 
     public static void scrollToQuote(WebView webView, String quote) {
@@ -84,5 +92,48 @@ public final class ReadingMarkerUtils {
                 + "m.setAttribute('data-quote',q);m.appendChild(r.extractContents());r.insertNode(m);}catch(e){}})("
                 + quote + ")";
         webView.evaluateJavascript(script, null);
+    }
+
+    private static void injectStudyMarker(WebView webView, StudyEntry entry) {
+        String id = JSONObject.quote(entry.id == null ? "" : entry.id);
+        String quote = JSONObject.quote(entry.anchorText == null || entry.anchorText.trim().isEmpty()
+                ? entry.quote == null ? "" : entry.quote : entry.anchorText);
+        String glyph = JSONObject.quote(markerGlyph(entry.icon));
+        String background = JSONObject.quote(markerColor(entry.color));
+        String foreground = JSONObject.quote("yellow".equals(entry.color) ? "#2A2521" : "#FFFFFF");
+        String script = "(function(id,q,g,bg,fg){"
+                + "if(!id||!q||document.querySelector('[data-study-id=\\\"'+id+'\\\"]'))return;"
+                + "var css=document.getElementById('ministerium-study-marker-fallback-css');"
+                + "if(!css){css=document.createElement('style');css.id='ministerium-study-marker-fallback-css';"
+                + "css.textContent='.ministerium-study-marker{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-width:24px!important;height:24px!important;margin-left:5px!important;padding:0 5px!important;border:0!important;border-radius:12px!important;font:700 14px sans-serif!important;vertical-align:middle!important;box-shadow:0 1px 4px rgba(0,0,0,.22)!important;cursor:pointer!important;}';document.head.appendChild(css);}"
+                + "function n(v){return(v||'').replace(/\\s+/g,' ').trim();}"
+                + "function marker(host){var m=document.createElement('button');m.type='button';m.className='ministerium-study-marker';m.setAttribute('data-study-id',id);m.textContent=g;m.style.setProperty('background-color',bg,'important');m.style.setProperty('color',fg,'important');m.style.setProperty('-webkit-text-fill-color',fg,'important');m.onclick=function(ev){ev.preventDefault();ev.stopPropagation();if(window.MinisteriumStudy)MinisteriumStudy.openEntry(id);};host.appendChild(m);return true;}"
+                + "var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),x,a=[],t='';while(x=w.nextNode()){if(x.parentNode&&x.parentNode.tagName!='SCRIPT'&&x.parentNode.tagName!='STYLE'&&!x.parentNode.classList.contains('ministerium-study-marker')){a.push({n:x,s:t.length,e:t.length+x.nodeValue.length});t+=x.nodeValue;}}"
+                + "var at=t.indexOf(q);if(at>=0){var end=at+q.length,en=null,eo=0;for(var i=0;i<a.length;i++){var z=a[i];if(end>=z.s&&end<=z.e){en=z.n;eo=Math.max(0,end-z.s);break;}}if(en){try{var r=document.createRange();r.setStart(en,eo);r.collapse(true);var span=document.createElement('span');r.insertNode(span);if(marker(span))return;}catch(e){}}}"
+                + "var nq=n(q),blocks=document.querySelectorAll('.verse,p,li,blockquote');for(var j=0;j<blocks.length;j++){var bt=n(blocks[j].textContent);if(bt&&nq&&bt.indexOf(nq)>=0){marker(blocks[j]);return;}}"
+                + "for(var k=0;k<blocks.length;k++){var bt2=n(blocks[k].textContent);if(!bt2||!nq)continue;var probe=nq.length>80?nq.substring(0,80):nq;if(bt2.indexOf(probe)>=0){marker(blocks[k]);return;}}"
+                + "})(" + id + "," + quote + "," + glyph + "," + background + "," + foreground + ")";
+        webView.evaluateJavascript(script, null);
+    }
+
+    private static String markerGlyph(String icon) {
+        if ("star".equals(icon)) return "★";
+        if ("idea".equals(icon)) return "✦";
+        if ("question".equals(icon)) return "?";
+        if ("important".equals(icon)) return "!";
+        if ("prayer".equals(icon)) return "✝";
+        if ("study".equals(icon)) return "A";
+        if ("bookmark".equals(icon)) return "◆";
+        return "●";
+    }
+
+    private static String markerColor(String color) {
+        if ("green".equals(color)) return "#4F9A45";
+        if ("blue".equals(color)) return "#397DB5";
+        if ("red".equals(color)) return "#B84A48";
+        if ("orange".equals(color)) return "#B9692E";
+        if ("violet".equals(color)) return "#7753A6";
+        if ("gray".equals(color)) return "#686868";
+        return "#E0A91A";
     }
 }
