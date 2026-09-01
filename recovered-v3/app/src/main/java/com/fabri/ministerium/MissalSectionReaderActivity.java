@@ -49,6 +49,7 @@ public class MissalSectionReaderActivity extends ThemedActivity {
             @Override public void onPageFinished(WebView view, String url) {
                 ReaderPreferences.apply(MissalSectionReaderActivity.this, webView, false);
                 LiturgicalWebStyle.apply(MissalSectionReaderActivity.this, webView);
+                ProseParagraphNormalizer.inject(webView);
                 MissalCompactView.inject(webView);
                 MissalRuntimeFixes31.inject(webView);
                 MissalAlternativeOptions31.inject(webView);
@@ -68,10 +69,6 @@ public class MissalSectionReaderActivity extends ThemedActivity {
         webView.setVisibility(View.INVISIBLE);
         new Thread(() -> {
             try {
-                // El Leccionario diario se conserva en español también cuando el
-                // usuario lee el Missale en latín. Los propios de Guadalajara se
-                // preparan igualmente para poder usarlos como respaldo cuando el
-                // paquete latino no contenga el propio correspondiente.
                 if (MassReadingsRepository.isCurrentMonth(date)) {
                     if (!MassReadingsRepository.has(this, date)) {
                         try { MassReadingsRepository.syncDay(getApplicationContext(), date); }
