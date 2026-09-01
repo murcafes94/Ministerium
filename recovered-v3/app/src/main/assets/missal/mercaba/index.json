@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "source": "Mercabá",
+  "indexUrl": "https://www.mercaba.org/LITURGIA/Misal/MISALE/cartel_misal_romano.htm",
+  "authorityPolicy": "ecuador-first; mercaba-only-when-verified; never-silent-language-mixing",
+  "entries": [],
+  "sources": []
+}
