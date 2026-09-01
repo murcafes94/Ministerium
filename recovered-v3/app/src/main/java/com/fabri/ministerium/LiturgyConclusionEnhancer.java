@@ -7,8 +7,6 @@ public final class LiturgyConclusionEnhancer {
     private LiturgyConclusionEnhancer() {}
 
     public static void inject(WebView webView, boolean ordained) {
-        normalizeBrokenParagraphs(webView);
-
         // La elección pertenece a cada celebración; no se toma como una configuración
         // litúrgica global. El parámetro se conserva para mantener compatibilidad con
         // los llamadores existentes mientras se elimina esa dependencia.
@@ -43,23 +41,5 @@ public final class LiturgyConclusionEnhancer {
         // Las alternativas editoriales «O bien» se presentan como elección compacta
         // también en Laudes y Vísperas, igual que en el Misal.
         MissalAlternativeOptions31.inject(webView);
-    }
-
-    private static void normalizeBrokenParagraphs(WebView webView) {
-        String script = "(function(){if(window.__ministeriumParagraphsNormalized)return;"
-                + "window.__ministeriumParagraphsNormalized=true;"
-                + "function text(e){return(e&&e.textContent||'').replace(/\\s+/g,' ').trim();}"
-                + "function excluded(e){if(!e||e.tagName!=='P')return true;"
-                + "if(e.closest('#ministerium-intentions,.ministerium-conclusion,.ministerium-memory-note,.ministerium-canticle'))return true;"
-                + "if(e.querySelector('a,button,h1,h2,h3,h4'))return true;"
-                + "var c=(e.className||'').toString().toLowerCase();"
-                + "return c.indexOf('rubrica')>=0||c.indexOf('rúbrica')>=0||c.indexOf('titulo')>=0||c.indexOf('redtitle')>=0;}"
-                + "var ps=Array.prototype.slice.call(document.querySelectorAll('p'));"
-                + "for(var i=0;i<ps.length;i++){var p=ps[i];if(!p.parentNode||excluded(p))continue;"
-                + "var next=p.nextElementSibling;if(!next||excluded(next))continue;"
-                + "var a=text(p),b=text(next);if(!a||!b)continue;"
-                + "if(!/[,:;]$/.test(a))continue;if(!/^[a-záéíóúüñ]/.test(b))continue;"
-                + "p.appendChild(document.createTextNode(' '));while(next.firstChild)p.appendChild(next.firstChild);next.remove();i--;}})()";
-        webView.evaluateJavascript(script, null);
     }
 }
