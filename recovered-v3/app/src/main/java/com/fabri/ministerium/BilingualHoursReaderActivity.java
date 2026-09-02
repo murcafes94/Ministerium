@@ -425,8 +425,14 @@ public class BilingualHoursReaderActivity extends ThemedActivity {
 
     @Override protected void onDestroy() {
         if (pendingSync != null) syncHandler.removeCallbacks(pendingSync);
-        if (spanish != null) spanish.destroy();
-        if (latin != null) latin.destroy();
+        syncHandler.removeCallbacksAndMessages(null);
+        pendingSync = null;
+        syncingScroll = false;
+        WebViewCleanup.destroy(spanish);
+        WebViewCleanup.destroy(latin);
+        spanish = null;
+        latin = null;
+        panes = null;
         super.onDestroy();
     }
 
