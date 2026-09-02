@@ -1,18 +1,6 @@
-name: Recovered v3 Build
+name: Legacy Recovered v3 Build
 
 on:
-  push:
-    branches:
-      - fix/combined-mass-single-flow
-    paths:
-      - 'recovered-v3/**'
-      - '.github/workflows/recovered-v3-build.yml'
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'recovered-v3/**'
-      - '.github/workflows/recovered-v3-build.yml'
   workflow_dispatch:
 
 permissions:
@@ -20,7 +8,7 @@ permissions:
 
 jobs:
   build-recovered-v3:
-    name: Compile recovered Ministerium 3.0
+    name: Compile legacy recovered Ministerium 3.0
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -30,49 +18,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python for content preprocessing
+      - name: Set up Python for legacy preprocessing
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install missal preprocessing dependency
+      - name: Install preprocessing dependency
         run: python -m pip install 'pypdf>=5,<6'
-
-      - name: Build Liturgia Papal Mexico missal package
-        shell: bash
-        run: |
-          set -euo pipefail
-          python tools/build_liturgiapapal_missal.py --language es --force-download
-          test -f app/src/main/assets/missal/manifest.json
-          test -f app/src/main/assets/missal/es/ordinary_full.txt
-          test -f app/src/main/assets/missal/es/initial.txt
-          test -f app/src/main/assets/missal/es/eucharistic_liturgy.txt
-          test -f app/src/main/assets/missal/es/prefaces.txt
-          test -f app/src/main/assets/missal/es/communion.txt
-          test -f app/src/main/assets/missal/es/conclusion.txt
-          test -f app/src/main/assets/missal/es/eucharistic_prayer_1.txt
-          test -f app/src/main/assets/missal/es/eucharistic_prayer_2.txt
-          test -f app/src/main/assets/missal/es/eucharistic_prayer_3.txt
-          test -f app/src/main/assets/missal/es/eucharistic_prayer_4.txt
-          test -f app/src/main/assets/missal/es/proper_advent.txt
-          test -f app/src/main/assets/missal/es/proper_christmas.txt
-          test -f app/src/main/assets/missal/es/proper_lent.txt
-          test -f app/src/main/assets/missal/es/proper_triduum.txt
-          test -f app/src/main/assets/missal/es/proper_easter.txt
-          test -f app/src/main/assets/missal/es/proper_ordinary.txt
-
-          grep -qi 'El Señor esté con ustedes' app/src/main/assets/missal/es/ordinary_full.txt
-          grep -qi 'El Señor esté con ustedes' app/src/main/assets/missal/es/initial.txt
-          grep -qi 'POR USTEDES' app/src/main/assets/missal/es/eucharistic_prayer_2.txt
-          grep -qi 'XXI DOMINGO DEL TIEMPO ORDINARIO' app/src/main/assets/missal/es/proper_ordinary.txt
-          grep -qi 'PREFACIO I PARA LOS DOMINGOS' app/src/main/assets/missal/es/prefaces.txt
-          grep -qi 'La paz del Señor esté siempre con ustedes' app/src/main/assets/missal/es/communion.txt
-
-          if grep -Eqi 'El Señor esté con vosotros|TOMAD Y COMED|TOMAD Y BEBED|entregado por vosotros|derramada por vosotros|Podéis ir en paz' app/src/main/assets/missal/es/ordinary_full.txt app/src/main/assets/missal/es/*.txt; then
-            echo 'ERROR: se detectó texto de la edición de España en el paquete ES.' >&2
-            exit 1
-          fi
-          echo 'Liturgia Papal Mexico package generated and validated.'
 
       - name: Set up JDK 11
         uses: actions/setup-java@v4
@@ -88,7 +40,7 @@ jobs:
       - name: Install Android platform and build tools
         run: sdkmanager 'platform-tools' 'platforms;android-30' 'build-tools;30.0.3'
 
-      - name: Validate recovered source tree
+      - name: Validate legacy source tree
         shell: bash
         run: |
           set -euo pipefail
@@ -96,17 +48,7 @@ jobs:
           test -f build.gradle
           test -f app/build.gradle
           test -f app/src/main/AndroidManifest.xml
-          test -f app/src/main/java/com/fabri/ministerium/CombinedMassActivity.java
-          test -f app/src/main/java/com/fabri/ministerium/CombinedMassComposer.java
-          test -f app/src/main/java/com/fabri/ministerium/CombinedMassPolisher.java
-          test -f app/src/main/java/com/fabri/ministerium/LiturgiaPapalMissalRepository.java
-          grep -q "versionName '3.0.0'" app/build.gradle
-          grep -q 'CombinedMassPolisher.compose' app/src/main/java/com/fabri/ministerium/CombinedMassActivity.java
-          grep -q 'LiturgiaPapalMissalRepository' app/src/main/java/com/fabri/ministerium/CombinedMassPolisher.java
-          grep -q 'Liturgia de la Palabra' app/src/main/java/com/fabri/ministerium/CombinedMassComposer.java
-          grep -q 'setPrayer(4)' app/src/main/java/com/fabri/ministerium/CombinedMassComposer.java
-          grep -q 'Niceno-constantinopolitano' app/src/main/java/com/fabri/ministerium/CombinedMassComposer.java
-          echo 'Recovered v3 structure validated.'
+          echo 'Legacy recovered source tree available.'
 
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
@@ -121,16 +63,14 @@ jobs:
           APK=$(find app/build/outputs/apk/debug -name '*.apk' -type f | head -n 1)
           test -n "$APK"
           test -s "$APK"
-          echo "APK_PATH=$APK" >> "$GITHUB_ENV"
           sha256sum "$APK" | tee apk-sha256.txt
 
-      - name: Upload Ministerium 3.0 test APK
+      - name: Upload legacy recovered APK
         uses: actions/upload-artifact@v4
         with:
-          name: Ministerium-3.0-recovered-debug
+          name: Ministerium-legacy-recovered-debug
           path: |
             recovered-v3/app/build/outputs/apk/debug/*.apk
             recovered-v3/apk-sha256.txt
-            recovered-v3/app/src/main/assets/missal/manifest.json
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 7
