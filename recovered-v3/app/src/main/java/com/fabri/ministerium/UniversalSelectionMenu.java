@@ -101,7 +101,7 @@ public final class UniversalSelectionMenu {
                 if (id == DICTIONARY) {
                     capture(webView, selection -> {
                         mode.finish();
-                        openDictionary(activity, selection.text);
+                        openDictionary(activity, webView, selection);
                     });
                     return true;
                 }
@@ -155,7 +155,7 @@ public final class UniversalSelectionMenu {
                 + "a=off(root,r.startContainer,r.startOffset);z=off(root,r.endContainer,r.endOffset);}"
                 + "var all=flat(root),pre='',suf='';if(a>=0&&z>=a){pre=all.substring(Math.max(0,a-64),a);"
                 + "suf=all.substring(z,Math.min(all.length,z+64));}"
-                + "return JSON.stringify({text:s.toString(),anchorText:s.toString(),semanticUnitId:u,startOffset:a,endOffset:z,prefix:pre,suffix:suf});})()";
+                + "var box=r.getBoundingClientRect();return JSON.stringify({text:s.toString(),anchorText:s.toString(),semanticUnitId:u,startOffset:a,endOffset:z,prefix:pre,suffix:suf,rectTop:box.top,rectBottom:box.bottom,viewportHeight:window.innerHeight||document.documentElement.clientHeight||0});})()";
         webView.evaluateJavascript(script, raw -> {
             SelectionSnapshot selection = decodeSelection(raw);
             if (selection.text.isEmpty()) {
@@ -616,35 +616,10 @@ public final class UniversalSelectionMenu {
         return "●";
     }
 
-    private static void openDictionary(Activity activity, String selected) {
-        String query = selected.replaceAll("[\\r\\n]+", " ").trim();
-        if (query.length() > 80) query = query.substring(0, 80).trim();
-        String finalQuery = query;
-        if (!query.contains(" ")) {
-            new Thread(() -> {
-                try {
-                    List<BibleDictionaryRepository.QuickResult> results =
-                            BibleDictionaryRepository.quickLookup(activity, finalQuery);
-                    activity.runOnUiThread(() -> {
-                        StringBuilder html = new StringBuilder();
-                        for (BibleDictionaryRepository.QuickResult result : results) html.append(result.html);
-                        html.append(RaeOnlineRepository.actionCard(finalQuery));
-                        if (results.isEmpty()) {
-                            html.insert(0, "<article class=\"dictionary-card\"><h2>Diccionarios offline</h2>"
-                                    + "<p>No hubo coincidencia exacta. Puedes abrir el catálogo completo desde Diccionarios o consultar RAE en línea.</p></article>");
-                        }
-                        ReaderOverlayDialog.show(activity, "Diccionario · " + finalQuery,
-                                html.toString());
-                    });
-                } catch (Exception error) {
-                    activity.runOnUiThread(() -> ReaderOverlayDialog.show(activity,
-                            "Diccionario · " + finalQuery,
-                            RaeOnlineRepository.actionCard(finalQuery)));
-                }
-            }).start();
-            return;
-        }
-        openDictionaryChooser(activity, finalQuery);
+    private static void openDictionary(Activity activity, WebView webView,
+                                       SelectionSnapshot selection) {
+        DictionaryFloatingCard.show(activity, webView, selection.text,
+                selection.rectTop, selection.rectBottom, selection.viewportHeight);
     }
 
     private static void openDictionaryChooser(Activity activity, String query) {
@@ -731,6 +706,9 @@ public final class UniversalSelectionMenu {
             result.endOffset = value.optInt("endOffset", -1);
             result.prefix = value.optString("prefix");
             result.suffix = value.optString("suffix");
+            result.rectTop = (float) value.optDouble("rectTop", 0d);
+            result.rectBottom = (float) value.optDouble("rectBottom", result.rectTop);
+            result.viewportHeight = (float) value.optDouble("viewportHeight", 0d);
         } catch (Exception ignored) {}
         return result;
     }
@@ -768,6 +746,9 @@ public final class UniversalSelectionMenu {
         int endOffset = -1;
         String prefix = "";
         String suffix = "";
+        float rectTop = 0f;
+        float rectBottom = 0f;
+        float viewportHeight = 0f;
     }
 
     private static final class StudyBridge {
