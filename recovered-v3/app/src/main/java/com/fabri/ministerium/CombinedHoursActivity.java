@@ -132,7 +132,7 @@ public class CombinedHoursActivity extends ThemedActivity {
     private static String value(String value) { return value == null ? "" : value; }
 
     @Override protected void onDestroy() {
-        if (webView != null) webView.destroy();
+        if (webView != null) { WebViewCleanup.destroy(webView); webView = null; }
         super.onDestroy();
     }
 }

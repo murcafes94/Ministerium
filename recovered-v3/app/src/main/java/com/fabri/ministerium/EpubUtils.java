@@ -24,6 +24,8 @@ import java.util.zip.ZipInputStream;
 
 public final class EpubUtils {
     private static final Map<String, List<EpubTocEntry>> TOC_CACHE = new ConcurrentHashMap<>();
+    private static final Map<Integer, Map<Integer, List<HoursLink>>> SAINTS_BY_MONTH_CACHE =
+            new ConcurrentHashMap<>();
     private static final String[] MONTHS = {
             "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
             "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"
@@ -177,25 +179,41 @@ public final class EpubUtils {
 
     public static List<HoursLink> saintsForDate(Context context, int month, int day)
             throws Exception {
+        int safeMonth = Math.max(0, Math.min(11, month));
+        Map<Integer, List<HoursLink>> cachedMonth = SAINTS_BY_MONTH_CACHE.get(safeMonth);
+        if (cachedMonth == null) {
+            cachedMonth = buildSaintMonth(context, safeMonth);
+            SAINTS_BY_MONTH_CACHE.put(safeMonth, cachedMonth);
+        }
+        List<HoursLink> found = cachedMonth.get(day);
+        return found == null ? Collections.emptyList() : found;
+    }
+
+    private static Map<Integer, List<HoursLink>> buildSaintMonth(Context context, int month)
+            throws Exception {
         HoursVolume santoral = HoursRepository.find("sanctoral");
         List<EpubTocEntry> entries = tableOfContents(context, santoral);
-        List<HoursLink> result = new ArrayList<>();
+        Map<Integer, List<HoursLink>> result = new ConcurrentHashMap<>();
         String currentMonth = "";
-        String wantedMonth = MONTHS[Math.max(0, Math.min(11, month))];
-        String dayPrefix = String.valueOf(day);
+        String wantedMonth = MONTHS[month];
         for (int i = 0; i < entries.size(); i++) {
             EpubTocEntry entry = entries.get(i);
             String title = entry.title.trim();
             if (entry.depth == 0 && isMonth(title)) currentMonth = title.toUpperCase(Locale.ROOT);
             if (!wantedMonth.equals(currentMonth) || entry.depth == 0) continue;
             String normalized = title.replaceAll("\\s+", " ");
-            if (normalized.matches("^0?" + dayPrefix + "\\s*-.*")) {
-                String cleanTitle = normalized.replaceFirst("^0?" + dayPrefix + "\\s*-\\s*", "");
-                result.add(new HoursLink(santoral, i, cleanTitle,
-                        "Propio del Santoral · " + wantedMonth));
-            }
+            java.util.regex.Matcher match = java.util.regex.Pattern
+                    .compile("^(\\d{1,2})\\s*-\\s*(.+)$").matcher(normalized);
+            if (!match.matches()) continue;
+            int day = Integer.parseInt(match.group(1));
+            result.computeIfAbsent(day, ignored -> new ArrayList<>()).add(
+                    new HoursLink(santoral, i, match.group(2),
+                            "Propio del Santoral · " + wantedMonth));
         }
-        return result;
+        for (Map.Entry<Integer, List<HoursLink>> value : result.entrySet()) {
+            value.setValue(Collections.unmodifiableList(value.getValue()));
+        }
+        return Collections.unmodifiableMap(result);
     }
 
     private static boolean isCleanHoursVolume(HoursVolume volume) {

@@ -76,6 +76,11 @@ public class SearchActivity extends ThemedActivity {
     }
 
     private void openResult(SearchResult result) {
+        if (result.isCanon()) {
+            startActivity(new Intent(this, CanonLawActivity.class)
+                    .putExtra(CanonLawActivity.EXTRA_CANON, result.canonNumber));
+            return;
+        }
         if (result.isPrayer()) {
             Intent intent = new Intent(this, PrayerReaderActivity.class);
             intent.putExtra(PrayerReaderActivity.EXTRA_PRAYER_ID, result.prayer.id);
@@ -198,7 +203,9 @@ public class SearchActivity extends ThemedActivity {
         List<Map<String, String>> rows = new ArrayList<>();
         for (SearchResult result : found) {
             String source;
-            if (result.isPrayer()) {
+            if (result.isCanon()) {
+                source = "Código de Derecho Canónico · comentario disponible desde el canon";
+            } else if (result.isPrayer()) {
                 source = "Oraciones básicas";
             } else if (result.isRitual()) {
                 source = result.ritualDocument.title + " · "

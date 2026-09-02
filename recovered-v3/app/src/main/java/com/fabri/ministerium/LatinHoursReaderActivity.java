@@ -117,7 +117,7 @@ public class LatinHoursReaderActivity extends ThemedActivity {
 
     @Override public void onBackPressed() { back(); }
     @Override protected void onDestroy() {
-        if (webView != null) webView.destroy();
+        if (webView != null) { WebViewCleanup.destroy(webView); webView = null; }
         super.onDestroy();
     }
     private static String value(String value) { return value == null ? "" : value; }

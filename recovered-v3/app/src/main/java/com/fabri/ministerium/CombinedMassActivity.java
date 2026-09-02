@@ -122,7 +122,7 @@ public class CombinedMassActivity extends ThemedActivity {
     private String hourName() { return "vespers".equals(hourKey) ? "Vísperas" : "Laudes"; }
 
     @Override protected void onDestroy() {
-        if (webView != null) webView.destroy();
+        if (webView != null) { WebViewCleanup.destroy(webView); webView = null; }
         super.onDestroy();
     }
 }

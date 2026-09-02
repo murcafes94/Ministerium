@@ -78,6 +78,13 @@ public final class ContentRepository {
                 if (results.size() >= maximumResults) return results;
             }
             try {
+                results.addAll(CanonSearchRepository.search(
+                        context, query, maximumResults - results.size()));
+            } catch (Exception ignored) {
+                // Derecho Canónico: solo texto de los cánones; los comentarios se abren desde el canon.
+            }
+            if (results.size() >= maximumResults) return results;
+            try {
                 results.addAll(MagisteriumIndexRepository.search(
                         context, query, maximumResults - results.size()));
             } catch (Exception ignored) {

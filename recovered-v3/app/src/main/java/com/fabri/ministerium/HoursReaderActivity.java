@@ -651,7 +651,7 @@ public class HoursReaderActivity extends ThemedActivity {
 
     @Override
     protected void onDestroy() {
-        if (webView != null) webView.destroy();
+        if (webView != null) { WebViewCleanup.destroy(webView); webView = null; }
         super.onDestroy();
     }
 }
