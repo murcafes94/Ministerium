@@ -69,14 +69,8 @@ public class MissalSectionReaderActivity extends ThemedActivity {
         webView.setVisibility(View.INVISIBLE);
         new Thread(() -> {
             try {
-                if (MassReadingsRepository.isCurrentMonth(date)) {
-                    if (!MassReadingsRepository.has(this, date)) {
-                        try { MassReadingsRepository.syncDay(getApplicationContext(), date); }
-                        catch (Exception ignored) {}
-                    }
-                    DailyMassProperRepository.getOrSync(getApplicationContext(), date);
-                }
-                LiturgicalDay resolvedDay = LiturgicalResolver.resolve(getApplicationContext(), date);
+                LiturgicalDayPackage dayPackage = LiturgicalDayCache.prepare(
+                        getApplicationContext(), date, true);
                 MissalDocument31.Result raw = "ordinary".equals(section)
                         ? MissalOrdinaryDocument41.build(
                                 getApplicationContext(), date, language)
@@ -84,9 +78,10 @@ public class MissalSectionReaderActivity extends ThemedActivity {
                                 getApplicationContext(), date, section, language);
                 String fallbackHtml = MercabaMissalFallback.apply(getApplicationContext(),
                         raw.html, section, language,
-                        resolvedDay == null ? "" : resolvedDay.celebration);
+                        dayPackage.day == null ? "" : dayPackage.day.celebration);
                 MissalDocument31.Result built = new MissalDocument31.Result(
                         raw.title, raw.subtitle, MissalLanguageGuard.sanitize(fallbackHtml, language));
+                LiturgicalDayCache.prefetch(getApplicationContext(), date, 3);
                 runOnUiThread(() -> show(built));
             } catch (Exception error) {
                 runOnUiThread(() -> {
@@ -121,8 +116,8 @@ public class MissalSectionReaderActivity extends ThemedActivity {
         String source = "missal31:" + date.get(Calendar.YEAR) + ":" + (date.get(Calendar.MONTH) + 1)
                 + ":" + date.get(Calendar.DAY_OF_MONTH) + ":" + section + ":" + language;
         String sourceName = "la".equals(language)
-                ? "Missale Romanum · Liturgia Papal · respaldo Guadalajara cuando falte el propio latino"
-                : "Misal Romano · Liturgia Papal / Guadalajara · respaldo Mercabá verificado";
+                ? "Missale Romanum · fuente latina local · respaldo español etiquetado"
+                : "Misal Romano · Ecuador · Mercabá verificado · Guadalajara";
         return new ReaderContext(sourceName, source, title, subtitle, "Liturgia", true);
     }
 
@@ -131,7 +126,15 @@ public class MissalSectionReaderActivity extends ThemedActivity {
     }
 
     @Override protected void onDestroy() {
-        if (webView != null) webView.destroy();
+        if (webView != null) {
+            webView.stopLoading();
+            webView.loadUrl("about:blank");
+            webView.setWebChromeClient(null);
+            webView.setWebViewClient(null);
+            webView.removeAllViews();
+            webView.destroy();
+            webView = null;
+        }
         super.onDestroy();
     }
 }
