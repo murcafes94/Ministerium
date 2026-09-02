@@ -60,8 +60,6 @@
         <activity android:name=".MyStudyActivity" android:exported="false" />
         <activity android:name=".StudyEditorActivity" android:exported="false" />
         <activity android:name=".StudyDeskActivity" android:exported="false" />
-        <activity android:name=".BilingualHoursActivity" android:exported="false" />
-        <activity android:name=".BilingualHoursReaderActivity" android:exported="false" />
         <activity android:name=".LatinHoursActivity" android:exported="false" />
         <activity android:name=".LatinHoursReaderActivity" android:exported="false" />
         <activity android:name=".MassReadingsActivity" android:exported="false" />
