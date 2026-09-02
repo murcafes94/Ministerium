@@ -1,0 +1,38 @@
+name: Apply WebView Cleanup Phase 4
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'recovered-v3/tools/apply_webview_cleanup_phase4.py'
+      - '.github/workflows/apply-webview-cleanup-phase4.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Apply cleanup patch
+        working-directory: recovered-v3
+        run: python tools/apply_webview_cleanup_phase4.py
+      - name: Commit generated source changes
+        shell: bash
+        run: |
+          if git diff --quiet -- recovered-v3/app/src/main/java/com/fabri/ministerium/WebViewCleanup.java recovered-v3/app/src/main/java/com/fabri/ministerium/BilingualHoursReaderActivity.java; then
+            echo 'No source changes required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add recovered-v3/app/src/main/java/com/fabri/ministerium/WebViewCleanup.java recovered-v3/app/src/main/java/com/fabri/ministerium/BilingualHoursReaderActivity.java
+          git commit -m 'perf: harden bilingual WebView teardown'
+          git push origin HEAD:main
