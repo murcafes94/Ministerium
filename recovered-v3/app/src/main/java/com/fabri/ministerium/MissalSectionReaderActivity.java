@@ -69,6 +69,8 @@ public class MissalSectionReaderActivity extends ThemedActivity {
         webView.setVisibility(View.INVISIBLE);
         new Thread(() -> {
             try {
+                // DailyMassProperRepository.getOrSync(getApplicationContext(), date)
+                // is now centralized inside LiturgicalDayCache.prepare().
                 LiturgicalDayPackage dayPackage = LiturgicalDayCache.prepare(
                         getApplicationContext(), date, true);
                 MissalDocument31.Result raw = "ordinary".equals(section)
