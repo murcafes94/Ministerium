@@ -1,5 +1,6 @@
 from pathlib import Path
 
+# One-shot deterministic source hardening. The workflow commits only generated Java changes.
 ROOT = Path(__file__).resolve().parents[1]
 
 
