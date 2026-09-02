@@ -108,15 +108,14 @@ public final class ReaderPreferences {
                 + "margin-left:auto!important;margin-right:auto!important;padding-left:" + horizontal
                 + "px!important;padding-right:" + horizontal + "px!important;box-sizing:border-box!important;}"
                 + "body *{font-family:" + family + "!important;}"
-                + "[data-ministerium-block],[data-ministerium-align-key]{border-top:1px solid "
+                + "[data-ministerium-block]{border-top:1px solid "
                 + palette.divider + "!important;padding-top:.72em!important;margin-top:1.05em!important;}"
-                + "[data-ministerium-block^='hymn'],[data-ministerium-align-key^='hymn'],"
-                + "[data-ministerium-block^='reading'],[data-ministerium-align-key^='reading'],"
-                + "[data-ministerium-block^='gospel'],[data-ministerium-align-key^='gospel'],"
-                + "[data-ministerium-block^='intercessions'],[data-ministerium-align-key^='intercessions']{"
+                + "[data-ministerium-block^='hymn'],"
+                + "[data-ministerium-block^='reading'],"
+                + "[data-ministerium-block^='gospel'],"
+                + "[data-ministerium-block^='intercessions']{"
                 + "color:" + palette.accent + "!important;-webkit-text-fill-color:" + palette.accent + "!important;"
                 + "font-weight:600!important;}"
-                + ".ministerium-align-spacer{max-height:360px!important;}"
                 + "@media(min-width:700px){body{padding-left:" + (horizontal + 12)
                 + "px!important;padding-right:" + (horizontal + 12) + "px!important;}}";
         String script = "(function(){var s=document.getElementById('ministerium-reader-prefs');"
@@ -131,7 +130,6 @@ public final class ReaderPreferences {
         // se presentan como opciones compactas y no como fórmulas apiladas. El guard
         // de oración propia actúa sólo cuando el contexto contiene un santo seleccionado.
         if (context instanceof HoursReaderActivity
-                || context instanceof BilingualHoursReaderActivity
                 || context instanceof LatinHoursReaderActivity) {
             MissalAlternativeOptions31.inject(webView);
             HoursProperPrayerFix41.inject(webView);
