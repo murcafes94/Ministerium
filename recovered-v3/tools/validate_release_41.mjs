@@ -83,4 +83,5 @@ for (const forbidden of ['AnythingLLM', 'WhisperModel', 'whisper.cpp', 'SpeechRe
   expect(!runtime.includes(forbidden), `4.1 must not implement AI/dictation yet: ${forbidden}`);
 }
 
+await import('./validate_liturgical_integrity_41.mjs');
 console.log('Ministerium 4.1 release contract OK');
