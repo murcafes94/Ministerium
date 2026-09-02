@@ -1,0 +1,1 @@
+Ministerium 4.1 quality hardening ready for clean CI verification.
