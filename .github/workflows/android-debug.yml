@@ -114,26 +114,49 @@ jobs:
 
           missal_dir="app/src/main/assets/missal"
           rituals_dir="app/src/main/assets/rituals/liturgiapapal"
+          have_missal_backup=0
+          have_rituals_backup=0
 
-          cp -a "$missal_dir" "$backup_root/missal"
-          cp -a "$rituals_dir" "$backup_root/liturgiapapal"
+          if [ -d "$missal_dir" ]; then
+            cp -a "$missal_dir" "$backup_root/missal"
+            have_missal_backup=1
+          else
+            echo "No committed local Missal package found; generator must create it."
+          fi
+
+          if [ -d "$rituals_dir" ]; then
+            cp -a "$rituals_dir" "$backup_root/liturgiapapal"
+            have_rituals_backup=1
+          else
+            echo "No committed local Ritual package found; generator must create it."
+          fi
 
           if timeout 90s python tools/build_liturgiapapal_missal_31.py --language all; then
             echo "Liturgia Papal Missal refreshed from source."
           else
             rc=$?
-            echo "WARNING: Liturgia Papal Missal refresh failed (exit $rc); restoring committed local package."
-            rm -rf "$missal_dir"
-            cp -a "$backup_root/missal" "$missal_dir"
+            if [ "$have_missal_backup" -eq 1 ]; then
+              echo "WARNING: Liturgia Papal Missal refresh failed (exit $rc); restoring committed local package."
+              rm -rf "$missal_dir"
+              cp -a "$backup_root/missal" "$missal_dir"
+            else
+              echo "ERROR: Liturgia Papal Missal refresh failed (exit $rc) and no committed local fallback exists."
+              exit "$rc"
+            fi
           fi
 
           if timeout 90s python tools/build_liturgiapapal_rituals_31.py; then
             echo "Liturgia Papal Ritual package refreshed from source."
           else
             rc=$?
-            echo "WARNING: Liturgia Papal Ritual refresh failed (exit $rc); restoring committed local package."
-            rm -rf "$rituals_dir"
-            cp -a "$backup_root/liturgiapapal" "$rituals_dir"
+            if [ "$have_rituals_backup" -eq 1 ]; then
+              echo "WARNING: Liturgia Papal Ritual refresh failed (exit $rc); restoring committed local package."
+              rm -rf "$rituals_dir"
+              cp -a "$backup_root/liturgiapapal" "$rituals_dir"
+            else
+              echo "ERROR: Liturgia Papal Ritual refresh failed (exit $rc) and no committed local fallback exists."
+              exit "$rc"
+            fi
           fi
 
           test -s app/src/main/assets/missal/es/initial.txt
