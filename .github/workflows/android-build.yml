@@ -1,20 +1,6 @@
-name: Android Build
+name: Legacy Android Build
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'app/**'
-      - 'bootstrap/v3/ministerium-v3.zip.part-*'
-      - 'gradle/**'
-      - 'gradlew'
-      - 'gradlew.bat'
-      - 'build.gradle*'
-      - 'settings.gradle*'
-      - 'gradle.properties'
-      - '.github/workflows/android-build.yml'
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
 
 permissions:
@@ -22,7 +8,7 @@ permissions:
 
 jobs:
   build:
-    name: Compile Ministerium APK
+    name: Compile legacy bootstrap APK
     runs-on: ubuntu-latest
 
     steps:
@@ -64,12 +50,11 @@ jobs:
           java-version: '11'
           cache: gradle
 
-      - name: Validate Ministerium 3.0 project
+      - name: Validate legacy project
         shell: bash
         run: |
           test -f app/build.gradle
           test -f app/src/main/AndroidManifest.xml
-          grep -q "versionName '3.0.0'" app/build.gradle
           if [ -f tools/validate_project.mjs ]; then node tools/validate_project.mjs; fi
           if [ -f tools/validate_content.mjs ]; then node tools/validate_content.mjs; fi
 
@@ -83,12 +68,12 @@ jobs:
         shell: bash
         run: sha256sum app/build/outputs/apk/debug/*.apk | tee apk-sha256.txt
 
-      - name: Upload debug APK
+      - name: Upload legacy debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: Ministerium-3.0.0-debug
+          name: Ministerium-legacy-debug
           path: |
             app/build/outputs/apk/debug/*.apk
             apk-sha256.txt
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 7
