@@ -50,6 +50,7 @@ public class MissalSectionReaderActivity extends ThemedActivity {
                 ReaderPreferences.apply(MissalSectionReaderActivity.this, webView, false);
                 LiturgicalWebStyle.apply(MissalSectionReaderActivity.this, webView);
                 ProseParagraphNormalizer.inject(webView);
+                MissalDayRules31.inject(MissalSectionReaderActivity.this, webView, date);
                 MissalCompactView.inject(webView);
                 MissalRuntimeFixes31.inject(webView);
                 MissalAlternativeOptions31.inject(webView);
