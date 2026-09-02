@@ -333,6 +333,7 @@ public class BibleReaderActivity extends ThemedActivity {
         bookmark.icon = "bookmark";
         bookmark.color = source.color == null || source.color.isEmpty() ? "yellow" : source.color;
         StudyStore.save(this, bookmark);
+        ReadingMarkerUtils.injectHighlights(this, webView, sourceKey());
         UniversalSelectionMenu.restoreHighlights(this, webView, sourceKey());
         Toast.makeText(this, "Marcador añadido.", Toast.LENGTH_SHORT).show();
     }
@@ -398,7 +399,19 @@ public class BibleReaderActivity extends ThemedActivity {
     @Override protected void onResume() {
         super.onResume();
         if (webView != null && book != null) {
+            ReadingMarkerUtils.injectHighlights(this, webView, sourceKey());
             UniversalSelectionMenu.restoreHighlights(this, webView, sourceKey());
+        }
+    }
+
+    @Override public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus && webView != null && book != null) {
+            webView.postDelayed(() -> {
+                if (webView == null || book == null) return;
+                ReadingMarkerUtils.injectHighlights(this, webView, sourceKey());
+                UniversalSelectionMenu.restoreHighlights(this, webView, sourceKey());
+            }, 120);
         }
     }
 
@@ -411,5 +424,16 @@ public class BibleReaderActivity extends ThemedActivity {
         } catch (Exception ignored) {}
         super.onPause();
     }
-    @Override protected void onDestroy() { if (webView != null) webView.destroy(); super.onDestroy(); }
+    @Override protected void onDestroy() {
+        if (webView != null) {
+            webView.stopLoading();
+            webView.loadUrl("about:blank");
+            webView.setWebChromeClient(null);
+            webView.setWebViewClient(null);
+            webView.removeAllViews();
+            webView.destroy();
+            webView = null;
+        }
+        super.onDestroy();
+    }
 }
