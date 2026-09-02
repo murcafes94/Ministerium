@@ -21,7 +21,12 @@ public final class ContentRepository {
     public static final String DEVOCIONARIO = "devocionario";
 
     private static final Map<String, DocumentInfo> DOCUMENTS = new LinkedHashMap<>();
-    private static final Map<String, String[]> PAGE_CACHE = new ConcurrentHashMap<>();
+    private static final Map<String, String[]> PAGE_CACHE = Collections.synchronizedMap(
+            new LinkedHashMap<String, String[]>(4, .75f, true) {
+                @Override protected boolean removeEldestEntry(Map.Entry<String, String[]> eldest) {
+                    return size() > 2;
+                }
+            });
 
     private ContentRepository() {}
 

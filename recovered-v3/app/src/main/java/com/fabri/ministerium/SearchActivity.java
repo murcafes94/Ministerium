@@ -138,12 +138,18 @@ public class SearchActivity extends ThemedActivity {
 
         executor.submit(() -> {
             try {
-                List<SearchResult> found = SCOPE_MAGISTERIUM.equals(scope)
-                        ? MagisteriumIndexRepository.search(
-                                getApplicationContext(), query, 150)
-                        : ContentRepository.search(
-                                getApplicationContext(), query, documentId, 150);
-                runOnUiThread(() -> display(found));
+                String cacheKey = SearchResultCache.key(scope, documentId, query);
+                List<SearchResult> found = SearchResultCache.get(cacheKey);
+                if (found == null) {
+                    found = SCOPE_MAGISTERIUM.equals(scope)
+                            ? MagisteriumIndexRepository.search(
+                                    getApplicationContext(), query, 150)
+                            : ContentRepository.search(
+                                    getApplicationContext(), query, documentId, 150);
+                    SearchResultCache.put(cacheKey, found);
+                }
+                List<SearchResult> displayResults = found;
+                runOnUiThread(() -> display(displayResults));
             } catch (Exception error) {
                 runOnUiThread(() -> {
                     progress.setVisibility(View.GONE);
