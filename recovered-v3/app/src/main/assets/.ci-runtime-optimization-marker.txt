@@ -1,0 +1,1 @@
+Build-only marker for runtime optimization validation. Do not merge.
