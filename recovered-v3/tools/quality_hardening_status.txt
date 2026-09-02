@@ -1,0 +1,1 @@
+Quality hardening sources applied; clean build validation pending via build-only PR.
