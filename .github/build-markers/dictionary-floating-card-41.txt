@@ -1,0 +1,1 @@
+Build-only marker for dictionary floating-card validation. Do not merge.
