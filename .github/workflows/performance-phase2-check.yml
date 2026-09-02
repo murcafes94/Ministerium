@@ -1,0 +1,30 @@
+name: Performance Phase 2 Check
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'recovered-v3/app/src/main/java/com/fabri/ministerium/**'
+      - 'recovered-v3/tools/validate_performance_phase2.mjs'
+      - '.github/workflows/performance-phase2-check.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'recovered-v3/app/src/main/java/com/fabri/ministerium/**'
+      - 'recovered-v3/tools/validate_performance_phase2.mjs'
+      - '.github/workflows/performance-phase2-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: recovered-v3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate performance contracts
+        run: node tools/validate_performance_phase2.mjs
