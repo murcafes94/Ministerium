@@ -1,0 +1,44 @@
+name: Runtime Asset Audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'recovered-v3/app/src/main/assets/**'
+      - 'recovered-v3/tools/audit_runtime_assets.py'
+      - '.github/workflows/runtime-asset-audit.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: recovered-v3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Remove build-time-only Hours EPUB sources
+        run: |
+          rm -f \
+            'app/src/main/assets/epubs/LH - 1. ADVIENTO.epub' \
+            'app/src/main/assets/epubs/LH - 2. NAVIDAD.epub' \
+            'app/src/main/assets/epubs/LH - 3. CUARESMA.epub' \
+            'app/src/main/assets/epubs/LH - 4. PASCUA.epub' \
+            'app/src/main/assets/epubs/LH - 5. TIEMPO ORDINARIO.epub' \
+            'app/src/main/assets/epubs/LH - 6. SANTORAL.epub' \
+            'app/src/main/assets/epubs/Liturgia-horarum-2026-latin.epub'
+      - name: Audit packaged runtime assets
+        run: python tools/audit_runtime_assets.py
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ministerium-runtime-asset-audit
+          path: recovered-v3/build/reports/runtime-assets.json
+          if-no-files-found: error
+          retention-days: 14
