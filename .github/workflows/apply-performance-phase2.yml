@@ -1,0 +1,35 @@
+name: Apply Performance Phase 2
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'recovered-v3/tools/apply_performance_phase2.py'
+      - '.github/workflows/apply-performance-phase2.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Apply optimizations
+        run: python recovered-v3/tools/apply_performance_phase2.py
+      - name: Commit optimized runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add recovered-v3/app/src/main/java/com/fabri/ministerium
+          if git diff --cached --quiet; then
+            echo 'No generated runtime changes.'
+            exit 0
+          fi
+          git commit -m 'perf: cache santoral and streamline reader lifecycle'
+          git push origin main
