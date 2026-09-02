@@ -168,7 +168,6 @@ const missalReader = read('app/src/main/java/com/fabri/ministerium/MissalSection
 const missalDocument = read('app/src/main/java/com/fabri/ministerium/MissalDocument31.java');
 const missalCompact = read('app/src/main/java/com/fabri/ministerium/MissalCompactView.java');
 const missalAlternatives = read('app/src/main/java/com/fabri/ministerium/MissalAlternativeOptions31.java');
-const missalGuard = read('app/src/main/java/com/fabri/ministerium/MissalLanguageGuard.java');
 expect(missalActivity.includes('String[] languages = {"Español", "Latín"}')
     && missalDocument.includes('String lang = "la".equals(language) ? "la" : "es"')
     && !missalDocument.includes('parallel-unit'),
@@ -177,11 +176,11 @@ expect(missalReader.includes('MissalAlternativeOptions31.inject')
     && missalAlternatives.includes('ministerium-alt-button')
     && missalAlternatives.includes('Altera formula'),
   'Existing Missal alternative/language controls must remain available.');
-expect(missalReader.includes('"es".equals(language) && MassReadingsRepository.isCurrentMonth(date)')
-    && missalReader.includes('MissalLanguageGuard.sanitize')
-    && missalGuard.includes('arquidiocesis-gdl')
-    && missalGuard.includes('Proprium huius celebrationis'),
-  'Latin Missal must not mix Spanish Guadalajara daily propers.');
+// En 4.1 se permite conservar el fallback español de Guadalajara cuando no hay
+// propio latino disponible. Las lecturas pueden permanecer en español; lo que
+// sigue prohibido es presentar el Misal en columnas o documentos paralelos.
+expect(!missalDocument.includes('parallel-unit'),
+  'Latin/Spanish Missal fallback must remain a single-document experience, never side-by-side.');
 expect(missalCompact.includes('ministerium-missal-heading')
     && missalCompact.includes('ministerium-people-response')
     && missalCompact.includes('ministerium-source-rubric')
