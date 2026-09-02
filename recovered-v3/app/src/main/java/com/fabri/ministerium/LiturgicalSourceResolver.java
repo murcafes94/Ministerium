@@ -47,10 +47,11 @@ public final class LiturgicalSourceResolver {
      */
     public static TextResult properFallback(Context context, Calendar date, LiturgicalDay day,
                                             String part, String language) {
-        if ("es".equals(language)) {
-            String mercaba = MercabaMissalFallback.proper(context, date, day, part, language);
-            if (mercaba != null && !mercaba.trim().isEmpty()) {
-                return new TextResult(mercaba, SOURCE_MERCABA_VERIFIED, true);
+        if ("es".equals(language) && day != null) {
+            MercabaMissalRepository.Match match = MercabaMissalRepository.verifiedProper(
+                    context, day.celebration, mercabaPart(part));
+            if (match != null && !match.text.trim().isEmpty()) {
+                return new TextResult(match.text, SOURCE_MERCABA_VERIFIED, true);
             }
         }
 
@@ -60,6 +61,15 @@ public final class LiturgicalSourceResolver {
             return new TextResult(text, SOURCE_GUADALAJARA, true);
         }
         return new TextResult("", "", false);
+    }
+
+    private static String mercabaPart(String part) {
+        if (LiturgiaPapalMissalRepository.ENTRANCE.equals(part)) return "entrance";
+        if (LiturgiaPapalMissalRepository.COLLECT.equals(part)) return "collect";
+        if (LiturgiaPapalMissalRepository.OFFERINGS.equals(part)) return "offerings";
+        if (LiturgiaPapalMissalRepository.COMMUNION_ANTIPHON.equals(part)) return "communion_antiphon";
+        if (LiturgiaPapalMissalRepository.POST_COMMUNION.equals(part)) return "post_communion";
+        return part == null ? "" : part;
     }
 
     private static String dailyText(DailyMassProperRepository.ProperDay day, String part) {
