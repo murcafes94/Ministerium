@@ -12,6 +12,7 @@ public final class SearchResult {
     public final int dateDay;
     public final int ritualIndex;
     public final int pageIndex;
+    public final int canonNumber;
     public final String title;
     public final String snippet;
     public final String directFilePath;
@@ -20,144 +21,74 @@ public final class SearchResult {
     private final boolean magisterium;
 
     public SearchResult(DocumentInfo document, int pageIndex, String title, String snippet) {
-        this.document = document;
-        this.prayer = null;
-        this.ritualDocument = null;
-        this.ritualEntry = null;
-        this.hoursVolume = null;
-        this.hoursIndex = -1;
-        this.dateYear = -1;
-        this.dateMonth = -1;
-        this.dateDay = -1;
-        this.ritualIndex = -1;
-        this.pageIndex = pageIndex;
-        this.title = title;
-        this.snippet = snippet;
-        this.directFilePath = "";
-        this.findText = "";
-        this.sourceLabel = "";
-        this.magisterium = false;
+        this(document, null, null, null, null, -1, -1, -1, -1, -1, pageIndex, -1,
+                title, snippet, "", "", "", false);
     }
 
     public SearchResult(PrayerEntry prayer, String snippet) {
-        this.document = null;
-        this.prayer = prayer;
-        this.ritualDocument = null;
-        this.ritualEntry = null;
-        this.hoursVolume = null;
-        this.hoursIndex = -1;
-        this.dateYear = -1;
-        this.dateMonth = -1;
-        this.dateDay = -1;
-        this.ritualIndex = -1;
-        this.pageIndex = -1;
-        this.title = prayer.title;
-        this.snippet = snippet;
-        this.directFilePath = "";
-        this.findText = "";
-        this.sourceLabel = "";
-        this.magisterium = false;
-    }
-
-    public boolean isPrayer() {
-        return prayer != null;
+        this(null, prayer, null, null, null, -1, -1, -1, -1, -1, -1, -1,
+                prayer.title, snippet, "", "", "", false);
     }
 
     public SearchResult(RitualDocument ritualDocument, RitualEntry ritualEntry,
                         int ritualIndex, String snippet) {
-        this.document = null;
-        this.prayer = null;
-        this.ritualDocument = ritualDocument;
-        this.ritualEntry = ritualEntry;
-        this.hoursVolume = null;
-        this.hoursIndex = -1;
-        this.dateYear = -1;
-        this.dateMonth = -1;
-        this.dateDay = -1;
-        this.ritualIndex = ritualIndex;
-        this.pageIndex = -1;
-        this.title = ritualEntry.title;
-        this.snippet = snippet;
-        this.directFilePath = "";
-        this.findText = "";
-        this.sourceLabel = "";
-        this.magisterium = false;
-    }
-
-    public boolean isRitual() {
-        return ritualDocument != null;
+        this(null, null, ritualDocument, ritualEntry, null, -1, -1, -1, -1,
+                ritualIndex, -1, -1, ritualEntry.title, snippet, "", "", "", false);
     }
 
     public SearchResult(HoursVolume volume, int hoursIndex, String title, String snippet) {
-        this.document = null;
-        this.prayer = null;
-        this.ritualDocument = null;
-        this.ritualEntry = null;
-        this.hoursVolume = volume;
-        this.hoursIndex = hoursIndex;
-        this.dateYear = -1;
-        this.dateMonth = -1;
-        this.dateDay = -1;
-        this.ritualIndex = -1;
-        this.pageIndex = -1;
-        this.title = title;
-        this.snippet = snippet;
-        this.directFilePath = "";
-        this.findText = "";
-        this.sourceLabel = "";
-        this.magisterium = false;
+        this(null, null, null, null, volume, hoursIndex, -1, -1, -1, -1, -1, -1,
+                title, snippet, "", "", "", false);
     }
 
     public SearchResult(HoursVolume volume, String directFilePath, String title,
                         String sourceLabel, String findText, String snippet) {
-        this.document = null;
-        this.prayer = null;
-        this.ritualDocument = null;
-        this.ritualEntry = null;
-        this.hoursVolume = volume;
-        this.hoursIndex = -1;
-        this.dateYear = -1;
-        this.dateMonth = -1;
-        this.dateDay = -1;
-        this.ritualIndex = -1;
-        this.pageIndex = -1;
-        this.title = title;
-        this.snippet = snippet;
-        this.directFilePath = directFilePath == null ? "" : directFilePath;
-        this.findText = findText == null ? "" : findText;
-        this.sourceLabel = sourceLabel == null ? "" : sourceLabel;
-        this.magisterium = true;
+        this(null, null, null, null, volume, -1, -1, -1, -1, -1, -1, -1,
+                title, snippet, directFilePath, findText, sourceLabel, true);
     }
 
     public SearchResult(LiturgicalDateHit hit) {
-        this.document = null;
-        this.prayer = null;
-        this.ritualDocument = null;
-        this.ritualEntry = null;
-        this.hoursVolume = null;
-        this.hoursIndex = -1;
-        this.dateYear = hit.year;
-        this.dateMonth = hit.month;
-        this.dateDay = hit.day;
-        this.ritualIndex = -1;
-        this.pageIndex = -1;
-        this.title = hit.title;
-        this.snippet = hit.snippet;
-        this.directFilePath = "";
-        this.findText = "";
-        this.sourceLabel = "";
-        this.magisterium = false;
+        this(null, null, null, null, null, -1, hit.year, hit.month, hit.day,
+                -1, -1, -1, hit.title, hit.snippet, "", "", "", false);
     }
 
-    public boolean isHours() {
-        return hoursVolume != null;
+    private SearchResult(DocumentInfo document, PrayerEntry prayer,
+                         RitualDocument ritualDocument, RitualEntry ritualEntry,
+                         HoursVolume hoursVolume, int hoursIndex,
+                         int dateYear, int dateMonth, int dateDay, int ritualIndex,
+                         int pageIndex, int canonNumber, String title, String snippet,
+                         String directFilePath, String findText, String sourceLabel,
+                         boolean magisterium) {
+        this.document = document;
+        this.prayer = prayer;
+        this.ritualDocument = ritualDocument;
+        this.ritualEntry = ritualEntry;
+        this.hoursVolume = hoursVolume;
+        this.hoursIndex = hoursIndex;
+        this.dateYear = dateYear;
+        this.dateMonth = dateMonth;
+        this.dateDay = dateDay;
+        this.ritualIndex = ritualIndex;
+        this.pageIndex = pageIndex;
+        this.canonNumber = canonNumber;
+        this.title = title == null ? "" : title;
+        this.snippet = snippet == null ? "" : snippet;
+        this.directFilePath = directFilePath == null ? "" : directFilePath;
+        this.findText = findText == null ? "" : findText;
+        this.sourceLabel = sourceLabel == null ? "" : sourceLabel;
+        this.magisterium = magisterium;
     }
 
-    public boolean isMagisterium() {
-        return magisterium;
+    public static SearchResult canon(int canon, String snippet) {
+        return new SearchResult(null, null, null, null, null, -1, -1, -1, -1,
+                -1, -1, canon, "Canon " + canon, snippet, "", "",
+                "Código de Derecho Canónico", false);
     }
 
-    public boolean isLiturgicalDate() {
-        return dateYear >= 0;
-    }
+    public boolean isPrayer() { return prayer != null; }
+    public boolean isRitual() { return ritualDocument != null; }
+    public boolean isHours() { return hoursVolume != null; }
+    public boolean isMagisterium() { return magisterium; }
+    public boolean isLiturgicalDate() { return dateYear >= 0; }
+    public boolean isCanon() { return canonNumber > 0; }
 }
