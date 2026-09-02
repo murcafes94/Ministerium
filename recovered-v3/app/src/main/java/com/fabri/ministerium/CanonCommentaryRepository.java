@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public final class CanonCommentaryRepository {
@@ -26,6 +27,12 @@ public final class CanonCommentaryRepository {
     }
 
     private static volatile Map<Integer, Entry> cache;
+    private static final Map<String, String> ARTICLE_CHUNK_CACHE =
+            new LinkedHashMap<String, String>(6, .75f, true) {
+                @Override protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+                    return size() > 8;
+                }
+            };
 
     private CanonCommentaryRepository() {}
 
@@ -67,12 +74,18 @@ public final class CanonCommentaryRepository {
     }
 
     private static String read(Context context, String asset) throws Exception {
+        synchronized (ARTICLE_CHUNK_CACHE) {
+            String cached = ARTICLE_CHUNK_CACHE.get(asset);
+            if (cached != null) return cached;
+        }
         try (InputStream input = context.getAssets().open(asset);
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[8192];
             int count;
             while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
-            return new String(output.toByteArray(), StandardCharsets.UTF_8);
+            String value = new String(output.toByteArray(), StandardCharsets.UTF_8);
+            synchronized (ARTICLE_CHUNK_CACHE) { ARTICLE_CHUNK_CACHE.put(asset, value); }
+            return value;
         }
     }
 }
