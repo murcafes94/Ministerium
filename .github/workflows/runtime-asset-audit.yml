@@ -23,8 +23,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Remove build-time-only Hours EPUB sources
+      - name: Remove build-time-only source assets
         run: |
+          for chunk in $(seq -w 1 18); do
+            test -s "app/src/main/assets/canon-comments/canon-comments-${chunk}.html"
+          done
+          test -s app/src/main/assets/canon-commentary-index.tsv
           rm -f \
             'app/src/main/assets/epubs/LH - 1. ADVIENTO.epub' \
             'app/src/main/assets/epubs/LH - 2. NAVIDAD.epub' \
@@ -32,7 +36,8 @@ jobs:
             'app/src/main/assets/epubs/LH - 4. PASCUA.epub' \
             'app/src/main/assets/epubs/LH - 5. TIEMPO ORDINARIO.epub' \
             'app/src/main/assets/epubs/LH - 6. SANTORAL.epub' \
-            'app/src/main/assets/epubs/Liturgia-horarum-2026-latin.epub'
+            'app/src/main/assets/epubs/Liturgia-horarum-2026-latin.epub' \
+            'app/src/main/assets/pdfs/Comentarios-Codigo-Derecho-Canonico-2001.pdf'
       - name: Audit packaged runtime assets
         run: python tools/audit_runtime_assets.py
       - name: Upload audit report
