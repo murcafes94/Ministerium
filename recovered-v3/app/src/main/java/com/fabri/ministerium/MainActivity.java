@@ -22,6 +22,7 @@ public class MainActivity extends ThemedActivity {
         // Si Android cerró el proceso mientras Ministerium había activado No molestar,
         // restaura el filtro previo antes de iniciar una nueva sesión.
         PrayerFocusController.recoverStaleSession(this);
+        RuntimeWarmup.start(this);
         replaceText(findViewById(R.id.cardPastoral), "Atención pastoral", "Ritual");
         // La antigua entrada bilingüe queda sustituida por la Liturgia Horarum latina.
         // Conservamos el id del layout para no romper instalaciones/recursos heredados.
