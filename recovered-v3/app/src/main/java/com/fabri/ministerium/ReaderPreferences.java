@@ -64,11 +64,22 @@ public final class ReaderPreferences {
         if (MARGIN_NARROW.equals(value)) return 1040;
         return 880;
     }
-    public static String palatinoCssStack() { return "'Palatino Linotype','Book Antiqua',Palatino,serif"; }
-    private static String cssFamily(Context context) {
-        String selected = family(context);
-        return PALATINO.equals(selected) ? palatinoCssStack() : selected;
+
+    public static String palatinoCssStack() {
+        return "'Palatino Linotype','Book Antiqua','URW Palladio L',Palatino,serif";
     }
+
+    private static String cssFamily(Context context) {
+        return cssStack(family(context));
+    }
+
+    private static String cssStack(String selected) {
+        if (PALATINO.equals(selected)) return palatinoCssStack();
+        if (SANS.equals(selected)) return "Roboto,'Helvetica Neue',Arial,sans-serif";
+        if (MONO.equals(selected)) return "'Roboto Mono','Droid Sans Mono','Courier New',monospace";
+        return "'Noto Serif','Droid Serif',Georgia,'Times New Roman',serif";
+    }
+
     public static void reset(Context context) { values(context).edit().remove(SIZE).remove(FAMILY).remove(WEIGHT).remove(LINE).remove(MARGIN).apply(); }
     public static void apply(Context context, WebView webView, boolean ignoredLegacyPreserveTypeface) {
         if (webView == null) return;
@@ -78,50 +89,48 @@ public final class ReaderPreferences {
     public static void applyPalatino(Context context, WebView webView) {
         if (webView == null) return;
         webView.getSettings().setTextZoom(textZoom(context));
-        applyInternal(context, webView, cssFamily(context));
+        applyInternal(context, webView, palatinoCssStack());
     }
     public static void applyForSource(Context context, WebView webView, String sourceKey) {
         if (webView == null) return;
         webView.getSettings().setTextZoom(textZoom(context));
-        String selected = familyFor(context, sourceKey);
-        applyInternal(context, webView, PALATINO.equals(selected) ? palatinoCssStack() : selected);
+        applyInternal(context, webView, cssStack(familyFor(context, sourceKey)));
     }
 
     private static void applyInternal(Context context, WebView webView, String family) {
-        boolean dark = ThemeUtils.isDark(context);
-        String palette = ThemeUtils.SEPIA.equals(ThemeUtils.getMode(context))
-                ? "background:#F0E2C7!important;color:#30261E!important;" : "";
-        String divider = dark ? "#594D43" : "#D9CDBE";
-        String accent = dark ? "#D9B96F" : "#772233";
+        ReaderVisualPalette palette = ReaderVisualPalette.from(context);
         int horizontal = horizontalPaddingPx(context);
         int maximumColumn = maximumColumnWidthCss(context);
-        String css = "html,body{" + palette + "}body{font-family:" + family
+        String css = "html,body{" + palette.bodyPaletteCss() + "}body{font-family:" + family
                 + "!important;font-weight:" + weight(context) + "!important;line-height:"
                 + lineHeight(context) + "!important;width:100%!important;max-width:"
                 + maximumColumn + "px!important;"
                 + "margin-left:auto!important;margin-right:auto!important;padding-left:" + horizontal
                 + "px!important;padding-right:" + horizontal + "px!important;box-sizing:border-box!important;}"
-                + "body,body p,body span,body div,body li,body td,body blockquote{font-family:"
-                + family + "!important;}"
-                // Clean Spanish Hours and semantic keys created in the Latin parallel reader
-                // share this visual divider. It intentionally resembles Divinum Officium's
-                // paired sections without reproducing its source code or layout verbatim.
-                + "[data-ministerium-block],[data-ministerium-align-key]{border-top:1px solid "
-                + divider + "!important;padding-top:.72em!important;margin-top:1.05em!important;}"
-                + "[data-ministerium-block^='hymn'],[data-ministerium-align-key^='hymn'],"
-                + "[data-ministerium-block^='reading'],[data-ministerium-align-key^='reading'],"
-                + "[data-ministerium-block^='gospel'],[data-ministerium-align-key^='gospel'],"
-                + "[data-ministerium-block^='intercessions'],[data-ministerium-align-key^='intercessions']{"
-                + "color:" + accent + "!important;-webkit-text-fill-color:" + accent + "!important;"
+                + "body *{font-family:" + family + "!important;}"
+                + "[data-ministerium-block]{border-top:1px solid "
+                + palette.divider + "!important;padding-top:.72em!important;margin-top:1.05em!important;}"
+                + "[data-ministerium-block^='hymn'],"
+                + "[data-ministerium-block^='reading'],"
+                + "[data-ministerium-block^='gospel'],"
+                + "[data-ministerium-block^='intercessions']{"
+                + "color:" + palette.accent + "!important;-webkit-text-fill-color:" + palette.accent + "!important;"
                 + "font-weight:600!important;}"
-                + ".ministerium-align-spacer{max-height:360px!important;}"
                 + "@media(min-width:700px){body{padding-left:" + (horizontal + 12)
                 + "px!important;padding-right:" + (horizontal + 12) + "px!important;}}";
         String script = "(function(){var s=document.getElementById('ministerium-reader-prefs');"
                 + "if(!s){s=document.createElement('style');s.id='ministerium-reader-prefs';document.head.appendChild(s);}"
                 + "s.innerHTML=" + JSONObject.quote(css) + ";})()";
         webView.evaluateJavascript(script, null);
+        ReaderEditorialEnhancer.apply(context, webView);
+        SpanishGospelCanticleEnhancer.inject(webView);
         HoursSeasonFilter.apply(context, webView);
+
+        if (context instanceof HoursReaderActivity
+                || context instanceof LatinHoursReaderActivity) {
+            MissalAlternativeOptions31.inject(webView);
+            HoursProperPrayerFix41.inject(webView);
+        }
     }
 
     private static String sanitizeFamily(String value) {

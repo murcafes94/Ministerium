@@ -49,6 +49,8 @@ public class MissalSectionReaderActivity extends ThemedActivity {
             @Override public void onPageFinished(WebView view, String url) {
                 ReaderPreferences.apply(MissalSectionReaderActivity.this, webView, false);
                 LiturgicalWebStyle.apply(MissalSectionReaderActivity.this, webView);
+                ProseParagraphNormalizer.inject(webView);
+                MissalDayRules31.inject(MissalSectionReaderActivity.this, webView, date);
                 MissalCompactView.inject(webView);
                 MissalRuntimeFixes31.inject(webView);
                 MissalAlternativeOptions31.inject(webView);
@@ -63,7 +65,7 @@ public class MissalSectionReaderActivity extends ThemedActivity {
     private void loadAsync() {
         TextView title = findViewById(R.id.txtReaderTitle);
         TextView subtitle = findViewById(R.id.txtReaderSubtitle);
-        title.setText("Misal Romano");
+        title.setText("la".equals(language) ? "Missale Romanum" : "Misal Romano");
         subtitle.setText("Preparando textos del día…");
         webView.setVisibility(View.INVISIBLE);
         new Thread(() -> {
@@ -73,10 +75,17 @@ public class MissalSectionReaderActivity extends ThemedActivity {
                         try { MassReadingsRepository.syncDay(getApplicationContext(), date); }
                         catch (Exception ignored) {}
                     }
-                    DailyMassProperRepository.getOrSync(getApplicationContext(), date);
+                    if ("es".equals(language)) {
+                        DailyMassProperRepository.getOrSync(getApplicationContext(), date);
+                    }
                 }
-                MissalDocument31.Result built = MissalDocument31.build(
-                        getApplicationContext(), date, section, language);
+                MissalDocument31.Result raw = "ordinary".equals(section)
+                        ? MissalOrdinaryDocument41.build(
+                                getApplicationContext(), date, language)
+                        : MissalDocument31.build(
+                                getApplicationContext(), date, section, language);
+                MissalDocument31.Result built = new MissalDocument31.Result(
+                        raw.title, raw.subtitle, MissalLanguageGuard.sanitize(raw.html, language));
                 runOnUiThread(() -> show(built));
             } catch (Exception error) {
                 runOnUiThread(() -> {
@@ -105,12 +114,15 @@ public class MissalSectionReaderActivity extends ThemedActivity {
     }
 
     private ReaderContext readerContext() {
-        String title = result == null ? "Misal Romano" : result.title;
+        String title = result == null
+                ? ("la".equals(language) ? "Missale Romanum" : "Misal Romano") : result.title;
         String subtitle = result == null ? LiturgicalCalendarRepository.dateLabel(date) : result.subtitle;
         String source = "missal31:" + date.get(Calendar.YEAR) + ":" + (date.get(Calendar.MONTH) + 1)
                 + ":" + date.get(Calendar.DAY_OF_MONTH) + ":" + section + ":" + language;
-        return new ReaderContext("Misal Romano · Liturgia Papal / Arquidiócesis de Guadalajara",
-                source, title, subtitle, "Liturgia", true);
+        String sourceName = "la".equals(language)
+                ? "Missale Romanum · Liturgia Papal"
+                : "Misal Romano · Liturgia Papal / Arquidiócesis de Guadalajara";
+        return new ReaderContext(sourceName, source, title, subtitle, "Liturgia", true);
     }
 
     private static String value(String value, String fallback) {

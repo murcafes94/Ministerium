@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - feature/ministerium-4.0
+      - feature/ministerium-4.1
   pull_request:
     branches:
       - main
@@ -104,18 +104,71 @@ jobs:
             app/src/main/assets/hours-clean/ordinary \
             --include='*.htm' --include='*.html' --include='*.xhtml'
 
-      - name: Build Liturgia Papal packages
+      - name: Refresh Liturgia Papal packages with safe local fallback
+        shell: bash
         run: |
-          python tools/build_liturgiapapal_missal_31.py --language all
-          python tools/build_liturgiapapal_rituals_31.py
-          test -f app/src/main/assets/missal/es/initial.txt
-          test -f app/src/main/assets/missal/es/word.txt
-          test -f app/src/main/assets/missal/es/proper_ordinary.txt
-          test -f app/src/main/assets/missal/la/initial.txt
-          test -f app/src/main/assets/rituals/liturgiapapal/baptism_one_child.txt
-          test -f app/src/main/assets/rituals/liturgiapapal/unction.txt
-          test -f app/src/main/assets/rituals/liturgiapapal/funeral_typical.txt
-          test -f app/src/main/assets/rituals/liturgiapapal/blessing_house.txt
+          set -euo pipefail
+
+          backup_root="$(mktemp -d)"
+          trap 'rm -rf "$backup_root"' EXIT
+
+          missal_dir="app/src/main/assets/missal"
+          rituals_dir="app/src/main/assets/rituals/liturgiapapal"
+          have_missal_backup=0
+          have_rituals_backup=0
+
+          if [ -d "$missal_dir" ]; then
+            cp -a "$missal_dir" "$backup_root/missal"
+            have_missal_backup=1
+          else
+            echo "No committed local Missal package found; generator must create it."
+          fi
+
+          if [ -d "$rituals_dir" ]; then
+            cp -a "$rituals_dir" "$backup_root/liturgiapapal"
+            have_rituals_backup=1
+          else
+            echo "No committed local Ritual package found; generator must create it."
+          fi
+
+          if timeout 90s python tools/build_liturgiapapal_missal_31.py --language all; then
+            echo "Liturgia Papal Missal refreshed from source."
+          else
+            rc=$?
+            if [ "$have_missal_backup" -eq 1 ]; then
+              echo "WARNING: Liturgia Papal Missal refresh failed (exit $rc); restoring committed local package."
+              rm -rf "$missal_dir"
+              cp -a "$backup_root/missal" "$missal_dir"
+            else
+              echo "ERROR: Liturgia Papal Missal refresh failed (exit $rc) and no committed local fallback exists."
+              exit "$rc"
+            fi
+          fi
+
+          if timeout 90s python tools/build_liturgiapapal_rituals_31.py; then
+            echo "Liturgia Papal Ritual package refreshed from source."
+          else
+            rc=$?
+            if [ "$have_rituals_backup" -eq 1 ]; then
+              echo "WARNING: Liturgia Papal Ritual refresh failed (exit $rc); restoring committed local package."
+              rm -rf "$rituals_dir"
+              cp -a "$backup_root/liturgiapapal" "$rituals_dir"
+            else
+              echo "ERROR: Liturgia Papal Ritual refresh failed (exit $rc) and no committed local fallback exists."
+              exit "$rc"
+            fi
+          fi
+
+          test -s app/src/main/assets/missal/es/initial.txt
+          test -s app/src/main/assets/missal/es/word.txt
+          test -s app/src/main/assets/missal/es/proper_ordinary.txt
+          test -s app/src/main/assets/missal/la/initial.txt
+          test -s app/src/main/assets/missal/manifest.json
+          test -s app/src/main/assets/rituals/liturgiapapal/baptism_one_child.txt
+          test -s app/src/main/assets/rituals/liturgiapapal/unction.txt
+          test -s app/src/main/assets/rituals/liturgiapapal/funeral_typical.txt
+          test -s app/src/main/assets/rituals/liturgiapapal/blessing_house.txt
+          test -s app/src/main/assets/rituals/liturgiapapal/manifest.json
 
       - name: Enrich structural Missal catalog
         run: |
@@ -156,14 +209,14 @@ jobs:
           test -s app/src/main/assets/magisterium-index.tsv
           test "$(grep -vc '^#' app/src/main/assets/magisterium-index.tsv)" -gt 20
 
-      - name: Validate Ministerium base and 4.0 contracts
+      - name: Validate Ministerium base and 4.1 contracts
         run: |
-          node tools/validate_stabilization_40.mjs
+          node tools/validate_stabilization_41.mjs
           node tools/validate_calendar_31.mjs
           node tools/validate_lectionary_40.mjs
           node tools/validate_magisterium_40.mjs
           node tools/validate_prayer_experience_40.mjs
-          node tools/validate_release_40.mjs
+          node tools/validate_release_41.mjs
           python - <<'PY'
           import hashlib, json, pathlib
           manifest = json.loads(pathlib.Path('app/src/main/assets/package-manifest.json').read_text(encoding='utf-8'))
@@ -176,8 +229,12 @@ jobs:
           print(f'Calendar SHA-256 OK: {actual}')
           PY
 
-      - name: Remove Liturgy source EPUBs from runtime APK assets
+      - name: Remove build-time-only source assets
         run: |
+          for chunk in $(seq -w 1 18); do
+            test -s "app/src/main/assets/canon-comments/canon-comments-${chunk}.html"
+          done
+          test -s app/src/main/assets/canon-commentary-index.tsv
           rm -f \
             'app/src/main/assets/epubs/LH - 1. ADVIENTO.epub' \
             'app/src/main/assets/epubs/LH - 2. NAVIDAD.epub' \
@@ -185,9 +242,11 @@ jobs:
             'app/src/main/assets/epubs/LH - 4. PASCUA.epub' \
             'app/src/main/assets/epubs/LH - 5. TIEMPO ORDINARIO.epub' \
             'app/src/main/assets/epubs/LH - 6. SANTORAL.epub' \
-            'app/src/main/assets/epubs/Liturgia-horarum-2026-latin.epub'
+            'app/src/main/assets/epubs/Liturgia-horarum-2026-latin.epub' \
+            'app/src/main/assets/pdfs/Comentarios-Codigo-Derecho-Canonico-2001.pdf'
           test ! -f 'app/src/main/assets/epubs/LH - 5. TIEMPO ORDINARIO.epub'
           test ! -f 'app/src/main/assets/epubs/Liturgia-horarum-2026-latin.epub'
+          test ! -f 'app/src/main/assets/pdfs/Comentarios-Codigo-Derecho-Canonico-2001.pdf'
 
       - name: Prepare stable Ministerium Test signing key
         run: |
@@ -213,7 +272,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: Ministerium-4.0.0-debug
+          name: Ministerium-4.1.0-debug
           path: |
             recovered-v3/app/build/outputs/apk/debug/app-debug.apk
             recovered-v3/app/build/outputs/apk/debug/app-debug.apk.sha256

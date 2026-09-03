@@ -92,7 +92,6 @@ SOURCES = {
     },
 }
 
-# Encabezados/pies que se pegan al final o principio de una línea al extraer PDF.
 PAGE_LABELS = [
     "ORDINARIO DE LA MISA",
     "RITOS INICIALES",
@@ -120,8 +119,12 @@ PAGE_ONLY_RE = re.compile(r"^\s*\d{1,3}\s*$")
 EDITORIAL_NUMBER_RE = re.compile(r"^\s*\d{1,3}\.\s+(?=[A-ZÁÉÍÓÚÜÑ])")
 SEPARATOR_RE = re.compile(r"^[\s_\-—–·.]{8,}$")
 SITE_RE = re.compile(r"^\s*(?:www\.)?liturgiapapal\.org\s*$", re.IGNORECASE)
+LEADING_LAYOUT_MARK_RE = re.compile(r"^[.·•]\s+(?=[A-ZÁÉÍÓÚÜÑÆŒ])")
+MISSAL_HEADING_PAGE_RE = re.compile(
+    r"^((?:PREFACIO|PRAEFATIO|PLEGARIA EUCAR[IÍ]STICA|PREX EUCHARISTICA)\b.{4,})\s+\d{1,3}\.?$",
+    re.IGNORECASE,
+)
 
-# Pies del Propio del Tiempo que suelen salir unidos a una línea de guiones bajos.
 PROPER_FOOTER_RE = re.compile(
     r"^\s*(?:Adviento|Navidad|Cuaresma|Pascua|Propio del tiempo|Tiempo ordinario)\s*[_\-—–]{5,}\s*$",
     re.IGNORECASE,
@@ -135,7 +138,7 @@ def download(url: str, destination: Path) -> None:
     request = urllib.request.Request(
         url,
         headers={
-            "User-Agent": "Ministerium-Missal-Builder/3.1 (+local preprocessing)",
+            "User-Agent": "Ministerium-Missal-Builder/4.1 (+local preprocessing)",
             "Accept": "application/pdf,*/*;q=0.8",
         },
     )
@@ -186,6 +189,10 @@ def clean_line(line: str) -> str:
         flags=re.IGNORECASE,
     ).strip()
     line = EDITORIAL_NUMBER_RE.sub("", line)
+    line = LEADING_LAYOUT_MARK_RE.sub("", line)
+    heading_page = MISSAL_HEADING_PAGE_RE.match(line)
+    if heading_page:
+        line = heading_page.group(1).rstrip()
     line = re.sub(r"[ \t]+", " ", line).strip()
     return line
 
@@ -216,14 +223,12 @@ def validate_mexico_ordinary(component: str, text: str) -> list[str]:
     normalized = unicodedata.normalize("NFC", text)
     lower = normalized.lower()
 
-    # Señales positivas de la edición mexicana.
     if component in {"ordinary_full", "initial"} and "el señor esté con ustedes" not in lower:
         errors.append("no aparece la fórmula mexicana «El Señor esté con ustedes»")
     if component in {"ordinary_full", "eucharistic_prayer_2"}:
         if "por ustedes" not in lower:
             errors.append("no aparece «por ustedes» en la Plegaria II mexicana")
 
-    # Señales negativas inequívocas de la edición española en estos bloques.
     forbidden = (
         "el señor esté con vosotros",
         "tomad y comed",
@@ -248,6 +253,13 @@ def validate_cleaned(language: str, component: str, text: str) -> list[str]:
         errors.append("quedó el pie liturgiapapal.org")
     if re.search(rf"(?im)^(?:\d+\s+)?(?:{PAGE_LABEL_ALT})\s+\d+\s*$", text):
         errors.append("quedó un encabezado con número de página")
+    if re.search(r"(?m)^[.·•]\s+(?=[A-ZÁÉÍÓÚÜÑÆŒ])", text):
+        errors.append("quedó una marca de maquetación al inicio de línea")
+    if re.search(
+        r"(?im)^(?:PREFACIO|PRAEFATIO|PLEGARIA EUCAR[IÍ]STICA|PREX EUCHARISTICA).{4,}\s+\d{1,3}\.?$",
+        text,
+    ):
+        errors.append("quedó un número de página pegado a un título litúrgico")
     if language == "es":
         errors.extend(validate_mexico_ordinary(component, text))
         if component == "initial" and "En el nombre del Padre" not in text:
@@ -260,7 +272,7 @@ def validate_cleaned(language: str, component: str, text: str) -> list[str]:
 def build(output: Path, languages: list[str], force: bool) -> None:
     output.mkdir(parents=True, exist_ok=True)
     manifest = {
-        "schema": 4,
+        "schema": 5,
         "provider": "Liturgia Papal",
         "editions": {
             "es": "Misal Romano - versión de México",
@@ -268,7 +280,7 @@ def build(output: Path, languages: list[str], force: bool) -> None:
         },
         "canonical_es_ordinary": SOURCES["es"]["ordinary_full"],
         "canonical_la_ordinary": SOURCES["la"]["ordinary_full"],
-        "notes": "PDFs preprocesados: sin paginación, encabezados ni pies; solo contenido litúrgico útil. Español basado exclusivamente en la versión de México; latín controlado contra el Ordo Missae completo.",
+        "notes": "PDFs preprocesados: sin paginación, encabezados, pies ni marcas de maquetación; solo contenido litúrgico útil. Español basado exclusivamente en la versión de México; latín controlado contra el Ordo Missae completo.",
         "languages": {},
     }
 

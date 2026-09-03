@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/** Misal 3.1: español y latín se leen en documentos separados, nunca en dos columnas. */
+/** Misal 4.1: español y latín se leen en documentos separados, nunca en dos columnas. */
 public class MissalActivity extends ThemedActivity {
     public static final String EXTRA_YEAR = "missal_year";
     public static final String EXTRA_MONTH = "missal_month";
@@ -26,7 +26,7 @@ public class MissalActivity extends ThemedActivity {
     public static final String EXTRA_LANGUAGE = "missal_language";
 
     private final List<Item> items = Arrays.asList(
-            new Item("Ordinario de la Misa", "Ritos iniciales", "initial"),
+            new Item("Ordinario de la Misa", "Ordinario completo: desde los ritos iniciales hasta la conclusión", "ordinary"),
             new Item("Oración colecta", "Propia de la celebración del día", "collect"),
             new Item("Liturgia de la Palabra", "Lecturas, homilía, Credo y oración universal", "word"),
             new Item("Liturgia eucarística", "Dones, prefacio y plegaria eucarística", "eucharist"),
@@ -131,8 +131,6 @@ public class MissalActivity extends ThemedActivity {
             putDate(intent);
             intent.putExtra(CombinedMassActivity.EXTRA_HOUR,
                     modeSpinner.getSelectedItemPosition() == 1 ? "lauds" : "vespers");
-            // La celebración unida conserva por ahora su texto ordinario español;
-            // el Misal independiente sí ofrece el latín completo por separado.
             intent.putExtra(CombinedMassActivity.EXTRA_LANGUAGE, selectedLanguage());
             startActivity(intent);
             return;

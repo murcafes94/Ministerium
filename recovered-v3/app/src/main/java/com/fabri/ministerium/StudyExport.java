@@ -39,35 +39,73 @@ public final class StudyExport {
             out.append("_No hay anotaciones guardadas._\n");
             return out.toString().getBytes(StandardCharsets.UTF_8);
         }
+        for (StudyEntry entry : entries) appendEntry(out, entry, false);
+        return out.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Markdown preparado para guardarse directamente dentro de un vault de Obsidian.
+     * No depende de Obsidian ni de plugins: usa frontmatter, tags y wikilinks estándar.
+     */
+    public static byte[] obsidian(Context context) {
+        List<StudyEntry> entries = StudyStore.all(context);
+        String exported = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+                .format(new Date());
+        StringBuilder out = new StringBuilder(12288);
+        out.append("---\n")
+                .append("title: \"Mi estudio — Ministerium\"\n")
+                .append("source: Ministerium\n")
+                .append("app_version: \"").append(yaml(BuildConfig.VERSION_NAME)).append("\"\n")
+                .append("exported_at: \"").append(yaml(exported)).append("\"\n")
+                .append("tags:\n  - ministerium\n  - estudio\n---\n\n")
+                .append("# Mi estudio — Ministerium\n\n")
+                .append("> Exportación compatible con Obsidian. Los IDs de contenido de Ministerium se conservan para poder volver a identificar cada anotación.\n\n");
+
+        if (entries.isEmpty()) {
+            out.append("_No hay anotaciones guardadas._\n");
+            return out.toString().getBytes(StandardCharsets.UTF_8);
+        }
+
+        String lastSource = "";
         for (StudyEntry entry : entries) {
-            out.append("## ").append(md(title(entry))).append("\n\n");
-            out.append("- Tipo: ").append(md(label(entry.type))).append("\n");
-            if (!entry.category.isEmpty()) out.append("- Categoría: ").append(md(entry.category)).append("\n");
-            if (!entry.source.isEmpty()) out.append("- Fuente: ").append(md(entry.source)).append("\n");
-            if (!entry.reference.isEmpty()) out.append("- Referencia: ").append(md(entry.reference)).append("\n");
-            if (!entry.contentId.isEmpty()) out.append("- ID: `").append(code(entry.contentId)).append("`\n");
-            if (!entry.tags.isEmpty()) {
-                out.append("- Etiquetas: ");
-                for (int i = 0; i < entry.tags.size(); i++) {
-                    if (i > 0) out.append(", ");
-                    out.append('`').append(code(entry.tags.get(i))).append('`');
-                }
-                out.append("\n");
+            String source = entry.source == null ? "" : entry.source.trim();
+            if (!source.isEmpty() && !source.equals(lastSource)) {
+                out.append("## [[").append(wikilink(source)).append("]]\n\n");
+                lastSource = source;
             }
-            out.append("\n");
-            if (!entry.quote.isEmpty()) {
-                for (String line : entry.quote.split("\\r?\\n")) {
-                    out.append("> ").append(line).append("\n");
-                }
-                out.append("\n");
-            }
-            if (!entry.body.isEmpty()) out.append(entry.body.trim()).append("\n\n");
-            out.append("<!-- ministerium-anchor: ")
-                    .append(code(entry.semanticUnitId)).append('|')
-                    .append(entry.startOffset).append('-').append(entry.endOffset)
-                    .append("; v=").append(entry.anchorVersion).append(" -->\n\n---\n\n");
+            appendEntry(out, entry, true);
         }
         return out.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    private static void appendEntry(StringBuilder out, StudyEntry entry, boolean obsidian) {
+        out.append(obsidian ? "### " : "## ").append(md(title(entry))).append("\n\n");
+        out.append("- Tipo: ").append(md(label(entry.type))).append("\n");
+        if (!entry.category.isEmpty()) out.append("- Categoría: ").append(md(entry.category)).append("\n");
+        if (!entry.source.isEmpty()) out.append("- Fuente: ").append(md(entry.source)).append("\n");
+        if (!entry.reference.isEmpty()) out.append("- Referencia: ").append(md(entry.reference)).append("\n");
+        if (!entry.contentId.isEmpty()) out.append("- ID: `").append(code(entry.contentId)).append("`\n");
+        if (!entry.tags.isEmpty()) {
+            out.append("- Etiquetas: ");
+            for (int i = 0; i < entry.tags.size(); i++) {
+                if (i > 0) out.append(", ");
+                if (obsidian) out.append('#').append(obsidianTag(entry.tags.get(i)));
+                else out.append('`').append(code(entry.tags.get(i))).append('`');
+            }
+            out.append("\n");
+        }
+        out.append("\n");
+        if (!entry.quote.isEmpty()) {
+            for (String line : entry.quote.split("\\r?\\n")) {
+                out.append("> ").append(line).append("\n");
+            }
+            out.append("\n");
+        }
+        if (!entry.body.isEmpty()) out.append(entry.body.trim()).append("\n\n");
+        out.append("<!-- ministerium-anchor: ")
+                .append(code(entry.semanticUnitId)).append('|')
+                .append(entry.startOffset).append('-').append(entry.endOffset)
+                .append("; v=").append(entry.anchorVersion).append(" -->\n\n---\n\n");
     }
 
     private static String title(StudyEntry entry) {
@@ -89,5 +127,23 @@ public final class StudyExport {
 
     private static String code(String value) {
         return value == null ? "" : value.replace("`", "'").replace("\n", " ").replace("\r", " ");
+    }
+
+    private static String yaml(String value) {
+        return value == null ? "" : value.replace("\\", "\\\\").replace("\"", "\\\"")
+                .replace("\r", " ").replace("\n", " ");
+    }
+
+    private static String wikilink(String value) {
+        return value == null ? "" : value.replace("[[", "").replace("]]", "")
+                .replace("|", "-").replace("\r", " ").replace("\n", " ").trim();
+    }
+
+    private static String obsidianTag(String value) {
+        if (value == null) return "ministerium";
+        String tag = value.trim().toLowerCase(Locale.ROOT)
+                .replaceAll("[^\\p{L}\\p{N}_/-]+", "-")
+                .replaceAll("^-+|-+$", "");
+        return tag.isEmpty() ? "ministerium" : tag;
     }
 }

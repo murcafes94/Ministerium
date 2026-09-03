@@ -35,8 +35,7 @@ public class CombinedMassActivity extends ThemedActivity {
                 getIntent().getIntExtra(EXTRA_MONTH, now.get(Calendar.MONTH)),
                 getIntent().getIntExtra(EXTRA_DAY, now.get(Calendar.DAY_OF_MONTH)), 12, 0, 0);
         hourKey = "vespers".equals(getIntent().getStringExtra(EXTRA_HOUR)) ? "vespers" : "lauds";
-        // The integrated celebration currently follows the Spanish Liturgy of the Hours.
-        // Latin remains available as a separate complete Missal reader.
+        // La celebración unida usa por ahora la Liturgia de las Horas española.
         language = "es";
         ((TextView) findViewById(R.id.txtCombinedMassTitle)).setText("Misa + " + hourName());
         subtitleView = findViewById(R.id.txtCombinedMassSubtitle);
@@ -87,8 +86,10 @@ public class CombinedMassActivity extends ThemedActivity {
                     }
                     DailyMassProperRepository.getOrSync(getApplicationContext(), date);
                 }
-                CombinedMassComposer.Result result = CombinedMassComposer31.compose(
+                CombinedMassComposer.Result composed = CombinedMassComposer31.compose(
                         getApplicationContext(), date, hourKey, language);
+                CombinedMassComposer.Result result = CombinedMassRubrics41.apply(
+                        getApplicationContext(), date, hourKey, composed);
                 runOnUiThread(() -> {
                     ((TextView) findViewById(R.id.txtCombinedMassTitle)).setText(result.title);
                     subtitleView.setText(result.celebration);

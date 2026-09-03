@@ -24,13 +24,16 @@ import java.util.concurrent.Executors;
 public class StudyDeskActivity extends ThemedActivity {
     public static final String EXTRA_QUERY = "study_query";
     private static final int EXPORT_STUDY = 91;
+    private static final int EXPORT_MARKDOWN = 0;
+    private static final int EXPORT_JSON = 1;
+    private static final int EXPORT_OBSIDIAN = 2;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private EditText input;
     private TextView status;
     private ProgressBar progress;
     private ListView list;
     private List<DeskRow> rows = new ArrayList<>();
-    private boolean exportMarkdown;
+    private int exportFormat = EXPORT_MARKDOWN;
 
     @Override protected void onCreate(Bundle state) {
         ThemeUtils.apply(this);
@@ -151,18 +154,25 @@ public class StudyDeskActivity extends ThemedActivity {
 
     private void chooseExport() {
         new AlertDialog.Builder(this).setTitle("Exportar Mi estudio")
-                .setItems(new String[]{"Markdown (.md)", "JSON portable (.json)"},
-                        (dialog, which) -> launchExport(which == 0))
+                .setItems(new String[]{
+                                "Markdown (.md)",
+                                "JSON portable (.json)",
+                                "Obsidian (.md)"
+                        },
+                        (dialog, which) -> launchExport(which))
                 .setNegativeButton("Cancelar", null).show();
     }
 
-    private void launchExport(boolean markdown) {
-        exportMarkdown = markdown;
+    private void launchExport(int format) {
+        exportFormat = format;
+        boolean json = format == EXPORT_JSON;
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType(markdown ? "text/markdown" : "application/json");
-        intent.putExtra(Intent.EXTRA_TITLE,
-                markdown ? "ministerium-mi-estudio.md" : "ministerium-mi-estudio.json");
+        intent.setType(json ? "application/json" : "text/markdown");
+        String name = json ? "ministerium-mi-estudio.json"
+                : format == EXPORT_OBSIDIAN ? "ministerium-mi-estudio-obsidian.md"
+                : "ministerium-mi-estudio.md";
+        intent.putExtra(Intent.EXTRA_TITLE, name);
         startActivityForResult(intent, EXPORT_STUDY);
     }
 
@@ -171,7 +181,9 @@ public class StudyDeskActivity extends ThemedActivity {
         if (requestCode != EXPORT_STUDY || resultCode != RESULT_OK
                 || data == null || data.getData() == null) return;
         try {
-            byte[] bytes = exportMarkdown ? StudyExport.markdown(this) : StudyExport.json(this);
+            byte[] bytes = exportFormat == EXPORT_JSON ? StudyExport.json(this)
+                    : exportFormat == EXPORT_OBSIDIAN ? StudyExport.obsidian(this)
+                    : StudyExport.markdown(this);
             try (OutputStream output = getContentResolver().openOutputStream(data.getData(), "w")) {
                 if (output == null) throw new IllegalStateException("No se pudo abrir el destino.");
                 output.write(bytes);

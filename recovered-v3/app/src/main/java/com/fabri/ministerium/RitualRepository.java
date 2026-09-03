@@ -90,8 +90,6 @@ public final class RitualRepository {
         int position = document.entries.indexOf(entry);
         if (position >= 0 && position + 1 < document.entries.size()) {
             RitualEntry next = document.entries.get(position + 1);
-            // Important: once we are already past the current chapter, the first
-            // next marker is the real next chapter; do not repeat its TOC occurrence count.
             int candidate = findOccurrence(source, next.sourceTitle, 0,
                     Math.min(source.length(), start + Math.max(1, entry.sourceTitle.length())));
             if (candidate > start) end = candidate;
@@ -150,9 +148,6 @@ public final class RitualRepository {
     }
 
     private static RitualDocument sickPastoral() {
-        // These headings occur once in the table of contents and once in the body.
-        // sourceOccurrence=1 selects the body. Boundaries always search the first
-        // next occurrence after the current start, so chapters do not bleed together.
         List<RitualEntry> entries = Arrays.asList(
                 new RitualEntry("Praenotanda", "PRAENOTANDA", "Enfermos", 1),
                 new RitualEntry("Visita y comunión de los enfermos", "CAPÍTULO I.", "Enfermos", 1),
@@ -252,6 +247,31 @@ public final class RitualRepository {
     }
 
     private static String readAsset(Context context, String path) throws IOException {
+        try {
+            return readAssetExact(context, path);
+        } catch (IOException missingGeneratedPackage) {
+            String fallback = fallbackAsset(path);
+            if (fallback == null) throw missingGeneratedPackage;
+            return readAssetExact(context, fallback);
+        }
+    }
+
+    /**
+     * Android Studio can compile the repository before the optional Liturgia Papal
+     * generator has been run. In that case, use the bundled legacy text rather
+     * than exposing a catalog entry that ends in «No se pudo abrir este texto».
+     */
+    private static String fallbackAsset(String path) {
+        if (path == null || !path.startsWith(BASE)) return null;
+        String file = path.substring(BASE.length()).toLowerCase(Locale.ROOT);
+        if (file.startsWith("baptism_")) return "rituals/bautismo_ninos.txt";
+        if (file.equals("unction.txt")) return "rituals/ritual_enfermos.txt";
+        if (file.startsWith("funeral_")) return "rituals/enfermos_difuntos.txt";
+        if (file.startsWith("blessing_")) return "rituals/bendicional_comun.txt";
+        return null;
+    }
+
+    private static String readAssetExact(Context context, String path) throws IOException {
         try (InputStream input = context.getAssets().open(path);
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[8192];
@@ -261,10 +281,6 @@ public final class RitualRepository {
         }
     }
 
-    /**
-     * Finds an accent-insensitive occurrence only inside source[from..]. This
-     * avoids comparing raw UTF-16 offsets with indexes from a normalized copy.
-     */
     private static int findOccurrence(String source, String needle, int occurrence, int from) {
         if (source == null || needle == null || needle.isEmpty()) return -1;
         int rawFrom = Math.max(0, Math.min(from, source.length()));
