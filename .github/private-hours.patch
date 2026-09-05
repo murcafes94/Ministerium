@@ -1,0 +1,273 @@
+diff --git a/recovered-v3/app/build.gradle b/recovered-v3/app/build.gradle
+index 4ab4c41..d9b2bc1 100644
+--- a/recovered-v3/app/build.gradle
++++ b/recovered-v3/app/build.gradle
+@@ -18,6 +18,20 @@ if (!ministeriumTestKeystore.exists()) {
+ android {
+     compileSdkVersion 30
+ 
++    flavorDimensions 'edition'
++    productFlavors {
++        standard {
++            dimension 'edition'
++            buildConfigField 'boolean', 'PRIVATE_HOURS', 'false'
++        }
++        privateEdition {
++            dimension 'edition'
++            applicationIdSuffix '.private'
++            versionNameSuffix '-private'
++            buildConfigField 'boolean', 'PRIVATE_HOURS', 'true'
++        }
++    }
++
+     signingConfigs {
+         testStable {
+             storeFile ministeriumTestKeystore
+@@ -34,8 +48,8 @@ android {
+         // 4.1 contract lineage markers retained for the legacy release validator:
+         // versionCode 41
+         // versionName '4.1.0'
+-        versionCode 43
+-        versionName '4.1.2'
++        versionCode 44
++        versionName '4.2.0'
+     }
+ 
+     buildTypes {
+diff --git a/recovered-v3/app/src/main/AndroidManifest.xml b/recovered-v3/app/src/main/AndroidManifest.xml
+index e9d208d..ee2fb86 100644
+--- a/recovered-v3/app/src/main/AndroidManifest.xml
++++ b/recovered-v3/app/src/main/AndroidManifest.xml
+@@ -40,6 +40,7 @@
+         <activity android:name=".BasicPrayersActivity" android:exported="false" />
+         <activity android:name=".DocumentSectionReaderActivity" android:exported="false" />
+         <activity android:name=".HoursReaderActivity" android:exported="false" />
++        <activity android:name=".PrivateDailyHoursActivity" android:exported="false" />
+         <activity android:name=".ComplineReaderActivity" android:exported="false" />
+         <activity android:name=".CombinedHoursActivity" android:exported="false" />
+         <activity android:name=".PrayerIntentionsActivity" android:exported="false" />
+diff --git a/recovered-v3/app/src/main/java/com/fabri/ministerium/HoursTodayActivity.java b/recovered-v3/app/src/main/java/com/fabri/ministerium/HoursTodayActivity.java
+index b11be5d..57303d3 100644
+--- a/recovered-v3/app/src/main/java/com/fabri/ministerium/HoursTodayActivity.java
++++ b/recovered-v3/app/src/main/java/com/fabri/ministerium/HoursTodayActivity.java
+@@ -70,9 +70,27 @@ public class HoursTodayActivity extends ThemedActivity {
+         findViewById(R.id.btnCommonOffices).setOnClickListener(v -> openNamedSantoral("OFICIOS COMUNES"));
+         findViewById(R.id.btnOfficeDead).setOnClickListener(v -> openNamedSantoral("OFICIO DE DIFUNTOS"));
+         findViewById(R.id.btnVolumes).setOnClickListener(v -> startActivity(new Intent(this, HoursActivity.class)));
++        View privateSource = findViewById(R.id.btnPrivateHoursSource);
++        privateSource.setVisibility(BuildConfig.PRIVATE_HOURS ? View.VISIBLE : View.GONE);
++        privateSource.setOnClickListener(v -> choosePrivateHour());
+         loadDate();
+     }
+ 
++    private void choosePrivateHour() {
++        String[] labels = {"Oficio de lecturas", "Laudes", "Tercia", "Sexta", "Nona", "Vísperas", "Completas"};
++        String[] files = {"oficio", "laudes", "tercia", "sexta", "nona", "visperas", "completas"};
++        new AlertDialog.Builder(this)
++                .setTitle("Fuente privada · Liturgia de las Horas")
++                .setItems(labels, (dialog, which) -> startActivity(new Intent(this,
++                        PrivateDailyHoursActivity.class)
++                        .putExtra(PrivateDailyHoursActivity.EXTRA_YEAR, selectedDate.get(Calendar.YEAR))
++                        .putExtra(PrivateDailyHoursActivity.EXTRA_MONTH, selectedDate.get(Calendar.MONTH))
++                        .putExtra(PrivateDailyHoursActivity.EXTRA_DAY, selectedDate.get(Calendar.DAY_OF_MONTH))
++                        .putExtra(PrivateDailyHoursActivity.EXTRA_HOUR, files[which])
++                        .putExtra(PrivateDailyHoursActivity.EXTRA_TITLE, labels[which])))
++                .setNegativeButton("Cancelar", null).show();
++    }
++
+     private void loadDate() {
+         final Calendar request = (Calendar) selectedDate.clone();
+         final String requestKey = key(request);
+diff --git a/recovered-v3/app/src/main/java/com/fabri/ministerium/PrivateDailyHoursActivity.java b/recovered-v3/app/src/main/java/com/fabri/ministerium/PrivateDailyHoursActivity.java
+new file mode 100644
+index 0000000..bbe52f9
+--- /dev/null
++++ b/recovered-v3/app/src/main/java/com/fabri/ministerium/PrivateDailyHoursActivity.java
+@@ -0,0 +1,65 @@
++package com.fabri.ministerium;
++
++import android.os.Bundle;
++import android.view.View;
++import android.webkit.WebResourceRequest;
++import android.webkit.WebView;
++import android.webkit.WebViewClient;
++import android.widget.TextView;
++import android.widget.Toast;
++
++import java.util.Locale;
++
++/** Lector aislado para el paquete de pruebas que no forma parte de la edición pública. */
++public final class PrivateDailyHoursActivity extends ThemedActivity {
++    public static final String EXTRA_YEAR = "private_hours_year";
++    public static final String EXTRA_MONTH = "private_hours_month";
++    public static final String EXTRA_DAY = "private_hours_day";
++    public static final String EXTRA_HOUR = "private_hours_hour";
++    public static final String EXTRA_TITLE = "private_hours_title";
++    private static final String[] MONTHS = {"ene", "feb", "mar", "abr", "may", "jun",
++            "jul", "ago", "sep", "oct", "nov", "dic"};
++
++    @Override protected void onCreate(Bundle state) {
++        ThemeUtils.apply(this);
++        super.onCreate(state);
++        setContentView(R.layout.activity_hours_reader);
++        findViewById(R.id.btnBack).setOnClickListener(v -> finish());
++        findViewById(R.id.btnReaderSearch).setVisibility(View.GONE);
++        findViewById(R.id.btnReaderTheme).setVisibility(View.GONE);
++        findViewById(R.id.btnReaderMore).setVisibility(View.GONE);
++        findViewById(R.id.btnGlobalMenu).setVisibility(View.GONE);
++
++        String title = getIntent().getStringExtra(EXTRA_TITLE);
++        ((TextView) findViewById(R.id.txtReaderTitle)).setText(title == null ? "Liturgia de las Horas" : title);
++        ((TextView) findViewById(R.id.txtReaderSubtitle)).setText("Edición privada de prueba · fuente externa");
++
++        int year = getIntent().getIntExtra(EXTRA_YEAR, 0);
++        int month = getIntent().getIntExtra(EXTRA_MONTH, 0);
++        int day = getIntent().getIntExtra(EXTRA_DAY, 0);
++        String hour = getIntent().getStringExtra(EXTRA_HOUR);
++        String path = String.format(Locale.US, "private-hours/%d/%s/%02d/%s.htm",
++                year, MONTHS[Math.max(0, Math.min(11, month))], day, hour);
++        MinisteriumWebView webView = findViewById(R.id.hoursWebView);
++        webView.getSettings().setJavaScriptEnabled(false);
++        webView.getSettings().setAllowContentAccess(false);
++        webView.getSettings().setAllowFileAccess(true);
++        webView.setWebViewClient(new WebViewClient() {
++            @Override public void onPageFinished(WebView view, String url) {
++                ReaderPreferences.apply(PrivateDailyHoursActivity.this, view, false);
++            }
++            @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
++                String url = request.getUrl().toString();
++                return !url.startsWith("file:///android_asset/private-hours/");
++            }
++            @Override public void onReceivedError(WebView view, int code, String description, String failingUrl) {
++                Toast.makeText(PrivateDailyHoursActivity.this,
++                        "Esta fecha no está incluida en el paquete privado.", Toast.LENGTH_LONG).show();
++            }
++        });
++        UniversalSelectionMenu.attach(this, webView,
++                new ReaderContext("Liturgia de las Horas", path, title, title,
++                        "Liturgia de las Horas", true));
++        webView.loadUrl("file:///android_asset/" + path);
++    }
++}
+diff --git a/recovered-v3/app/src/main/java/com/fabri/ministerium/ReaderPreferences.java b/recovered-v3/app/src/main/java/com/fabri/ministerium/ReaderPreferences.java
+index 38c4728..e4f6ad6 100644
+--- a/recovered-v3/app/src/main/java/com/fabri/ministerium/ReaderPreferences.java
++++ b/recovered-v3/app/src/main/java/com/fabri/ministerium/ReaderPreferences.java
+@@ -54,9 +54,12 @@ public final class ReaderPreferences {
+     }
+     public static int horizontalPaddingPx(Context context) {
+         String value = margin(context);
+-        if (MARGIN_WIDE.equals(value)) return 52;
+-        if (MARGIN_NARROW.equals(value)) return 14;
+-        return 28;
++        // Son píxeles CSS del WebView, no píxeles físicos. Incluso el ajuste
++        // estrecho conserva una zona de descanso para que el texto no toque
++        // los bordes ni los tiradores de selección.
++        if (MARGIN_WIDE.equals(value)) return 56;
++        if (MARGIN_NARROW.equals(value)) return 20;
++        return 32;
+     }
+     public static int maximumColumnWidthCss(Context context) {
+         String value = margin(context);
+diff --git a/recovered-v3/app/src/main/java/com/fabri/ministerium/UniversalSelectionMenu.java b/recovered-v3/app/src/main/java/com/fabri/ministerium/UniversalSelectionMenu.java
+index 4115d01..faadbf2 100644
+--- a/recovered-v3/app/src/main/java/com/fabri/ministerium/UniversalSelectionMenu.java
++++ b/recovered-v3/app/src/main/java/com/fabri/ministerium/UniversalSelectionMenu.java
+@@ -52,8 +52,10 @@ public final class UniversalSelectionMenu {
+                 add(menu, NOTE, "Nota");
+                 add(menu, BOOKMARK, "Marcador");
+                 add(menu, DICTIONARY, "Diccionario");
+-                SubMenu more = menu.addSubMenu(Menu.NONE, MORE, 120, "Más");
+-                more.getItem().setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
++                // Android/Chromium puede llamar onPrepareActionMode varias veces para
++                // una misma selección. Reutilizar el submenú evita acumular «Más» y
++                // repetir todas sus acciones cada vez que se mueve un tirador.
++                SubMenu more = moreMenu(menu);
+                 add(more, SHARE, "Compartir");
+                 add(more, MEDITATION, "Reflexión");
+                 if ("Biblia".equalsIgnoreCase(context.category)) add(more, COMMENTARY, "Comentario");
+@@ -134,6 +136,14 @@ public final class UniversalSelectionMenu {
+                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+     }
+ 
++    private static SubMenu moreMenu(Menu menu) {
++        MenuItem existing = menu.findItem(MORE);
++        if (existing != null && existing.hasSubMenu()) return existing.getSubMenu();
++        SubMenu more = menu.addSubMenu(Menu.NONE, MORE, 120, "Más");
++        more.getItem().setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
++        return more;
++    }
++
+     private static void capture(WebView webView, SelectionCallback callback) {
+         String script = "(function(){var s=window.getSelection&&window.getSelection();"
+                 + "if(!s||!s.rangeCount||!s.toString().trim())return '';var r=s.getRangeAt(0);"
+diff --git a/recovered-v3/app/src/main/res/layout/activity_hours_today.xml b/recovered-v3/app/src/main/res/layout/activity_hours_today.xml
+index beeddcd..e7744ff 100644
+--- a/recovered-v3/app/src/main/res/layout/activity_hours_today.xml
++++ b/recovered-v3/app/src/main/res/layout/activity_hours_today.xml
+@@ -367,6 +367,20 @@
+                     android:textColor="@color/wine"
+                     android:textStyle="bold" />
+ 
++                <Button
++                    android:id="@+id/btnPrivateHoursSource"
++                    android:layout_width="match_parent"
++                    android:layout_height="50dp"
++                    android:layout_marginStart="22dp"
++                    android:layout_marginTop="9dp"
++                    android:layout_marginEnd="22dp"
++                    android:background="@drawable/bg_button_secondary"
++                    android:text="Fuente privada · Liturgia de las Horas"
++                    android:textAllCaps="false"
++                    android:textColor="@color/wine"
++                    android:textStyle="bold"
++                    android:visibility="gone" />
++
+                 <TextView
+                     android:id="@+id/txtDailySource"
+                     android:layout_width="match_parent"
+diff --git a/recovered-v3/tools/build_private_hours.py b/recovered-v3/tools/build_private_hours.py
+new file mode 100644
+index 0000000..1b47000
+--- /dev/null
++++ b/recovered-v3/tools/build_private_hours.py
+@@ -0,0 +1,39 @@
++#!/usr/bin/env python3
++"""Crea el paquete anual privado sin incorporar la fuente al repositorio."""
++from pathlib import Path
++import argparse, shutil
++
++MONTHS = ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
++HOURS = ("oficio.htm", "laudes.htm", "tercia.htm", "sexta.htm", "nona.htm", "visperas.htm", "completas.htm")
++
++def main():
++    parser = argparse.ArgumentParser()
++    parser.add_argument("source", type=Path)
++    parser.add_argument("--year", type=int, required=True)
++    parser.add_argument("--output", type=Path, default=Path("app/src/privateEdition/assets/private-hours"))
++    args = parser.parse_args()
++    source_year = args.source / "sync" / str(args.year)
++    target_year = args.output / str(args.year)
++    if not source_year.is_dir():
++        raise SystemExit(f"No existe el año {args.year} en {source_year}")
++    if target_year.exists():
++        shutil.rmtree(target_year)
++    copied = 0
++    for month in MONTHS:
++        month_dir = source_year / month
++        if not month_dir.is_dir():
++            continue
++        for day_dir in sorted(p for p in month_dir.iterdir() if p.is_dir()):
++            destination = target_year / month / day_dir.name
++            for name in HOURS:
++                source = day_dir / name
++                if source.is_file():
++                    destination.mkdir(parents=True, exist_ok=True)
++                    shutil.copy2(source, destination / name)
++                    copied += 1
++    if copied < 300:
++        raise SystemExit(f"Paquete incompleto: solo {copied} oficios")
++    print(f"Paquete privado {args.year}: {copied} archivos")
++
++if __name__ == "__main__":
++    main()
