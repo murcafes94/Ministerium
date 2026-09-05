@@ -13,10 +13,7 @@ import android.widget.TextView;
 
 import java.util.Calendar;
 
-/**
- * Ministerium 5 preview shell.
- * Keeps the proven modules/resources available while the app is rebuilt screen by screen.
- */
+/** Ministerium 5 preview shell. */
 public class MainActivityV5 extends ThemedActivity {
     private boolean dark;
     private int bg;
@@ -60,8 +57,7 @@ public class MainActivityV5 extends ThemedActivity {
 
         TextView mark = text("✠", 28, wine, Typeface.BOLD);
         mark.setGravity(Gravity.CENTER);
-        GradientDrawable markBg = rounded(gold, 16);
-        mark.setBackground(markBg);
+        mark.setBackground(rounded(gold, 16));
         header.addView(mark, new LinearLayout.LayoutParams(dp(52), dp(52)));
 
         LinearLayout titles = new LinearLayout(this);
@@ -81,7 +77,7 @@ public class MainActivityV5 extends ThemedActivity {
 
         root.addView(text("Lo esencial, primero", 26, ink, Typeface.BOLD), matchWrap());
         TextView intro = text(
-                "Esta vista nueva usa navegación nativa y conserva los módulos probados mientras los vamos reconstruyendo uno por uno.",
+                "La nueva base usa navegación nativa y migra cada módulo sin arrastrar los lectores heredados.",
                 14, muted, Typeface.NORMAL);
         intro.setPadding(0, dp(6), 0, dp(14));
         root.addView(intro, matchWrap());
@@ -89,12 +85,12 @@ public class MainActivityV5 extends ThemedActivity {
         root.addView(card("B", "Biblia", "Se mantiene offline y sin cambios de contenido", () ->
                 startActivity(new Intent(this, BibleActivity.class))));
 
-        root.addView(card("M", "Misal", "Nuevo punto de partida para rehacerlo por secciones", () ->
-                startActivity(new Intent(this, MissalActivity.class))));
+        root.addView(card("M", "Misal", "Ya abre la primera estructura nativa de Ministerium 5", () ->
+                startActivity(new Intent(this, MissalV5Activity.class))));
 
-        root.addView(card("☀", "Liturgia de las Horas", "Acceso diario; se reconstruirá con datos estructurados", this::openToday));
+        root.addView(card("☀", "Liturgia de las Horas", "Acceso diario; será el siguiente módulo estructurado", this::openToday));
 
-        root.addView(card("✠", "Rituales y Bendicional", "Un solo acceso pastoral, preparado para migración nativa", () ->
+        root.addView(card("✠", "Rituales y Bendicional", "Acceso pastoral conservado para su migración nativa", () ->
                 startActivity(new Intent(this, PastoralActivity.class))));
 
         root.addView(card("M", "Magisterio y Derecho", "Se conserva mientras definimos contenido online/descargable", () ->
@@ -103,7 +99,7 @@ public class MainActivityV5 extends ThemedActivity {
         root.addView(card("⚙", "Ajustes", "Tema, lectura, márgenes y preferencias", () ->
                 startActivity(new Intent(this, SettingsActivity.class))));
 
-        TextView note = text("Vista previa: la versión anterior sigue intacta en la rama 4.1.", 12, muted, Typeface.NORMAL);
+        TextView note = text("Preview 5.0 · la versión anterior sigue intacta en la rama 4.1.", 12, muted, Typeface.NORMAL);
         note.setPadding(0, dp(18), 0, 0);
         root.addView(note, matchWrap());
         return scroll;
