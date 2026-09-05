@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.fabri.ministerium">
 
-    <!-- Solo se usa para actualizar las lecturas mensuales y el año latino. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -67,6 +66,7 @@
         <activity android:name=".MassReadingsActivity" android:exported="false" />
         <activity android:name=".MassReadingReaderActivity" android:exported="false" />
         <activity android:name=".MissalActivity" android:exported="false" />
+        <activity android:name=".MissalV5Activity" android:exported="false" />
         <activity android:name=".MissalSectionReaderActivity" android:exported="false" />
         <activity android:name=".CombinedMassActivity" android:exported="false" />
         <activity android:name=".LiturgicalCalendarActivity" android:exported="false" />
@@ -94,5 +94,4 @@
             </intent-filter>
         </activity>
     </application>
-
 </manifest>
