@@ -1,59 +1,18 @@
-name: Ministerium Android Debug
+name: Ministerium 5 Preview
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - feature/ministerium-4.1
-  pull_request:
-    branches:
-      - main
+      - feature/ministerium-5.0
 
 permissions:
   contents: read
   actions: write
 
 jobs:
-  cleanup-artifacts:
-    name: Keep latest previous artifact
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      actions: write
-    steps:
-      - name: Conservar solo el artifact anterior más reciente
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          mapfile -t artifacts < <(
-            gh api --paginate \
-              -H "Accept: application/vnd.github+json" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              "repos/${GITHUB_REPOSITORY}/actions/artifacts?per_page=100" \
-              --jq '.artifacts[] | [.created_at, (.id|tostring), .name] | @tsv' \
-              | sort -r -k1,1
-          )
-          echo "Artifacts encontrados: ${#artifacts[@]}"
-          if [ "${#artifacts[@]}" -le 1 ]; then
-            exit 0
-          fi
-          IFS=$'\t' read -r keep_created keep_id keep_name <<< "${artifacts[0]}"
-          echo "Conservando ${keep_name} (${keep_id}, ${keep_created})"
-          for row in "${artifacts[@]:1}"; do
-            IFS=$'\t' read -r created artifact_id artifact_name <<< "$row"
-            echo "Eliminando ${artifact_name} (${artifact_id}, ${created})"
-            gh api --method DELETE \
-              -H "Accept: application/vnd.github+json" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              "repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}"
-          done
-
-  build-debug:
-    name: Build debug APK
+  build-preview:
+    name: Build Ministerium 5 preview APK
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -63,195 +22,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install content preprocessing dependencies
-        run: python -m pip install --disable-pip-version-check pypdf beautifulsoup4
-
-      - name: Static preflight
+      - name: Verify preview launcher
         run: |
-          python -m py_compile \
-            tools/build_magisterium_index_40.py \
-            tools/build_liturgiapapal_missal_31.py \
-            tools/build_liturgiapapal_rituals_31.py
+          test -s app/src/main/java/com/fabri/ministerium/MainActivityV5.java
+          grep -q 'MainActivityV5' app/src/main/AndroidManifest.xml
           python - <<'PY'
           from xml.etree import ElementTree
           ElementTree.parse('app/src/main/AndroidManifest.xml')
-          print('AndroidManifest.xml: XML OK')
+          print('Ministerium 5 manifest: XML OK')
           PY
-
-      - name: Build clean Liturgy of the Hours packages
-        run: |
-          python tools/build_clean_hours_31.py --volume all
-          python tools/build_clean_latin_hours_31.py
-          test -s app/src/main/assets/hours-clean/manifest.json
-          test -s app/src/main/assets/hours-clean/latin/2026/manifest.json
-          test -s app/src/main/assets/hours-clean/latin/2026/files.txt
-          for v in advent christmas lent easter ordinary sanctoral; do
-            test -s "app/src/main/assets/hours-clean/$v/toc.tsv"
-            test -s "app/src/main/assets/hours-clean/$v/navigation.tsv"
-            test -s "app/src/main/assets/hours-clean/$v/files.txt"
-            test -s "app/src/main/assets/hours-clean/$v/manifest.json"
-          done
-          grep -q $'\tO\t' app/src/main/assets/hours-clean/ordinary/navigation.tsv
-          grep -q $'\tL\t' app/src/main/assets/hours-clean/ordinary/navigation.tsv
-          grep -q $'\tM\t' app/src/main/assets/hours-clean/ordinary/navigation.tsv
-          grep -qE $'\t(1V|2V|V)\t' app/src/main/assets/hours-clean/ordinary/navigation.tsv
-          ! grep -R -E '\[(1V|2V|V|C|C1|C2|IN|O|L|M)\]' \
-            app/src/main/assets/hours-clean/ordinary \
-            --include='*.htm' --include='*.html' --include='*.xhtml'
-
-      - name: Refresh Liturgia Papal packages with safe local fallback
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          backup_root="$(mktemp -d)"
-          trap 'rm -rf "$backup_root"' EXIT
-
-          missal_dir="app/src/main/assets/missal"
-          rituals_dir="app/src/main/assets/rituals/liturgiapapal"
-          have_missal_backup=0
-          have_rituals_backup=0
-
-          if [ -d "$missal_dir" ]; then
-            cp -a "$missal_dir" "$backup_root/missal"
-            have_missal_backup=1
-          else
-            echo "No committed local Missal package found; generator must create it."
-          fi
-
-          if [ -d "$rituals_dir" ]; then
-            cp -a "$rituals_dir" "$backup_root/liturgiapapal"
-            have_rituals_backup=1
-          else
-            echo "No committed local Ritual package found; generator must create it."
-          fi
-
-          if timeout 90s python tools/build_liturgiapapal_missal_31.py --language all; then
-            echo "Liturgia Papal Missal refreshed from source."
-          else
-            rc=$?
-            if [ "$have_missal_backup" -eq 1 ]; then
-              echo "WARNING: Liturgia Papal Missal refresh failed (exit $rc); restoring committed local package."
-              rm -rf "$missal_dir"
-              cp -a "$backup_root/missal" "$missal_dir"
-            else
-              echo "ERROR: Liturgia Papal Missal refresh failed (exit $rc) and no committed local fallback exists."
-              exit "$rc"
-            fi
-          fi
-
-          if timeout 90s python tools/build_liturgiapapal_rituals_31.py; then
-            echo "Liturgia Papal Ritual package refreshed from source."
-          else
-            rc=$?
-            if [ "$have_rituals_backup" -eq 1 ]; then
-              echo "WARNING: Liturgia Papal Ritual refresh failed (exit $rc); restoring committed local package."
-              rm -rf "$rituals_dir"
-              cp -a "$backup_root/liturgiapapal" "$rituals_dir"
-            else
-              echo "ERROR: Liturgia Papal Ritual refresh failed (exit $rc) and no committed local fallback exists."
-              exit "$rc"
-            fi
-          fi
-
-          test -s app/src/main/assets/missal/es/initial.txt
-          test -s app/src/main/assets/missal/es/word.txt
-          test -s app/src/main/assets/missal/es/proper_ordinary.txt
-          test -s app/src/main/assets/missal/la/initial.txt
-          test -s app/src/main/assets/missal/manifest.json
-          test -s app/src/main/assets/rituals/liturgiapapal/baptism_one_child.txt
-          test -s app/src/main/assets/rituals/liturgiapapal/unction.txt
-          test -s app/src/main/assets/rituals/liturgiapapal/funeral_typical.txt
-          test -s app/src/main/assets/rituals/liturgiapapal/blessing_house.txt
-          test -s app/src/main/assets/rituals/liturgiapapal/manifest.json
-
-      - name: Enrich structural Missal catalog
-        run: |
-          python tools/build_missal_reference_catalog.py
-          python - <<'PY'
-          import json, pathlib, unicodedata
-          path = pathlib.Path('app/src/main/assets/missal-reference-catalog.json')
-          data = json.loads(path.read_text(encoding='utf-8'))
-          groups = data.get('groups', {})
-          for required in ('commons', 'needs', 'votive', 'dead'):
-              if not groups.get(required):
-                  raise SystemExit(f'Missing Missal structural group: {required}')
-          def fold(value):
-              return ''.join(c for c in unicodedata.normalize('NFD', value or '')
-                             if unicodedata.category(c) != 'Mn').lower()
-          bart = [x for x in data.get('saints', [])
-                  if x.get('month') == 8 and x.get('day') == 24
-                  and 'bartolome' in fold(x.get('title'))]
-          if not bart:
-              raise SystemExit('Missing 24 Aug San Bartolome structural reference')
-          valid = [x for x in bart if x.get('gloria') and 'apostol' in fold(
-              x.get('preface', '') + ' ' + x.get('descriptor', '') + ' '
-              + ' '.join(x.get('commons', [])))]
-          if not valid:
-              raise SystemExit('San Bartolome structure lost Gloria/Apostles reference')
-          print(f"Missal structural catalog OK: {len(data.get('saints', []))} saint metadata entries")
-          PY
-
-      - name: Secondary calendar cross-check
-        continue-on-error: true
-        run: python tools/check_secondary_liturgy_sources.py
-
-      - name: Build local search indexes
-        run: |
-          python tools/build_bible_search_index.py
-          python tools/build_magisterium_index_40.py
-          test -s app/src/main/assets/bible-search-index.tsv
-          test -s app/src/main/assets/magisterium-index.tsv
-          test "$(grep -vc '^#' app/src/main/assets/magisterium-index.tsv)" -gt 20
-
-      - name: Validate Ministerium base and 4.1 contracts
-        run: |
-          node tools/validate_stabilization_41.mjs
-          node tools/validate_calendar_31.mjs
-          node tools/validate_lectionary_40.mjs
-          node tools/validate_magisterium_40.mjs
-          node tools/validate_prayer_experience_40.mjs
-          node tools/validate_release_41.mjs
-          python - <<'PY'
-          import hashlib, json, pathlib
-          manifest = json.loads(pathlib.Path('app/src/main/assets/package-manifest.json').read_text(encoding='utf-8'))
-          calendar = next(p for p in manifest['packages'] if p['id'] == 'calendar-ec')
-          asset = pathlib.Path('app/src/main/assets') / calendar['asset']
-          actual = hashlib.sha256(asset.read_bytes()).hexdigest()
-          expected = calendar['sha256'].lower()
-          if actual != expected:
-              raise SystemExit(f'Calendar SHA-256 mismatch: manifest={expected} actual={actual}')
-          print(f'Calendar SHA-256 OK: {actual}')
-          PY
-
-      - name: Remove build-time-only source assets
-        run: |
-          for chunk in $(seq -w 1 18); do
-            test -s "app/src/main/assets/canon-comments/canon-comments-${chunk}.html"
-          done
-          test -s app/src/main/assets/canon-commentary-index.tsv
-          rm -f \
-            'app/src/main/assets/epubs/LH - 1. ADVIENTO.epub' \
-            'app/src/main/assets/epubs/LH - 2. NAVIDAD.epub' \
-            'app/src/main/assets/epubs/LH - 3. CUARESMA.epub' \
-            'app/src/main/assets/epubs/LH - 4. PASCUA.epub' \
-            'app/src/main/assets/epubs/LH - 5. TIEMPO ORDINARIO.epub' \
-            'app/src/main/assets/epubs/LH - 6. SANTORAL.epub' \
-            'app/src/main/assets/epubs/Liturgia-horarum-2026-latin.epub' \
-            'app/src/main/assets/pdfs/Comentarios-Codigo-Derecho-Canonico-2001.pdf'
-          test ! -f 'app/src/main/assets/epubs/LH - 5. TIEMPO ORDINARIO.epub'
-          test ! -f 'app/src/main/assets/epubs/Liturgia-horarum-2026-latin.epub'
-          test ! -f 'app/src/main/assets/pdfs/Comentarios-Codigo-Derecho-Canonico-2001.pdf'
-
-      - name: Prepare stable Ministerium Test signing key
-        run: |
-          base64 -d test-signing/ministerium-test.keystore.b64 > test-signing/ministerium-test.keystore
-          test -s test-signing/ministerium-test.keystore
 
       - name: Set up JDK 11
         uses: actions/setup-java@v4
@@ -263,24 +42,18 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      - name: Build debug APK
+      - name: Build preview APK
         run: ./gradlew --no-daemon assembleDebug
 
       - name: Compute APK SHA-256
         run: sha256sum app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/app-debug.apk.sha256
 
-      - name: Upload debug APK
+      - name: Upload preview APK
         uses: actions/upload-artifact@v4
         with:
-          name: Ministerium-4.1.0-debug
+          name: Ministerium-5.0-preview
           path: |
             recovered-v3/app/build/outputs/apk/debug/app-debug.apk
             recovered-v3/app/build/outputs/apk/debug/app-debug.apk.sha256
-            recovered-v3/app/src/main/assets/hours-clean/manifest.json
-            recovered-v3/app/src/main/assets/hours-clean/latin/2026/manifest.json
-            recovered-v3/app/src/main/assets/missal/manifest.json
-            recovered-v3/app/src/main/assets/missal-reference-catalog.json
-            recovered-v3/app/src/main/assets/magisterium-index.tsv
-            recovered-v3/app/src/main/assets/rituals/liturgiapapal/manifest.json
           if-no-files-found: error
           retention-days: 14
