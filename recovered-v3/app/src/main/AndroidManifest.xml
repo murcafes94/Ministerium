@@ -70,6 +70,8 @@
         <activity android:name=".MissalSectionReaderActivity" android:exported="false" />
         <activity android:name=".CombinedMassActivity" android:exported="false" />
         <activity android:name=".LiturgicalCalendarActivity" android:exported="false" />
+        <activity android:name=".MainActivity" android:exported="false" />
+
         <service android:name=".TtsPlaybackService" android:exported="false" />
         <receiver android:name=".PrayerReminderReceiver" android:exported="false" />
         <receiver android:name=".GospelReminderReceiver" android:exported="false" />
@@ -82,8 +84,9 @@
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
         </receiver>
+
         <activity
-            android:name=".MainActivity"
+            android:name=".MainActivityV5"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
