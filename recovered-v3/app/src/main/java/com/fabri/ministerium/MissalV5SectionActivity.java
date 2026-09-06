@@ -27,7 +27,9 @@ public class MissalV5SectionActivity extends ThemedActivity {
     private LinearLayout root;
     private Calendar selectedDate;
     private String sectionId;
+    private String celebration;
     private MassSection semanticSection;
+    private MissalDayPresentation presentation;
     private TextView sourceStatus;
     private TextView entranceBody;
     private TextView collectBody;
@@ -40,7 +42,9 @@ public class MissalV5SectionActivity extends ThemedActivity {
         super.onCreate(savedInstanceState);
         selectedDate = selectedDate();
         sectionId = value(EXTRA_SECTION, "initial");
+        celebration = value(EXTRA_CELEBRATION, "Celebración del día");
         semanticSection = MissalV5Semantic.section(sectionId);
+        presentation = MissalDisplayRules.resolve(selectedDate, celebration);
         setContentView(buildScreen());
         loadDailyProper();
     }
@@ -62,10 +66,13 @@ public class MissalV5SectionActivity extends ThemedActivity {
         back.setOnClickListener(v -> finish());
         root.addView(back);
 
-        TextView context = text(dayLabel() + "\n" + value(EXTRA_CELEBRATION, "Celebración del día"),
-                13, R.color.muted, false);
+        TextView context = text(dayLabel() + "\n" + celebration, 13, R.color.muted, false);
         context.setPadding(0, 0, 0, dp(8));
         root.addView(context);
+
+        TextView rules = text(presentation.getReason(), 12, R.color.muted, false);
+        rules.setPadding(0, 0, 0, dp(8));
+        root.addView(rules);
 
         sourceStatus = text("Propios: comprobando caché local…", 12, R.color.muted, false);
         sourceStatus.setPadding(0, 0, 0, dp(18));
@@ -86,36 +93,38 @@ public class MissalV5SectionActivity extends ThemedActivity {
 
     private void renderInitial() {
         heading(sectionTitle("Ritos iniciales"));
-        entranceBody = block(elementTitle("entrance_antiphon", "Antífona de entrada"), PENDING);
-        block(elementTitle("greeting", "Saludo"), "Celebrante, respuesta de la asamblea y rúbrica se representarán como elementos distintos.");
-        block(elementTitle("penitential_act", "Acto penitencial"), "Elige una fórmula. Solo una queda activa.");
+        entranceBody = semanticBlock("entrance_antiphon", PENDING);
+        semanticBlock("greeting", "Celebrante, respuesta de la asamblea y rúbrica se representarán como elementos distintos.");
+        semanticBlock("penitential_act", "Elige una fórmula. Solo una queda activa.");
         semanticSelectable("penitential_act", "Fórmula penitencial");
-        block(elementTitle("gloria", "Gloria"), "Se mostrará únicamente cuando corresponda según el calendario litúrgico.");
-        collectBody = block(elementTitle("collect", "Oración colecta"), PENDING);
+        if (presentation.getShowGloria()) {
+            semanticBlock("gloria", "Gloria activo para esta celebración. El texto verificado se integrará como elemento propio.");
+        }
+        collectBody = semanticBlock("collect", PENDING);
     }
 
     private void renderEucharist() {
         heading(sectionTitle("Liturgia eucarística"));
-        block(elementTitle("gifts", "Preparación de los dones"), "Rúbricas, invitaciones y respuestas se representarán con roles propios.");
-        offeringsBody = block(elementTitle("offerings", "Oración sobre las ofrendas"), PENDING);
-        block(elementTitle("preface", "Prefacio"), "Se resolverá por celebración, tiempo litúrgico y formulario.");
-        block(elementTitle("eucharistic_prayer", "Plegaria eucarística"), "Elige una plegaria. La IV conservará su relación propia con el prefacio.");
+        semanticBlock("gifts", "Rúbricas, invitaciones y respuestas se representarán con roles propios.");
+        offeringsBody = semanticBlock("offerings", PENDING);
+        semanticBlock("preface", "Se resolverá por celebración, tiempo litúrgico y formulario.");
+        semanticBlock("eucharistic_prayer", "Elige una plegaria. La IV conservará su relación propia con el prefacio.");
         semanticSelectable("eucharistic_prayer", "Plegaria eucarística");
     }
 
     private void renderCommunion() {
         heading(sectionTitle("Rito de la comunión"));
-        block(elementTitle("our_father", "Padrenuestro"), "Texto, embolismo y respuesta se mantendrán como elementos semánticos separados.");
-        block(elementTitle("peace", "Rito de la paz"), "Rúbrica y fórmulas separadas.");
-        block(elementTitle("fraction", "Fracción del pan"), "Agnus Dei y gestos rituales como elementos distintos.");
-        communionAntiphonBody = block(elementTitle("communion_antiphon", "Antífona de comunión"), PENDING);
-        postCommunionBody = block(elementTitle("post_communion", "Oración después de la comunión"), PENDING);
+        semanticBlock("our_father", "Texto, embolismo y respuesta se mantendrán como elementos semánticos separados.");
+        semanticBlock("peace", "Rúbrica y fórmulas separadas.");
+        semanticBlock("fraction", "Agnus Dei y gestos rituales como elementos distintos.");
+        communionAntiphonBody = semanticBlock("communion_antiphon", PENDING);
+        postCommunionBody = semanticBlock("post_communion", PENDING);
     }
 
     private void renderConclusion() {
         heading(sectionTitle("Rito de conclusión"));
-        block(elementTitle("blessing", "Bendición"), "Bendición simple o solemne según corresponda.");
-        block(elementTitle("dismissal", "Despedida"), "Fórmula de despedida y respuesta de la asamblea.");
+        semanticBlock("blessing", "Bendición simple o solemne según corresponda.");
+        semanticBlock("dismissal", "Fórmula de despedida y respuesta de la asamblea.");
     }
 
     private void renderOther() {
@@ -127,31 +136,63 @@ public class MissalV5SectionActivity extends ThemedActivity {
         block("Propio de los santos", "Santoral por fecha, aislado por celebración para evitar contaminaciones entre santos.");
     }
 
+    private TextView semanticBlock(String elementId, String body) {
+        MassElement element = MissalV5Semantic.element(sectionId, elementId);
+        String title = element == null ? elementId : element.getTitle();
+        MassElementType type = element == null ? MassElementType.PRAYER : element.getType();
+        return roleBlock(roleLabel(type), title, body);
+    }
+
+    private String roleLabel(MassElementType type) {
+        switch (type) {
+            case RUBRIC: return "RÚBRICA";
+            case CELEBRANT: return "CELEBRANTE";
+            case ASSEMBLY: return "ASAMBLEA";
+            case ANTIPHON: return "ANTÍFONA";
+            case READING_REFERENCE: return "LECTURA";
+            case OPTION: return "OPCIÓN";
+            case PRAYER: return "ORACIÓN";
+            default: return "ELEMENTO";
+        }
+    }
+
+    private TextView roleBlock(String role, String title, String body) {
+        LinearLayout card = column();
+        card.setPadding(dp(16), dp(14), dp(16), dp(14));
+        card.setBackgroundResource(R.drawable.bg_button_secondary);
+        TextView roleView = text(role, 10, R.color.muted, true);
+        roleView.setLetterSpacing(.10f);
+        card.addView(roleView);
+        TextView titleView = text(title, 18, R.color.wine, true);
+        titleView.setPadding(0, dp(3), 0, 0);
+        card.addView(titleView);
+        TextView p = text(body, 15, R.color.ink, false);
+        p.setPadding(0, dp(6), 0, 0);
+        p.setLineSpacing(0, 1.12f);
+        p.setTextIsSelectable(true);
+        card.addView(p);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
+        lp.setMargins(0, 0, 0, dp(10));
+        root.addView(card, lp);
+        return p;
+    }
+
     private void semanticSelectable(String elementId, String fallbackTitle) {
         MassElement element = MissalV5Semantic.element(sectionId, elementId);
         if (element == null || element.getOptions().isEmpty()) return;
         List<String> options = element.getOptions();
         String[] labels = options.toArray(new String[0]);
         String[] states = new String[labels.length];
-        for (int i = 0; i < labels.length; i++) {
-            states[i] = element.getTitle() + " " + labels[i] + " seleccionada";
-        }
+        for (int i = 0; i < labels.length; i++) states[i] = element.getTitle() + " " + labels[i] + " seleccionada";
         selectable(element.getTitle().isEmpty() ? fallbackTitle : element.getTitle(), labels, states);
     }
 
     private String sectionTitle(String fallback) {
-        return semanticSection == null || semanticSection.getTitle().trim().isEmpty()
-                ? fallback : semanticSection.getTitle();
-    }
-
-    private String elementTitle(String id, String fallback) {
-        MassElement element = MissalV5Semantic.element(sectionId, id);
-        return element == null || element.getTitle().trim().isEmpty() ? fallback : element.getTitle();
+        return semanticSection == null || semanticSection.getTitle().trim().isEmpty() ? fallback : semanticSection.getTitle();
     }
 
     private void loadDailyProper() {
-        DailyMassProperRepository.ProperDay cached =
-                DailyMassProperRepository.cached(getApplicationContext(), selectedDate);
+        DailyMassProperRepository.ProperDay cached = DailyMassProperRepository.cached(getApplicationContext(), selectedDate);
         if (cached != null) {
             applyProper(cached);
             sourceStatus.setText("Propios: Arquidiócesis de Guadalajara · caché local");
@@ -161,12 +202,10 @@ public class MissalV5SectionActivity extends ThemedActivity {
                     ? "Propios: buscando fuente verificada…"
                     : "Propios: no disponibles todavía para esta fecha");
         }
-
         if (!MassReadingsRepository.isCurrentMonth(selectedDate)) return;
         final Calendar requestDate = (Calendar) selectedDate.clone();
         new Thread(() -> {
-            DailyMassProperRepository.ProperDay proper =
-                    DailyMassProperRepository.getOrSync(getApplicationContext(), requestDate);
+            DailyMassProperRepository.ProperDay proper = DailyMassProperRepository.getOrSync(getApplicationContext(), requestDate);
             runOnUiThread(() -> {
                 if (isFinishing()) return;
                 if (proper == null) {
@@ -198,7 +237,6 @@ public class MissalV5SectionActivity extends ThemedActivity {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER);
-
         LinearLayout statusCard = column();
         statusCard.setPadding(dp(16), dp(12), dp(16), dp(12));
         statusCard.setBackgroundResource(R.drawable.bg_button_secondary);
@@ -207,7 +245,6 @@ public class MissalV5SectionActivity extends ThemedActivity {
         status.setPadding(0, dp(4), 0, 0);
         statusCard.addView(statusTitle);
         statusCard.addView(status);
-
         for (int i = 0; i < labels.length; i++) {
             final int index = i;
             TextView button = text(labels[i], 16, R.color.wine, true);
@@ -218,7 +255,6 @@ public class MissalV5SectionActivity extends ThemedActivity {
             lp.setMargins(dp(3), 0, dp(3), 0);
             row.addView(button, lp);
         }
-
         LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(-1, -2);
         rowLp.setMargins(0, 0, 0, dp(8));
         root.addView(row, rowLp);
@@ -233,21 +269,7 @@ public class MissalV5SectionActivity extends ThemedActivity {
         root.addView(v);
     }
 
-    private TextView block(String title, String body) {
-        LinearLayout card = column();
-        card.setPadding(dp(16), dp(14), dp(16), dp(14));
-        card.setBackgroundResource(R.drawable.bg_button_secondary);
-        card.addView(text(title, 18, R.color.wine, true));
-        TextView p = text(body, 15, R.color.ink, false);
-        p.setPadding(0, dp(6), 0, 0);
-        p.setLineSpacing(0, 1.12f);
-        p.setTextIsSelectable(true);
-        card.addView(p);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
-        lp.setMargins(0, 0, 0, dp(10));
-        root.addView(card, lp);
-        return p;
-    }
+    private TextView block(String title, String body) { return roleBlock("SECCIÓN", title, body); }
 
     private Calendar selectedDate() {
         Calendar now = Calendar.getInstance();
@@ -260,8 +282,7 @@ public class MissalV5SectionActivity extends ThemedActivity {
     }
 
     private String dayLabel() {
-        return new SimpleDateFormat("d 'de' MMMM 'de' yyyy", new Locale("es", "EC"))
-                .format(selectedDate.getTime());
+        return new SimpleDateFormat("d 'de' MMMM 'de' yyyy", new Locale("es", "EC")).format(selectedDate.getTime());
     }
 
     private String value(String key, String fallback) {
