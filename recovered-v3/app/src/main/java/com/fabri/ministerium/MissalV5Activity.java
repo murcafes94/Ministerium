@@ -43,7 +43,7 @@ public class MissalV5Activity extends ThemedActivity {
         back.setOnClickListener(v -> finish());
         root.addView(back);
 
-        TextView subtitle = text("Ministerium 5 · estructura nativa", 13, R.color.muted, false);
+        TextView subtitle = text("Ministerium 5 · estructura nativa en Kotlin", 13, R.color.muted, false);
         subtitle.setPadding(0, 0, 0, dp(18));
         root.addView(subtitle);
 
@@ -104,12 +104,9 @@ public class MissalV5Activity extends ThemedActivity {
 
     private void renderSections() {
         sections.removeAllViews();
-        addSection("Ritos iniciales", "Entrada, saludo, acto penitencial, Gloria y colecta", "initial");
-        addSection("Liturgia de la Palabra", "Lecturas del día, salmo, Evangelio, Credo y oración universal", "word");
-        addSection("Liturgia eucarística", "Preparación de los dones, prefacio y plegaria eucarística", "eucharist");
-        addSection("Rito de la comunión", "Padrenuestro, paz, fracción, comunión y oración", "communion");
-        addSection("Rito de conclusión", "Bendición y despedida", "conclusion");
-        addSection("Otros formularios", "Comunes, necesidades, votivas, difuntos y santos", "other");
+        for (MassSection section : MissalV5Semantic.sections()) {
+            addSection(section.getTitle(), section.getSummary(), section.getId());
+        }
     }
 
     private void addSection(String title, String subtitle, String id) {
