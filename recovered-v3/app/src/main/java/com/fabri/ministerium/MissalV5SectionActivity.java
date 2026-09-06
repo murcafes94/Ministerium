@@ -10,6 +10,7 @@ import android.widget.TextView;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Locale;
 
 /** Native section reader for the Ministerium 5 Missal. */
@@ -25,6 +26,8 @@ public class MissalV5SectionActivity extends ThemedActivity {
 
     private LinearLayout root;
     private Calendar selectedDate;
+    private String sectionId;
+    private MassSection semanticSection;
     private TextView sourceStatus;
     private TextView entranceBody;
     private TextView collectBody;
@@ -36,13 +39,15 @@ public class MissalV5SectionActivity extends ThemedActivity {
         ThemeUtils.apply(this);
         super.onCreate(savedInstanceState);
         selectedDate = selectedDate();
+        sectionId = value(EXTRA_SECTION, "initial");
+        semanticSection = MissalV5Semantic.section(sectionId);
         setContentView(buildScreen());
         loadDailyProper();
     }
 
     private View buildScreen() {
-        String section = value(EXTRA_SECTION, "initial");
-        String title = value(EXTRA_TITLE, "Misal");
+        String fallbackTitle = value(EXTRA_TITLE, "Misal");
+        String title = semanticSection == null ? fallbackTitle : semanticSection.getTitle();
 
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
@@ -66,62 +71,82 @@ public class MissalV5SectionActivity extends ThemedActivity {
         sourceStatus.setPadding(0, 0, 0, dp(18));
         root.addView(sourceStatus);
 
-        TextView badge = text("MISAL 5 · LECTOR NATIVO", 11, R.color.wine, true);
+        TextView badge = text("MISAL 5 · MODELO KOTLIN", 11, R.color.wine, true);
         badge.setLetterSpacing(.10f);
         badge.setPadding(0, 0, 0, dp(20));
         root.addView(badge);
 
-        if ("initial".equals(section)) renderInitial();
-        else if ("eucharist".equals(section)) renderEucharist();
-        else if ("communion".equals(section)) renderCommunion();
-        else if ("conclusion".equals(section)) renderConclusion();
+        if ("initial".equals(sectionId)) renderInitial();
+        else if ("eucharist".equals(sectionId)) renderEucharist();
+        else if ("communion".equals(sectionId)) renderCommunion();
+        else if ("conclusion".equals(sectionId)) renderConclusion();
         else renderOther();
         return scroll;
     }
 
     private void renderInitial() {
-        heading("Ritos iniciales");
-        entranceBody = block("Antífona de entrada", PENDING);
-        block("Saludo", "Celebrante, respuesta de la asamblea y rúbrica serán elementos distintos, no un párrafo HTML reparado.");
-        block("Acto penitencial", "Elige una fórmula. Solo una queda activa.");
-        selectable("Fórmula penitencial", new String[]{"I", "II", "III"},
-                new String[]{"Fórmula I seleccionada", "Fórmula II seleccionada", "Fórmula III seleccionada"});
-        block("Gloria", "Se mostrará únicamente cuando corresponda según el calendario litúrgico.");
-        collectBody = block("Oración colecta", PENDING);
+        heading(sectionTitle("Ritos iniciales"));
+        entranceBody = block(elementTitle("entrance_antiphon", "Antífona de entrada"), PENDING);
+        block(elementTitle("greeting", "Saludo"), "Celebrante, respuesta de la asamblea y rúbrica se representarán como elementos distintos.");
+        block(elementTitle("penitential_act", "Acto penitencial"), "Elige una fórmula. Solo una queda activa.");
+        semanticSelectable("penitential_act", "Fórmula penitencial");
+        block(elementTitle("gloria", "Gloria"), "Se mostrará únicamente cuando corresponda según el calendario litúrgico.");
+        collectBody = block(elementTitle("collect", "Oración colecta"), PENDING);
     }
 
     private void renderEucharist() {
-        heading("Liturgia eucarística");
-        block("Preparación de los dones", "Rúbricas, invitaciones y respuestas se representarán con roles propios.");
-        offeringsBody = block("Oración sobre las ofrendas", PENDING);
-        block("Prefacio", "Se resolverá por celebración, tiempo litúrgico y formulario.");
-        block("Plegaria eucarística", "Elige una plegaria. La IV conservará su relación propia con el prefacio.");
-        selectable("Plegaria eucarística", new String[]{"I", "II", "III", "IV"},
-                new String[]{"Plegaria I seleccionada", "Plegaria II seleccionada", "Plegaria III seleccionada", "Plegaria IV seleccionada"});
+        heading(sectionTitle("Liturgia eucarística"));
+        block(elementTitle("gifts", "Preparación de los dones"), "Rúbricas, invitaciones y respuestas se representarán con roles propios.");
+        offeringsBody = block(elementTitle("offerings", "Oración sobre las ofrendas"), PENDING);
+        block(elementTitle("preface", "Prefacio"), "Se resolverá por celebración, tiempo litúrgico y formulario.");
+        block(elementTitle("eucharistic_prayer", "Plegaria eucarística"), "Elige una plegaria. La IV conservará su relación propia con el prefacio.");
+        semanticSelectable("eucharistic_prayer", "Plegaria eucarística");
     }
 
     private void renderCommunion() {
-        heading("Rito de la comunión");
-        block("Padrenuestro", "Texto, embolismo y respuesta se mantendrán como elementos semánticos separados.");
-        block("Rito de la paz", "Rúbrica y fórmulas separadas.");
-        block("Fracción del pan", "Agnus Dei y gestos rituales como elementos distintos.");
-        communionAntiphonBody = block("Antífona de comunión", PENDING);
-        postCommunionBody = block("Oración después de la comunión", PENDING);
+        heading(sectionTitle("Rito de la comunión"));
+        block(elementTitle("our_father", "Padrenuestro"), "Texto, embolismo y respuesta se mantendrán como elementos semánticos separados.");
+        block(elementTitle("peace", "Rito de la paz"), "Rúbrica y fórmulas separadas.");
+        block(elementTitle("fraction", "Fracción del pan"), "Agnus Dei y gestos rituales como elementos distintos.");
+        communionAntiphonBody = block(elementTitle("communion_antiphon", "Antífona de comunión"), PENDING);
+        postCommunionBody = block(elementTitle("post_communion", "Oración después de la comunión"), PENDING);
     }
 
     private void renderConclusion() {
-        heading("Rito de conclusión");
-        block("Bendición", "Bendición simple o solemne según corresponda.");
-        block("Despedida", "Fórmula de despedida y respuesta de la asamblea.");
+        heading(sectionTitle("Rito de conclusión"));
+        block(elementTitle("blessing", "Bendición"), "Bendición simple o solemne según corresponda.");
+        block(elementTitle("dismissal", "Despedida"), "Fórmula de despedida y respuesta de la asamblea.");
     }
 
     private void renderOther() {
-        heading("Otros formularios");
+        heading(sectionTitle("Otros formularios"));
         block("Comunes", "Pastores, mártires, vírgenes, santos y santas.");
         block("Por diversas necesidades", "Formularios para la Iglesia, sociedad y necesidades particulares.");
         block("Misas votivas", "Formularios votivos organizados por tema.");
         block("Misas de difuntos", "Exequias, aniversarios y otras ocasiones.");
         block("Propio de los santos", "Santoral por fecha, aislado por celebración para evitar contaminaciones entre santos.");
+    }
+
+    private void semanticSelectable(String elementId, String fallbackTitle) {
+        MassElement element = MissalV5Semantic.element(sectionId, elementId);
+        if (element == null || element.getOptions().isEmpty()) return;
+        List<String> options = element.getOptions();
+        String[] labels = options.toArray(new String[0]);
+        String[] states = new String[labels.length];
+        for (int i = 0; i < labels.length; i++) {
+            states[i] = element.getTitle() + " " + labels[i] + " seleccionada";
+        }
+        selectable(element.getTitle().isEmpty() ? fallbackTitle : element.getTitle(), labels, states);
+    }
+
+    private String sectionTitle(String fallback) {
+        return semanticSection == null || semanticSection.getTitle().trim().isEmpty()
+                ? fallback : semanticSection.getTitle();
+    }
+
+    private String elementTitle(String id, String fallback) {
+        MassElement element = MissalV5Semantic.element(sectionId, id);
+        return element == null || element.getTitle().trim().isEmpty() ? fallback : element.getTitle();
     }
 
     private void loadDailyProper() {
