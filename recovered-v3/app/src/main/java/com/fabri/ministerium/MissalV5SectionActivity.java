@@ -21,12 +21,23 @@ public class MissalV5SectionActivity extends ThemedActivity {
     public static final String EXTRA_DAY = "v5_missal_day";
     public static final String EXTRA_CELEBRATION = "v5_missal_celebration";
 
+    private static final String PENDING = "Contenido propio pendiente de una fuente verificada.";
+
     private LinearLayout root;
+    private Calendar selectedDate;
+    private TextView sourceStatus;
+    private TextView entranceBody;
+    private TextView collectBody;
+    private TextView offeringsBody;
+    private TextView communionAntiphonBody;
+    private TextView postCommunionBody;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         ThemeUtils.apply(this);
         super.onCreate(savedInstanceState);
+        selectedDate = selectedDate();
         setContentView(buildScreen());
+        loadDailyProper();
     }
 
     private View buildScreen() {
@@ -48,8 +59,12 @@ public class MissalV5SectionActivity extends ThemedActivity {
 
         TextView context = text(dayLabel() + "\n" + value(EXTRA_CELEBRATION, "Celebración del día"),
                 13, R.color.muted, false);
-        context.setPadding(0, 0, 0, dp(18));
+        context.setPadding(0, 0, 0, dp(8));
         root.addView(context);
+
+        sourceStatus = text("Propios: comprobando caché local…", 12, R.color.muted, false);
+        sourceStatus.setPadding(0, 0, 0, dp(18));
+        root.addView(sourceStatus);
 
         TextView badge = text("MISAL 5 · LECTOR NATIVO", 11, R.color.wine, true);
         badge.setLetterSpacing(.10f);
@@ -66,19 +81,19 @@ public class MissalV5SectionActivity extends ThemedActivity {
 
     private void renderInitial() {
         heading("Ritos iniciales");
-        block("Entrada", "La antífona o canto de entrada se resolverá desde el formulario estructurado de la celebración.");
+        entranceBody = block("Antífona de entrada", PENDING);
         block("Saludo", "Celebrante, respuesta de la asamblea y rúbrica serán elementos distintos, no un párrafo HTML reparado.");
         block("Acto penitencial", "Elige una fórmula. Solo una queda activa.");
         selectable("Fórmula penitencial", new String[]{"I", "II", "III"},
                 new String[]{"Fórmula I seleccionada", "Fórmula II seleccionada", "Fórmula III seleccionada"});
         block("Gloria", "Se mostrará únicamente cuando corresponda según el calendario litúrgico.");
-        block("Oración colecta", "Se cargará la propia del día. Si la fuente no contiene texto verificable, Ministerium lo marcará como pendiente en vez de inventarlo.");
+        collectBody = block("Oración colecta", PENDING);
     }
 
     private void renderEucharist() {
         heading("Liturgia eucarística");
         block("Preparación de los dones", "Rúbricas, invitaciones y respuestas se representarán con roles propios.");
-        block("Oración sobre las ofrendas", "Se resolverá desde el formulario propio del día o el formulario elegido.");
+        offeringsBody = block("Oración sobre las ofrendas", PENDING);
         block("Prefacio", "Se resolverá por celebración, tiempo litúrgico y formulario.");
         block("Plegaria eucarística", "Elige una plegaria. La IV conservará su relación propia con el prefacio.");
         selectable("Plegaria eucarística", new String[]{"I", "II", "III", "IV"},
@@ -90,8 +105,8 @@ public class MissalV5SectionActivity extends ThemedActivity {
         block("Padrenuestro", "Texto, embolismo y respuesta se mantendrán como elementos semánticos separados.");
         block("Rito de la paz", "Rúbrica y fórmulas separadas.");
         block("Fracción del pan", "Agnus Dei y gestos rituales como elementos distintos.");
-        block("Comunión", "Antífona propia y rito de comunión.");
-        block("Oración después de la comunión", "Propia del día o del formulario seleccionado.");
+        communionAntiphonBody = block("Antífona de comunión", PENDING);
+        postCommunionBody = block("Oración después de la comunión", PENDING);
     }
 
     private void renderConclusion() {
@@ -107,6 +122,51 @@ public class MissalV5SectionActivity extends ThemedActivity {
         block("Misas votivas", "Formularios votivos organizados por tema.");
         block("Misas de difuntos", "Exequias, aniversarios y otras ocasiones.");
         block("Propio de los santos", "Santoral por fecha, aislado por celebración para evitar contaminaciones entre santos.");
+    }
+
+    private void loadDailyProper() {
+        DailyMassProperRepository.ProperDay cached =
+                DailyMassProperRepository.cached(getApplicationContext(), selectedDate);
+        if (cached != null) {
+            applyProper(cached);
+            sourceStatus.setText("Propios: Arquidiócesis de Guadalajara · caché local");
+            if (cached.isComplete()) return;
+        } else {
+            sourceStatus.setText(MassReadingsRepository.isCurrentMonth(selectedDate)
+                    ? "Propios: buscando fuente verificada…"
+                    : "Propios: no disponibles todavía para esta fecha");
+        }
+
+        if (!MassReadingsRepository.isCurrentMonth(selectedDate)) return;
+        final Calendar requestDate = (Calendar) selectedDate.clone();
+        new Thread(() -> {
+            DailyMassProperRepository.ProperDay proper =
+                    DailyMassProperRepository.getOrSync(getApplicationContext(), requestDate);
+            runOnUiThread(() -> {
+                if (isFinishing()) return;
+                if (proper == null) {
+                    sourceStatus.setText("Propios: fuente verificada no disponible; no se mostrará texto supuesto");
+                    return;
+                }
+                applyProper(proper);
+                sourceStatus.setText("Propios: Arquidiócesis de Guadalajara · guardados localmente");
+            });
+        }, "ministerium-v5-proper").start();
+    }
+
+    private void applyProper(DailyMassProperRepository.ProperDay proper) {
+        if (proper == null) return;
+        setProperText(entranceBody, proper.entrance);
+        setProperText(collectBody, proper.collect);
+        setProperText(offeringsBody, proper.offerings);
+        setProperText(communionAntiphonBody, proper.communionAntiphon);
+        setProperText(postCommunionBody, proper.postCommunion);
+    }
+
+    private void setProperText(TextView view, String value) {
+        if (view == null) return;
+        String clean = value == null ? "" : value.trim();
+        view.setText(clean.isEmpty() ? PENDING : clean);
     }
 
     private void selectable(String title, String[] labels, String[] states) {
@@ -148,7 +208,7 @@ public class MissalV5SectionActivity extends ThemedActivity {
         root.addView(v);
     }
 
-    private void block(String title, String body) {
+    private TextView block(String title, String body) {
         LinearLayout card = column();
         card.setPadding(dp(16), dp(14), dp(16), dp(14));
         card.setBackgroundResource(R.drawable.bg_button_secondary);
@@ -156,20 +216,27 @@ public class MissalV5SectionActivity extends ThemedActivity {
         TextView p = text(body, 15, R.color.ink, false);
         p.setPadding(0, dp(6), 0, 0);
         p.setLineSpacing(0, 1.12f);
+        p.setTextIsSelectable(true);
         card.addView(p);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.setMargins(0, 0, 0, dp(10));
         root.addView(card, lp);
+        return p;
     }
 
-    private String dayLabel() {
+    private Calendar selectedDate() {
         Calendar now = Calendar.getInstance();
         Calendar c = Calendar.getInstance();
         c.clear();
         c.set(getIntent().getIntExtra(EXTRA_YEAR, now.get(Calendar.YEAR)),
                 getIntent().getIntExtra(EXTRA_MONTH, now.get(Calendar.MONTH)),
                 getIntent().getIntExtra(EXTRA_DAY, now.get(Calendar.DAY_OF_MONTH)), 12, 0, 0);
-        return new SimpleDateFormat("d 'de' MMMM 'de' yyyy", new Locale("es", "EC")).format(c.getTime());
+        return c;
+    }
+
+    private String dayLabel() {
+        return new SimpleDateFormat("d 'de' MMMM 'de' yyyy", new Locale("es", "EC"))
+                .format(selectedDate.getTime());
     }
 
     private String value(String key, String fallback) {
