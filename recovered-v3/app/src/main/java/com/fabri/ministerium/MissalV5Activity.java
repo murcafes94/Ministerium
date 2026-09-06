@@ -138,6 +138,10 @@ public class MissalV5Activity extends ThemedActivity {
         Intent intent = new Intent(this, MissalV5SectionActivity.class);
         intent.putExtra(MissalV5SectionActivity.EXTRA_SECTION, id);
         intent.putExtra(MissalV5SectionActivity.EXTRA_TITLE, title);
+        intent.putExtra(MissalV5SectionActivity.EXTRA_YEAR, selectedDate.get(Calendar.YEAR));
+        intent.putExtra(MissalV5SectionActivity.EXTRA_MONTH, selectedDate.get(Calendar.MONTH));
+        intent.putExtra(MissalV5SectionActivity.EXTRA_DAY, selectedDate.get(Calendar.DAY_OF_MONTH));
+        intent.putExtra(MissalV5SectionActivity.EXTRA_CELEBRATION, celebrationView.getText().toString());
         startActivity(intent);
     }
 
