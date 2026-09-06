@@ -1,6 +1,5 @@
 package com.fabri.ministerium;
 
-import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.graphics.Typeface;
@@ -15,13 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 
-/**
- * Ministerium 5 Missal shell.
- *
- * This screen intentionally does not render or repair the legacy Missal HTML.
- * It models the Mass as native, semantic sections so each section can be migrated
- * independently to structured content.
- */
+/** Native Ministerium 5 Missal hub. */
 public class MissalV5Activity extends ThemedActivity {
     private Calendar selectedDate = Calendar.getInstance();
     private TextView dateView;
@@ -106,7 +99,6 @@ public class MissalV5Activity extends ThemedActivity {
             celebrationView.setText("Celebración del día");
             detailView.setText("Calendario litúrgico");
         }
-
         renderSections();
     }
 
@@ -124,15 +116,11 @@ public class MissalV5Activity extends ThemedActivity {
         LinearLayout card = column();
         card.setPadding(dp(16), dp(15), dp(16), dp(15));
         card.setBackgroundResource(R.drawable.bg_button_secondary);
-
-        TextView t = text(title, 19, R.color.ink, true);
-        card.addView(t);
+        card.addView(text(title, 19, R.color.ink, true));
         TextView s = text(subtitle, 14, R.color.muted, false);
         s.setPadding(0, dp(4), 0, 0);
         card.addView(s);
-
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.setMargins(0, 0, 0, dp(10));
         sections.addView(card, lp);
         card.setOnClickListener(v -> openSection(id, title));
@@ -147,11 +135,10 @@ public class MissalV5Activity extends ThemedActivity {
             startActivity(intent);
             return;
         }
-        new AlertDialog.Builder(this)
-                .setTitle(title)
-                .setMessage("Este apartado ya pertenece al Misal 5 nativo. El contenido se migrará de forma estructurada, sin reutilizar el lector HTML antiguo.")
-                .setPositiveButton("Entendido", null)
-                .show();
+        Intent intent = new Intent(this, MissalV5SectionActivity.class);
+        intent.putExtra(MissalV5SectionActivity.EXTRA_SECTION, id);
+        intent.putExtra(MissalV5SectionActivity.EXTRA_TITLE, title);
+        startActivity(intent);
     }
 
     private void chooseDate() {
@@ -170,8 +157,7 @@ public class MissalV5Activity extends ThemedActivity {
     private LinearLayout column() {
         LinearLayout l = new LinearLayout(this);
         l.setOrientation(LinearLayout.VERTICAL);
-        l.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        l.setLayoutParams(new LinearLayout.LayoutParams(-1, -2));
         return l;
     }
 
