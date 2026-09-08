@@ -54,6 +54,7 @@ object MissalV5Semantic {
                 MassElement("first_reading", MassElementType.READING_REFERENCE, "Primera lectura"),
                 MassElement("psalm", MassElementType.READING_REFERENCE, "Salmo responsorial"),
                 MassElement("second_reading", MassElementType.READING_REFERENCE, "Segunda lectura", required = false),
+                MassElement("acclamation", MassElementType.READING_REFERENCE, "Aclamación antes del Evangelio"),
                 MassElement("gospel", MassElementType.READING_REFERENCE, "Evangelio"),
                 MassElement("creed", MassElementType.PRAYER, "Credo", required = false),
                 MassElement("universal_prayer", MassElementType.PRAYER, "Oración universal")
