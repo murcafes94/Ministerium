@@ -138,10 +138,10 @@ public class MainActivityV5 extends ThemedActivity {
 
     private void openToday() {
         Calendar today = Calendar.getInstance();
-        Intent intent = new Intent(this, HoursTodayActivity.class);
-        intent.putExtra(HoursTodayActivity.EXTRA_YEAR, today.get(Calendar.YEAR));
-        intent.putExtra(HoursTodayActivity.EXTRA_MONTH, today.get(Calendar.MONTH));
-        intent.putExtra(HoursTodayActivity.EXTRA_DAY, today.get(Calendar.DAY_OF_MONTH));
+        Intent intent = new Intent(this, HoursV5Activity.class);
+        intent.putExtra(HoursV5Activity.EXTRA_YEAR, today.get(Calendar.YEAR));
+        intent.putExtra(HoursV5Activity.EXTRA_MONTH, today.get(Calendar.MONTH));
+        intent.putExtra(HoursV5Activity.EXTRA_DAY, today.get(Calendar.DAY_OF_MONTH));
         startActivity(intent);
     }
 
