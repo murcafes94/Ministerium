@@ -43,7 +43,7 @@ public class MissalV5Activity extends ThemedActivity {
         back.setOnClickListener(v -> finish());
         root.addView(back);
 
-        TextView subtitle = text("Ministerium 5 · estructura nativa en Kotlin", 13, R.color.muted, false);
+        TextView subtitle = text("Misal · celebración del día", 13, R.color.muted, false);
         subtitle.setPadding(0, 0, 0, dp(18));
         root.addView(subtitle);
 
@@ -124,14 +124,6 @@ public class MissalV5Activity extends ThemedActivity {
     }
 
     private void openSection(String id, String title) {
-        if ("word".equals(id)) {
-            Intent intent = new Intent(this, MassReadingsActivity.class);
-            intent.putExtra(MassReadingsActivity.EXTRA_YEAR, selectedDate.get(Calendar.YEAR));
-            intent.putExtra(MassReadingsActivity.EXTRA_MONTH, selectedDate.get(Calendar.MONTH));
-            intent.putExtra(MassReadingsActivity.EXTRA_DAY, selectedDate.get(Calendar.DAY_OF_MONTH));
-            startActivity(intent);
-            return;
-        }
         Intent intent = new Intent(this, MissalV5SectionActivity.class);
         intent.putExtra(MissalV5SectionActivity.EXTRA_SECTION, id);
         intent.putExtra(MissalV5SectionActivity.EXTRA_TITLE, title);
