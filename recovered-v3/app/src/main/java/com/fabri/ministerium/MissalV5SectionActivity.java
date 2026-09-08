@@ -1,5 +1,6 @@
 package com.fabri.ministerium;
 
+import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -46,7 +47,7 @@ public class MissalV5SectionActivity extends ThemedActivity {
         semanticSection = MissalV5Semantic.section(sectionId);
         presentation = MissalDisplayRules.resolve(selectedDate, celebration);
         setContentView(buildScreen());
-        loadDailyProper();
+        if (!"word".equals(sectionId)) loadDailyProper();
     }
 
     private View buildScreen() {
@@ -74,16 +75,20 @@ public class MissalV5SectionActivity extends ThemedActivity {
         rules.setPadding(0, 0, 0, dp(8));
         root.addView(rules);
 
-        sourceStatus = text("Propios: comprobando caché local…", 12, R.color.muted, false);
+        String initialStatus = "word".equals(sectionId)
+                ? "Lecturas: comprobando contenido local…"
+                : "Propios: comprobando caché local…";
+        sourceStatus = text(initialStatus, 12, R.color.muted, false);
         sourceStatus.setPadding(0, 0, 0, dp(18));
         root.addView(sourceStatus);
 
-        TextView badge = text("MISAL 5 · MODELO KOTLIN", 11, R.color.wine, true);
+        TextView badge = text("MISAL · LECTOR NATIVO", 11, R.color.wine, true);
         badge.setLetterSpacing(.10f);
         badge.setPadding(0, 0, 0, dp(20));
         root.addView(badge);
 
         if ("initial".equals(sectionId)) renderInitial();
+        else if ("word".equals(sectionId)) renderWord();
         else if ("eucharist".equals(sectionId)) renderEucharist();
         else if ("communion".equals(sectionId)) renderCommunion();
         else if ("conclusion".equals(sectionId)) renderConclusion();
@@ -101,6 +106,42 @@ public class MissalV5SectionActivity extends ThemedActivity {
             semanticBlock("gloria", "Gloria activo para esta celebración. El texto verificado se integrará como elemento propio.");
         }
         collectBody = semanticBlock("collect", PENDING);
+    }
+
+    private void renderWord() {
+        heading(sectionTitle("Liturgia de la Palabra"));
+        MissalV5WordContent content = MissalV5Readings.load(getApplicationContext(), selectedDate);
+        if (content == null) {
+            sourceStatus.setText("Lecturas: esta fecha no está sincronizada en el dispositivo");
+            roleBlock("LECTURAS", "Contenido no disponible sin conexión",
+                    "Ministerium no mostrará lecturas supuestas. Sincroniza el Leccionario desde Ajustes → Actualizaciones y vuelve a abrir esta fecha.");
+            actionCard("Abrir Actualizaciones", () -> startActivity(new Intent(this, UpdateCenterActivity.class)));
+            return;
+        }
+
+        sourceStatus.setText("Lecturas: " + content.getSourceLabel());
+        readingBlock(content, "first_reading");
+        readingBlock(content, "psalm");
+        readingBlock(content, "second_reading");
+        readingBlock(content, "acclamation");
+        readingBlock(content, "gospel");
+
+        if (presentation.getShowCreed()) {
+            semanticBlock("creed", "El Credo corresponde a esta celebración. El texto fijo se mantendrá como oración litúrgica separada de las lecturas.");
+        }
+        semanticBlock("universal_prayer",
+                "Se conserva como elemento propio de la celebración; las intenciones no se inventan cuando no existe un formulario verificado.");
+    }
+
+    private void readingBlock(MissalV5WordContent content, String id) {
+        MissalV5Reading reading = content.reading(id);
+        if (reading == null) return;
+        MassElement element = MissalV5Semantic.element("word", id);
+        String title = element == null || element.getTitle().trim().isEmpty()
+                ? reading.getTitle() : element.getTitle();
+        String body = reading.displayText();
+        if (body.trim().isEmpty()) return;
+        roleBlock("LECTURA", title, body);
     }
 
     private void renderEucharist() {
@@ -175,6 +216,17 @@ public class MissalV5SectionActivity extends ThemedActivity {
         lp.setMargins(0, 0, 0, dp(10));
         root.addView(card, lp);
         return p;
+    }
+
+    private void actionCard(String label, Runnable action) {
+        TextView button = text(label, 16, R.color.wine, true);
+        button.setGravity(Gravity.CENTER);
+        button.setPadding(dp(14), dp(13), dp(14), dp(13));
+        button.setBackgroundResource(R.drawable.bg_button_secondary);
+        button.setOnClickListener(v -> action.run());
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
+        lp.setMargins(0, 0, 0, dp(12));
+        root.addView(button, lp);
     }
 
     private void semanticSelectable(String elementId, String fallbackTitle) {
