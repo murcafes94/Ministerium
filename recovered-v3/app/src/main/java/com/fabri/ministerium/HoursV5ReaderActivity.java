@@ -31,6 +31,10 @@ public class HoursV5ReaderActivity extends ThemedActivity {
     public static final String EXTRA_TEMPORAL_FILE_PATH = "v5_hours_reader_temporal_file";
     public static final String EXTRA_TEMPORAL_FRAGMENT = "v5_hours_reader_temporal_fragment";
     public static final String EXTRA_TEMPORAL_SCROLL_TEXT = "v5_hours_reader_temporal_scroll";
+    public static final String EXTRA_COMMON_VOLUME_ID = "v5_hours_reader_common_volume";
+    public static final String EXTRA_COMMON_FILE_PATH = "v5_hours_reader_common_file";
+    public static final String EXTRA_COMMON_FRAGMENT = "v5_hours_reader_common_fragment";
+    public static final String EXTRA_COMMON_TITLE = "v5_hours_reader_common_title";
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private LinearLayout content;
@@ -98,6 +102,10 @@ public class HoursV5ReaderActivity extends ThemedActivity {
         final String temporalFile = value(EXTRA_TEMPORAL_FILE_PATH, "");
         final String temporalFragment = value(EXTRA_TEMPORAL_FRAGMENT, "");
         final String temporalScroll = value(EXTRA_TEMPORAL_SCROLL_TEXT, "");
+        final String commonVolume = value(EXTRA_COMMON_VOLUME_ID, "");
+        final String commonFile = value(EXTRA_COMMON_FILE_PATH, "");
+        final String commonFragment = value(EXTRA_COMMON_FRAGMENT, "");
+        final String commonTitle = value(EXTRA_COMMON_TITLE, "Común");
 
         executor.submit(() -> {
             try {
@@ -106,15 +114,26 @@ public class HoursV5ReaderActivity extends ThemedActivity {
                 HoursNativeDocument document = primary;
                 boolean composed = false;
 
-                if (!rank.isEmpty() && !temporalVolume.isEmpty() && !temporalFile.isEmpty()) {
-                    HoursNativeDocument temporal = loadNativeDocument(
+                HoursNativeDocument temporal = null;
+                if (!temporalVolume.isEmpty() && !temporalFile.isEmpty()) {
+                    temporal = loadNativeDocument(
                             temporalVolume, temporalFile, temporalFragment, title, temporalScroll);
-                    document = HoursV5Composition.compose(hourKey, rank, temporal, primary);
+                }
+
+                HoursNativeDocument common = null;
+                if (!commonVolume.isEmpty() && !commonFile.isEmpty()) {
+                    common = loadNativeDocument(
+                            commonVolume, commonFile, commonFragment, commonTitle, "");
+                }
+
+                if (!rank.isEmpty() && (temporal != null || common != null)) {
+                    document = HoursV5Composition.compose(hourKey, rank, temporal, primary, common);
                     composed = true;
                 }
 
                 final HoursNativeDocument finalDocument = document;
                 final boolean finalComposed = composed;
+                final boolean usedCommon = common != null;
                 runOnUiThread(() -> {
                     if (isFinishing()) return;
                     progress.setVisibility(View.GONE);
@@ -123,9 +142,13 @@ public class HoursV5ReaderActivity extends ThemedActivity {
                         addEmptyState();
                         return;
                     }
-                    status.setText(finalComposed
-                            ? "Texto local · composición litúrgica semántica controlada"
-                            : "Texto local · lector nativo");
+                    if (finalComposed) {
+                        status.setText(usedCommon
+                                ? "Texto local · temporal/propio/común con procedencia explícita"
+                                : "Texto local · composición litúrgica semántica controlada");
+                    } else {
+                        status.setText("Texto local · lector nativo");
+                    }
                     render(finalDocument);
                 });
             } catch (Exception error) {
