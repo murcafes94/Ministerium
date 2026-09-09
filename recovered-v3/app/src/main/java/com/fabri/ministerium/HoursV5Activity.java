@@ -29,6 +29,7 @@ public class HoursV5Activity extends ThemedActivity {
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Map<String, HourEntry> hours = new HashMap<>();
+    private final Map<String, HourEntry> temporalHours = new HashMap<>();
     private Calendar selectedDate;
     private LiturgicalDay currentDay;
     private HoursOfficeSelection officeSelection;
@@ -136,14 +137,19 @@ public class HoursV5Activity extends ThemedActivity {
                 LiturgicalDay day = LiturgicalResolver.resolve(getApplicationContext(), request);
                 HoursOfficeSelection resolved = HoursV5OfficePolicy.resolve(day);
                 HoursOfficeOption chosen = resolved.getDefaultOption();
-                List<HourEntry> entries = chosen == null
+                List<HourEntry> temporalEntries = day.temporalOffice == null
                         ? java.util.Collections.emptyList()
-                        : DailyHoursRepository.hoursFor(getApplicationContext(), chosen.getOffice(), request);
+                        : DailyHoursRepository.hoursFor(getApplicationContext(), day.temporalOffice, request);
+                List<HourEntry> entries;
+                if (chosen == null) entries = java.util.Collections.emptyList();
+                else if (chosen.getSource() == HoursOfficeSource.TEMPORAL) entries = temporalEntries;
+                else entries = DailyHoursRepository.hoursFor(getApplicationContext(), chosen.getOffice(), request);
                 runOnUiThread(() -> {
                     if (!requestKey.equals(key(selectedDate)) || isFinishing()) return;
                     currentDay = day;
                     officeSelection = resolved;
                     selectedOffice = chosen;
+                    applyTemporalEntries(temporalEntries);
                     applyEntries(entries);
                     renderResolvedDay();
                 });
@@ -161,8 +167,10 @@ public class HoursV5Activity extends ThemedActivity {
         hourList.removeAllViews();
         executor.submit(() -> {
             try {
-                List<HourEntry> entries = DailyHoursRepository.hoursFor(
-                        getApplicationContext(), option.getOffice(), request);
+                List<HourEntry> entries = option.getSource() == HoursOfficeSource.TEMPORAL
+                        && !temporalHours.isEmpty()
+                        ? new java.util.ArrayList<>(temporalHours.values())
+                        : DailyHoursRepository.hoursFor(getApplicationContext(), option.getOffice(), request);
                 runOnUiThread(() -> {
                     if (!requestKey.equals(key(selectedDate)) || isFinishing()) return;
                     selectedOffice = option;
@@ -188,12 +196,18 @@ public class HoursV5Activity extends ThemedActivity {
         for (HourEntry entry : entries) hours.put(entry.key, entry);
     }
 
+    private void applyTemporalEntries(List<HourEntry> entries) {
+        temporalHours.clear();
+        for (HourEntry entry : entries) temporalHours.put(entry.key, entry);
+    }
+
     private void showResolveError(String requestKey) {
         if (!requestKey.equals(key(selectedDate)) || isFinishing()) return;
         currentDay = null;
         officeSelection = null;
         selectedOffice = null;
         hours.clear();
+        temporalHours.clear();
         celebrationView.setText("Oficio del día");
         detailsView.setText("No se pudo resolver el oficio para esta fecha.");
         sourceView.setText("Ministerium no mezclará contenido de otra celebración como sustitución.");
@@ -233,7 +247,8 @@ public class HoursV5Activity extends ThemedActivity {
         String source = officeSelection == null ? "Fuente aislada" : officeSelection.getReason();
         if (selectedOffice != null) {
             source += "\n" + (selectedOffice.getSource() == HoursOfficeSource.PROPER
-                    ? "Fuente activa: propio del santoral" : "Fuente activa: temporal");
+                    ? "Fuente activa: propio del santoral · composición por elementos al abrir cada hora"
+                    : "Fuente activa: temporal");
         }
         sourceView.setText(source);
         progress.setVisibility(View.GONE);
@@ -310,6 +325,20 @@ public class HoursV5Activity extends ThemedActivity {
         intent.putExtra(HoursV5ReaderActivity.EXTRA_TITLE, entry.title);
         intent.putExtra(HoursV5ReaderActivity.EXTRA_SUBTITLE, entry.subtitle);
         intent.putExtra(HoursV5ReaderActivity.EXTRA_SCROLL_TEXT, entry.scrollText);
+        intent.putExtra(HoursV5ReaderActivity.EXTRA_HOUR_KEY, entry.key);
+
+        if (selectedOffice != null && selectedOffice.getSource() == HoursOfficeSource.PROPER) {
+            String rank = selectedOffice.getOffice().liturgicalRank == null
+                    ? "" : selectedOffice.getOffice().liturgicalRank;
+            intent.putExtra(HoursV5ReaderActivity.EXTRA_OFFICE_RANK, rank);
+            HourEntry temporal = temporalHours.get(entry.key);
+            if (temporal != null && temporal.volume != null) {
+                intent.putExtra(HoursV5ReaderActivity.EXTRA_TEMPORAL_VOLUME_ID, temporal.volume.id);
+                intent.putExtra(HoursV5ReaderActivity.EXTRA_TEMPORAL_FILE_PATH, temporal.filePath);
+                intent.putExtra(HoursV5ReaderActivity.EXTRA_TEMPORAL_FRAGMENT, temporal.fragment);
+                intent.putExtra(HoursV5ReaderActivity.EXTRA_TEMPORAL_SCROLL_TEXT, temporal.scrollText);
+            }
+        }
         startActivity(intent);
     }
 
