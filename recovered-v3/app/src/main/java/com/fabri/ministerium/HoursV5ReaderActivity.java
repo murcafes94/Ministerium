@@ -25,6 +25,12 @@ public class HoursV5ReaderActivity extends ThemedActivity {
     public static final String EXTRA_TITLE = "v5_hours_reader_title";
     public static final String EXTRA_SUBTITLE = "v5_hours_reader_subtitle";
     public static final String EXTRA_SCROLL_TEXT = "v5_hours_reader_scroll";
+    public static final String EXTRA_HOUR_KEY = "v5_hours_reader_hour_key";
+    public static final String EXTRA_OFFICE_RANK = "v5_hours_reader_office_rank";
+    public static final String EXTRA_TEMPORAL_VOLUME_ID = "v5_hours_reader_temporal_volume";
+    public static final String EXTRA_TEMPORAL_FILE_PATH = "v5_hours_reader_temporal_file";
+    public static final String EXTRA_TEMPORAL_FRAGMENT = "v5_hours_reader_temporal_fragment";
+    public static final String EXTRA_TEMPORAL_SCROLL_TEXT = "v5_hours_reader_temporal_scroll";
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private LinearLayout content;
@@ -86,36 +92,66 @@ public class HoursV5ReaderActivity extends ThemedActivity {
         final String fragment = value(EXTRA_FRAGMENT, "");
         final String title = value(EXTRA_TITLE, "Liturgia de las Horas");
         final String scrollText = value(EXTRA_SCROLL_TEXT, "");
+        final String hourKey = value(EXTRA_HOUR_KEY, "");
+        final String rank = value(EXTRA_OFFICE_RANK, "");
+        final String temporalVolume = value(EXTRA_TEMPORAL_VOLUME_ID, "");
+        final String temporalFile = value(EXTRA_TEMPORAL_FILE_PATH, "");
+        final String temporalFragment = value(EXTRA_TEMPORAL_FRAGMENT, "");
+        final String temporalScroll = value(EXTRA_TEMPORAL_SCROLL_TEXT, "");
 
         executor.submit(() -> {
             try {
-                HoursVolume volume = HoursRepository.find(volumeId);
-                if (volume == null || filePath.isEmpty()) throw new IllegalStateException("Ruta del oficio no disponible.");
-                File root = EpubUtils.ensureExtracted(getApplicationContext(), volume);
-                File file = new File(root, filePath);
-                if (!file.isFile()) throw new IllegalStateException("El texto del oficio no está instalado.");
-                String html = read(file);
-                HoursNativeDocument document = HoursV5DocumentParser.parse(title, html, fragment, scrollText);
+                HoursNativeDocument primary = loadNativeDocument(
+                        volumeId, filePath, fragment, title, scrollText);
+                HoursNativeDocument document = primary;
+                boolean composed = false;
+
+                if (!rank.isEmpty() && !temporalVolume.isEmpty() && !temporalFile.isEmpty()) {
+                    HoursNativeDocument temporal = loadNativeDocument(
+                            temporalVolume, temporalFile, temporalFragment, title, temporalScroll);
+                    document = HoursV5Composition.compose(hourKey, rank, temporal, primary);
+                    composed = true;
+                }
+
+                final HoursNativeDocument finalDocument = document;
+                final boolean finalComposed = composed;
                 runOnUiThread(() -> {
                     if (isFinishing()) return;
                     progress.setVisibility(View.GONE);
-                    if (document.getBlocks().isEmpty()) {
+                    if (finalDocument.getBlocks().isEmpty()) {
                         status.setText("No se encontró contenido estructurado para este oficio.");
                         addEmptyState();
                         return;
                     }
-                    status.setText("Texto local · lector nativo");
-                    render(document);
+                    status.setText(finalComposed
+                            ? "Texto local · composición litúrgica semántica controlada"
+                            : "Texto local · lector nativo");
+                    render(finalDocument);
                 });
             } catch (Exception error) {
                 runOnUiThread(() -> {
                     if (isFinishing()) return;
                     progress.setVisibility(View.GONE);
                     status.setText("No se pudo abrir este oficio sin conexión.");
-                    roleBlock("ESTADO", "Contenido no disponible", "Ministerium no sustituirá este oficio con contenido de otra celebración.");
+                    roleBlock("ESTADO", "Contenido no disponible",
+                            "Ministerium no sustituirá este oficio con contenido de otra celebración.");
                 });
             }
         });
+    }
+
+    private HoursNativeDocument loadNativeDocument(String volumeId, String filePath,
+                                                   String fragment, String title,
+                                                   String scrollText) throws Exception {
+        HoursVolume volume = HoursRepository.find(volumeId);
+        if (volume == null || filePath.isEmpty()) {
+            throw new IllegalStateException("Ruta del oficio no disponible.");
+        }
+        File root = EpubUtils.ensureExtracted(getApplicationContext(), volume);
+        File file = new File(root, filePath);
+        if (!file.isFile()) throw new IllegalStateException("El texto del oficio no está instalado.");
+        String html = read(file);
+        return HoursV5DocumentParser.parse(title, html, fragment, scrollText);
     }
 
     private void render(HoursNativeDocument document) {
@@ -173,7 +209,8 @@ public class HoursV5ReaderActivity extends ThemedActivity {
     }
 
     private void addEmptyState() {
-        roleBlock("ESTADO", "Oficio sin contenido legible", "La estructura se mantuvo aislada para evitar mezclar temporal, santoral o comunes incorrectos.");
+        roleBlock("ESTADO", "Oficio sin contenido legible",
+                "La estructura se mantuvo aislada para evitar mezclar temporal, santoral o comunes incorrectos.");
     }
 
     private String read(File file) throws Exception {
