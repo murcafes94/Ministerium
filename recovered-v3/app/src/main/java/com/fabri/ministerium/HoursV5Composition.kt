@@ -2,8 +2,9 @@ package com.fabri.ministerium
 
 /**
  * Composes one native Hours document from already-parsed liturgical sources.
- * The merger is deliberately conservative: it never guesses a common and it
- * never borrows a block from a neighbouring saint.
+ * Every source remains explicit: temporal, proper and (only when resolved by the
+ * santoral entry or chosen by the user) common. No neighbouring celebration is
+ * ever used as an implicit fallback.
  */
 object HoursV5Composition {
     @JvmStatic
@@ -11,36 +12,71 @@ object HoursV5Composition {
         hourKey: String?,
         rank: String?,
         temporal: HoursNativeDocument?,
-        proper: HoursNativeDocument?
+        proper: HoursNativeDocument?,
+        common: HoursNativeDocument?
     ): HoursNativeDocument {
         val key = hourKey.orEmpty()
         val normalizedRank = rank.orEmpty()
-        if (proper == null || proper.blocks.isEmpty()) return temporal ?: empty(key)
-        if (temporal == null || temporal.blocks.isEmpty()) return proper
+        val hasProper = proper != null && proper.blocks.isNotEmpty()
+        val hasCommon = common != null && common.blocks.isNotEmpty()
+        val hasTemporal = temporal != null && temporal.blocks.isNotEmpty()
 
-        // Feasts and solemnities are isolated offices. If their proper package is
-        // incomplete we prefer showing that incompleteness over silently importing
-        // unrelated temporal material.
-        if (normalizedRank == "F" || normalizedRank == "S") return proper
+        if (!hasProper && !hasCommon) return temporal ?: empty(key)
 
-        // Memories keep the psalmody of the feria unless the verified proper itself
-        // explicitly supplies a complete psalmody. Other proper elements may replace
-        // their temporal counterparts one semantic role at a time.
-        if (normalizedRank == "M" || normalizedRank == "m" || normalizedRank == "m*") {
-            return composeMemory(key, temporal, proper)
+        // A feast or solemnity is never repaired from the feria. If an explicit
+        // common was selected/referenced, it may form the base and the proper
+        // replaces only matching semantic roles.
+        if (normalizedRank == "F" || normalizedRank == "S") {
+            return when {
+                hasCommon && hasProper -> overlay(common!!, proper!!, key, allowPsalmody = true)
+                hasProper -> proper!!
+                hasCommon -> common!!
+                else -> empty(key)
+            }
         }
 
-        // Unknown proper rank: keep it isolated rather than guessing precedence.
-        return proper
+        // Memorials keep the feria as their base. Proper material has priority;
+        // an explicit common is only a secondary source for roles absent from the
+        // proper. Psalmody remains temporal unless the proper itself supplies a
+        // complete psalmody; a common never replaces memorial psalmody silently.
+        if (normalizedRank == "M" || normalizedRank == "m" || normalizedRank == "m*") {
+            if (!hasTemporal) return when {
+                hasProper -> proper!!
+                hasCommon -> common!!
+                else -> empty(key)
+            }
+            return composeMemory(key, temporal!!, proper, common)
+        }
+
+        // Unknown rank: keep the selected non-temporal source isolated rather
+        // than guessing precedence.
+        return when {
+            hasProper -> proper!!
+            hasCommon -> common!!
+            hasTemporal -> temporal!!
+            else -> empty(key)
+        }
     }
+
+    // Backward-compatible overload while callers migrate to explicit commons.
+    @JvmStatic
+    fun compose(
+        hourKey: String?,
+        rank: String?,
+        temporal: HoursNativeDocument?,
+        proper: HoursNativeDocument?
+    ): HoursNativeDocument = compose(hourKey, rank, temporal, proper, null)
 
     private fun composeMemory(
         hourKey: String,
         temporal: HoursNativeDocument,
-        proper: HoursNativeDocument
+        proper: HoursNativeDocument?,
+        common: HoursNativeDocument?
     ): HoursNativeDocument {
-        val properHasPsalmody = proper.blocks.any { it.type == HoursBlockType.PSALMODY }
-        val replaceable = setOf(
+        val properBlocks = proper?.blocks.orEmpty()
+        val commonBlocks = common?.blocks.orEmpty()
+        val properHasPsalmody = properBlocks.any { it.type == HoursBlockType.PSALMODY }
+        val replaceable = linkedSetOf(
             HoursBlockType.HYMN,
             HoursBlockType.READING,
             HoursBlockType.RESPONSORY,
@@ -48,9 +84,16 @@ object HoursV5Composition {
             HoursBlockType.INTERCESSIONS,
             HoursBlockType.PRAYER
         )
-        val properByType = proper.blocks.groupBy { it.type }
+        val properByType = properBlocks.groupBy { it.type }
+        val commonByType = commonBlocks.groupBy { it.type }
         val result = mutableListOf<HoursBlock>()
         val used = mutableSetOf<HoursBlockType>()
+
+        fun replacement(type: HoursBlockType): List<HoursBlock> {
+            val fromProper = properByType[type].orEmpty()
+            if (fromProper.isNotEmpty()) return fromProper
+            return commonByType[type].orEmpty()
+        }
 
         temporal.blocks.forEach { block ->
             when {
@@ -59,24 +102,63 @@ object HoursV5Composition {
                         result += properByType[HoursBlockType.PSALMODY].orEmpty()
                     }
                 }
-                block.type in replaceable && properByType[block.type].orEmpty().isNotEmpty() -> {
-                    if (used.add(block.type)) result += properByType[block.type].orEmpty()
+                block.type in replaceable && replacement(block.type).isNotEmpty() -> {
+                    if (used.add(block.type)) result += replacement(block.type)
                 }
                 else -> result += block
             }
         }
 
-        // Proper blocks not represented in the temporal skeleton are appended only
-        // for roles that are safe and explicit. Generic TEXT/HEADING blocks are not
-        // appended because their provenance is ambiguous outside their source.
+        // Append only explicit liturgical roles absent from the temporal skeleton.
+        // Generic TEXT/HEADING blocks stay source-local because their provenance
+        // cannot be established safely outside their original document.
         replaceable.forEach { type ->
             if (type !in used && temporal.blocks.none { it.type == type }) {
-                result += properByType[type].orEmpty()
+                result += replacement(type)
             }
         }
 
+        val preferredTitle = proper?.title?.takeIf { it.isNotBlank() }
+            ?: common?.title?.takeIf { it.isNotBlank() }
+            ?: temporal.title.takeIf { it.isNotBlank() }
+            ?: hourKey
+        return HoursNativeDocument(preferredTitle, result)
+    }
+
+    /** Base common + proper overlay for feasts/solemnities explicitly tied to a common. */
+    private fun overlay(
+        base: HoursNativeDocument,
+        proper: HoursNativeDocument,
+        hourKey: String,
+        allowPsalmody: Boolean
+    ): HoursNativeDocument {
+        val replaceable = mutableSetOf(
+            HoursBlockType.HYMN,
+            HoursBlockType.ANTIPHON,
+            HoursBlockType.READING,
+            HoursBlockType.RESPONSORY,
+            HoursBlockType.CANTICLE,
+            HoursBlockType.INTERCESSIONS,
+            HoursBlockType.PRAYER
+        )
+        if (allowPsalmody) replaceable += HoursBlockType.PSALMODY
+        val properByType = proper.blocks.groupBy { it.type }
+        val used = mutableSetOf<HoursBlockType>()
+        val result = mutableListOf<HoursBlock>()
+
+        base.blocks.forEach { block ->
+            val replacement = properByType[block.type].orEmpty()
+            if (block.type in replaceable && replacement.isNotEmpty()) {
+                if (used.add(block.type)) result += replacement
+            } else result += block
+        }
+        replaceable.forEach { type ->
+            if (type !in used && base.blocks.none { it.type == type }) {
+                result += properByType[type].orEmpty()
+            }
+        }
         return HoursNativeDocument(
-            proper.title.ifBlank { temporal.title.ifBlank { hourKey } },
+            proper.title.ifBlank { base.title.ifBlank { hourKey } },
             result
         )
     }
