@@ -7,6 +7,7 @@ enum class HoursBlockType {
     HEADING,
     HYMN,
     ANTIPHON,
+    GOSPEL_ANTIPHON,
     PSALMODY,
     READING,
     RESPONSORY,
@@ -55,10 +56,11 @@ object HoursV5DocumentParser {
 
         paragraphs.forEach { paragraph ->
             val firstLine = paragraph.lineSequence().firstOrNull()?.trim().orEmpty()
-            val type = classify(firstLine, paragraph)
+            val type = classify(title, firstLine, paragraph)
             val titlePart = when (type) {
                 HoursBlockType.HYMN -> "Himno"
                 HoursBlockType.ANTIPHON -> "Antífona"
+                HoursBlockType.GOSPEL_ANTIPHON -> gospelAntiphonTitle(title)
                 HoursBlockType.PSALMODY -> psalmTitle(firstLine)
                 HoursBlockType.READING -> readingTitle(firstLine)
                 HoursBlockType.RESPONSORY -> "Responsorio"
@@ -68,7 +70,9 @@ object HoursV5DocumentParser {
                 HoursBlockType.HEADING -> firstLine
                 HoursBlockType.TEXT -> ""
             }
-            val body = if (titlePart.isNotEmpty() && normalize(firstLine).contains(normalize(titlePart))) {
+            val body = if (type == HoursBlockType.GOSPEL_ANTIPHON) {
+                stripHourPrefix(paragraph)
+            } else if (titlePart.isNotEmpty() && normalize(firstLine).contains(normalize(titlePart))) {
                 paragraph.substring(firstLine.length).trim()
             } else paragraph
             if (body.isNotBlank() || titlePart.isNotBlank()) blocks += HoursBlock(type, titlePart, body)
@@ -92,14 +96,15 @@ object HoursV5DocumentParser {
         if (wanted.isEmpty()) return text
         val index = normalize(text).indexOf(normalize(wanted))
         if (index < 0) return text
-        // Normalization changes offsets, so use a case-insensitive direct lookup when possible.
         val direct = text.lowercase(Locale.ROOT).indexOf(wanted.lowercase(Locale.ROOT))
         return if (direct >= 0) text.substring(direct) else text
     }
 
-    private fun classify(firstLine: String, paragraph: String): HoursBlockType {
+    private fun classify(documentTitle: String, firstLine: String, paragraph: String): HoursBlockType {
         val n = normalize(firstLine)
+        val document = normalize(documentTitle)
         return when {
+            isGospelAntiphon(document, n, paragraph) -> HoursBlockType.GOSPEL_ANTIPHON
             n == "HIMNO" || n.startsWith("HIMNO ") -> HoursBlockType.HYMN
             n.startsWith("ANT ") || n.startsWith("ANTIFONA") -> HoursBlockType.ANTIPHON
             n.startsWith("SALMO") || n.startsWith("CANTICO AT") || n.startsWith("CANTICO NT") -> HoursBlockType.PSALMODY
@@ -111,6 +116,26 @@ object HoursV5DocumentParser {
             looksLikeHeading(firstLine, paragraph) -> HoursBlockType.HEADING
             else -> HoursBlockType.TEXT
         }
+    }
+
+    private fun isGospelAntiphon(document: String, first: String, paragraph: String): Boolean {
+        if (paragraph.length > 650) return false
+        val lauds = document.contains("LAUDES") && first.startsWith("LAUDES ")
+        val vespers = document.contains("VISPERAS") && first.startsWith("VISPERAS ")
+        val explicit = first.startsWith("ANTIFONA DEL CANTICO EVANGELICO")
+        return lauds || vespers || explicit
+    }
+
+    private fun stripHourPrefix(value: String): String = value
+        .replaceFirst(Regex("(?i)^\\s*(Laudes|V[ií]speras)\\s*:\\s*"), "")
+        .replaceFirst(Regex("(?i)^\\s*Ant[ií]fona del c[aá]ntico evang[eé]lico\\s*:?\\s*"), "")
+        .trim()
+
+    private fun gospelAntiphonTitle(documentTitle: String): String {
+        val n = normalize(documentTitle)
+        return if (n.contains("LAUDES")) "Antífona del Benedictus"
+        else if (n.contains("VISPERAS")) "Antífona del Magníficat"
+        else "Antífona del cántico evangélico"
     }
 
     private fun looksLikeHeading(firstLine: String, paragraph: String): Boolean {
