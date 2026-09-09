@@ -1,5 +1,6 @@
 package com.fabri.ministerium;
 
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.graphics.Typeface;
@@ -30,10 +31,13 @@ public class HoursV5Activity extends ThemedActivity {
     private final Map<String, HourEntry> hours = new HashMap<>();
     private Calendar selectedDate;
     private LiturgicalDay currentDay;
+    private HoursOfficeSelection officeSelection;
+    private HoursOfficeOption selectedOffice;
     private TextView dateView;
     private TextView celebrationView;
     private TextView detailsView;
     private TextView sourceView;
+    private TextView officeChoice;
     private LinearLayout hourList;
     private ProgressBar progress;
 
@@ -87,8 +91,17 @@ public class HoursV5Activity extends ThemedActivity {
         root.addView(detailsView);
 
         sourceView = text("", 12, R.color.muted, false);
-        sourceView.setPadding(0, dp(4), 0, dp(16));
+        sourceView.setPadding(0, dp(4), 0, dp(10));
         root.addView(sourceView);
+
+        officeChoice = text("Elegir oficio", 15, R.color.wine, true);
+        officeChoice.setGravity(Gravity.CENTER);
+        officeChoice.setPadding(dp(12), dp(12), dp(12), dp(12));
+        officeChoice.setBackgroundResource(R.drawable.bg_button_secondary);
+        officeChoice.setOnClickListener(v -> chooseOffice());
+        LinearLayout.LayoutParams choiceLp = new LinearLayout.LayoutParams(-1, -2);
+        choiceLp.setMargins(0, 0, 0, dp(14));
+        root.addView(officeChoice, choiceLp);
 
         progress = new ProgressBar(this);
         LinearLayout.LayoutParams progressLp = new LinearLayout.LayoutParams(dp(32), dp(32));
@@ -116,30 +129,77 @@ public class HoursV5Activity extends ThemedActivity {
         renderDate();
         progress.setVisibility(View.VISIBLE);
         hourList.removeAllViews();
+        officeChoice.setEnabled(false);
+        officeChoice.setAlpha(.55f);
         executor.submit(() -> {
             try {
                 LiturgicalDay day = LiturgicalResolver.resolve(getApplicationContext(), request);
-                List<HourEntry> entries = DailyHoursRepository.hoursFor(getApplicationContext(), day.temporalOffice, request);
+                HoursOfficeSelection resolved = HoursV5OfficePolicy.resolve(day);
+                HoursOfficeOption chosen = resolved.getDefaultOption();
+                List<HourEntry> entries = chosen == null
+                        ? java.util.Collections.emptyList()
+                        : DailyHoursRepository.hoursFor(getApplicationContext(), chosen.getOffice(), request);
                 runOnUiThread(() -> {
                     if (!requestKey.equals(key(selectedDate)) || isFinishing()) return;
                     currentDay = day;
-                    hours.clear();
-                    for (HourEntry entry : entries) hours.put(entry.key, entry);
+                    officeSelection = resolved;
+                    selectedOffice = chosen;
+                    applyEntries(entries);
+                    renderResolvedDay();
+                });
+            } catch (Exception error) {
+                runOnUiThread(() -> showResolveError(requestKey));
+            }
+        });
+    }
+
+    private void loadSelectedOffice(HoursOfficeOption option) {
+        if (option == null || currentDay == null) return;
+        final String requestKey = key(selectedDate);
+        final Calendar request = (Calendar) selectedDate.clone();
+        progress.setVisibility(View.VISIBLE);
+        hourList.removeAllViews();
+        executor.submit(() -> {
+            try {
+                List<HourEntry> entries = DailyHoursRepository.hoursFor(
+                        getApplicationContext(), option.getOffice(), request);
+                runOnUiThread(() -> {
+                    if (!requestKey.equals(key(selectedDate)) || isFinishing()) return;
+                    selectedOffice = option;
+                    applyEntries(entries);
                     renderResolvedDay();
                 });
             } catch (Exception error) {
                 runOnUiThread(() -> {
                     if (!requestKey.equals(key(selectedDate)) || isFinishing()) return;
-                    currentDay = null;
+                    selectedOffice = option;
                     hours.clear();
-                    celebrationView.setText("Oficio del día");
-                    detailsView.setText("No se pudo resolver el oficio temporal para esta fecha.");
-                    sourceView.setText("No se mezclará contenido de otra celebración como sustitución.");
                     progress.setVisibility(View.GONE);
+                    sourceView.setText("El formulario elegido no tiene contenido local verificable. No se sustituirá con otro oficio.");
                     renderHours();
+                    updateOfficeChooser();
                 });
             }
         });
+    }
+
+    private void applyEntries(List<HourEntry> entries) {
+        hours.clear();
+        for (HourEntry entry : entries) hours.put(entry.key, entry);
+    }
+
+    private void showResolveError(String requestKey) {
+        if (!requestKey.equals(key(selectedDate)) || isFinishing()) return;
+        currentDay = null;
+        officeSelection = null;
+        selectedOffice = null;
+        hours.clear();
+        celebrationView.setText("Oficio del día");
+        detailsView.setText("No se pudo resolver el oficio para esta fecha.");
+        sourceView.setText("Ministerium no mezclará contenido de otra celebración como sustitución.");
+        progress.setVisibility(View.GONE);
+        updateOfficeChooser();
+        renderHours();
     }
 
     private void renderDate() {
@@ -149,25 +209,66 @@ public class HoursV5Activity extends ThemedActivity {
     }
 
     private void renderResolvedDay() {
-        celebrationView.setText(currentDay == null ? "Oficio del día" : currentDay.celebration);
+        String celebration = selectedOffice == null ? currentDay.celebration : selectedOffice.getTitle();
+        celebrationView.setText(celebration == null || celebration.trim().isEmpty() ? "Oficio del día" : celebration);
+
         StringBuilder details = new StringBuilder();
-        if (currentDay != null && currentDay.liturgicalColor != null && !currentDay.liturgicalColor.isEmpty()) {
-            details.append("Color ").append(currentDay.liturgicalColor.toLowerCase(Locale.ROOT));
+        String liturgicalColor = selectedOffice != null && selectedOffice.getOffice().liturgicalColor != null
+                && !selectedOffice.getOffice().liturgicalColor.isEmpty()
+                ? selectedOffice.getOffice().liturgicalColor : currentDay.liturgicalColor;
+        if (liturgicalColor != null && !liturgicalColor.isEmpty()) {
+            details.append("Color ").append(liturgicalColor.toLowerCase(Locale.ROOT));
         }
         int ordinaryWeek = LiturgicalResolver.ordinaryWeekNumber(selectedDate);
         if (ordinaryWeek > 0) {
             if (details.length() > 0) details.append(" · ");
             details.append("Semana ").append(ordinaryWeek).append(" del Tiempo Ordinario");
         }
-        if (currentDay != null && currentDay.psalterWeek != null && !currentDay.psalterWeek.isEmpty()) {
+        if (currentDay.psalterWeek != null && !currentDay.psalterWeek.isEmpty()) {
             if (details.length() > 0) details.append(" · ");
             details.append("Salterio ").append(currentDay.psalterWeek);
         }
         detailsView.setText(details.length() == 0 ? "Liturgia de las Horas" : details.toString());
-        sourceView.setText(currentDay != null && currentDay.sourceNote != null && !currentDay.sourceNote.isEmpty()
-                ? currentDay.sourceNote : "Contenido local");
+
+        String source = officeSelection == null ? "Fuente aislada" : officeSelection.getReason();
+        if (selectedOffice != null) {
+            source += "\n" + (selectedOffice.getSource() == HoursOfficeSource.PROPER
+                    ? "Fuente activa: propio del santoral" : "Fuente activa: temporal");
+        }
+        sourceView.setText(source);
         progress.setVisibility(View.GONE);
+        updateOfficeChooser();
         renderHours();
+    }
+
+    private void updateOfficeChooser() {
+        int count = officeSelection == null ? 0 : officeSelection.getOptions().size();
+        officeChoice.setEnabled(count > 1);
+        officeChoice.setAlpha(count > 1 ? 1f : .55f);
+        if (selectedOffice == null) officeChoice.setText("Oficio no disponible");
+        else if (count > 1) officeChoice.setText("Oficio: " + selectedOffice.getTitle() + " · cambiar");
+        else officeChoice.setText("Oficio: " + selectedOffice.getTitle());
+    }
+
+    private void chooseOffice() {
+        if (officeSelection == null || officeSelection.getOptions().size() <= 1) return;
+        List<HoursOfficeOption> options = officeSelection.getOptions();
+        String[] labels = new String[options.size()];
+        int checked = 0;
+        for (int i = 0; i < options.size(); i++) {
+            HoursOfficeOption option = options.get(i);
+            labels[i] = option.getTitle() + "\n" + option.getSubtitle();
+            if (selectedOffice != null && option.getOffice() == selectedOffice.getOffice()) checked = i;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Elegir oficio")
+                .setSingleChoiceItems(labels, checked, (dialog, which) -> {
+                    HoursOfficeOption chosen = options.get(which);
+                    dialog.dismiss();
+                    loadSelectedOffice(chosen);
+                })
+                .setNegativeButton("Cancelar", null)
+                .show();
     }
 
     private void renderHours() {
@@ -178,7 +279,7 @@ public class HoursV5Activity extends ThemedActivity {
             card.setPadding(dp(16), dp(14), dp(16), dp(14));
             card.setBackgroundResource(R.drawable.bg_button_secondary);
             card.addView(text(item.getTitle(), 18, entry == null ? R.color.muted : R.color.ink, true));
-            String subtitle = entry == null ? "No disponible para esta fecha" :
+            String subtitle = entry == null ? "No disponible en el formulario seleccionado" :
                     (entry.subtitle == null || entry.subtitle.trim().isEmpty() ? item.getSummary() : entry.subtitle);
             TextView sub = text(subtitle, 13, R.color.muted, false);
             sub.setPadding(0, dp(4), 0, 0);
@@ -220,7 +321,8 @@ public class HoursV5Activity extends ThemedActivity {
         intent.putExtra(MissalV5SectionActivity.EXTRA_MONTH, selectedDate.get(Calendar.MONTH));
         intent.putExtra(MissalV5SectionActivity.EXTRA_DAY, selectedDate.get(Calendar.DAY_OF_MONTH));
         intent.putExtra(MissalV5SectionActivity.EXTRA_CELEBRATION,
-                currentDay == null ? "Celebración del día" : currentDay.celebration);
+                selectedOffice == null ? (currentDay == null ? "Celebración del día" : currentDay.celebration)
+                        : selectedOffice.getTitle());
         startActivity(intent);
     }
 
