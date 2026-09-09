@@ -192,7 +192,10 @@ public class HoursV5ReaderActivity extends ThemedActivity {
         switch (type) {
             case HYMN: return "HIMNO";
             case ANTIPHON: return "ANTÍFONA";
+            case GOSPEL_ANTIPHON: return "ANTÍFONA EVANGÉLICA";
             case PSALMODY: return "SALMODIA";
+            case FIRST_READING: return "PRIMERA LECTURA";
+            case SECOND_READING: return "SEGUNDA LECTURA";
             case READING: return "LECTURA";
             case RESPONSORY: return "RESPONSORIO";
             case CANTICLE: return "CÁNTICO";
