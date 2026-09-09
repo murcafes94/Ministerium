@@ -14,6 +14,7 @@ import android.widget.TextView;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -34,11 +35,14 @@ public class HoursV5Activity extends ThemedActivity {
     private LiturgicalDay currentDay;
     private HoursOfficeSelection officeSelection;
     private HoursOfficeOption selectedOffice;
+    private List<CommonOfficeChoice> commonChoices = Collections.emptyList();
+    private CommonOfficeChoice selectedCommon;
     private TextView dateView;
     private TextView celebrationView;
     private TextView detailsView;
     private TextView sourceView;
     private TextView officeChoice;
+    private TextView commonChoice;
     private LinearLayout hourList;
     private ProgressBar progress;
 
@@ -101,8 +105,17 @@ public class HoursV5Activity extends ThemedActivity {
         officeChoice.setBackgroundResource(R.drawable.bg_button_secondary);
         officeChoice.setOnClickListener(v -> chooseOffice());
         LinearLayout.LayoutParams choiceLp = new LinearLayout.LayoutParams(-1, -2);
-        choiceLp.setMargins(0, 0, 0, dp(14));
+        choiceLp.setMargins(0, 0, 0, dp(8));
         root.addView(officeChoice, choiceLp);
+
+        commonChoice = text("Común: no necesario", 14, R.color.wine, true);
+        commonChoice.setGravity(Gravity.CENTER);
+        commonChoice.setPadding(dp(12), dp(11), dp(12), dp(11));
+        commonChoice.setBackgroundResource(R.drawable.bg_button_secondary);
+        commonChoice.setOnClickListener(v -> chooseCommon());
+        LinearLayout.LayoutParams commonLp = new LinearLayout.LayoutParams(-1, -2);
+        commonLp.setMargins(0, 0, 0, dp(14));
+        root.addView(commonChoice, commonLp);
 
         progress = new ProgressBar(this);
         LinearLayout.LayoutParams progressLp = new LinearLayout.LayoutParams(dp(32), dp(32));
@@ -132,23 +145,29 @@ public class HoursV5Activity extends ThemedActivity {
         hourList.removeAllViews();
         officeChoice.setEnabled(false);
         officeChoice.setAlpha(.55f);
+        commonChoice.setEnabled(false);
+        commonChoice.setAlpha(.55f);
         executor.submit(() -> {
             try {
                 LiturgicalDay day = LiturgicalResolver.resolve(getApplicationContext(), request);
                 HoursOfficeSelection resolved = HoursV5OfficePolicy.resolve(day);
                 HoursOfficeOption chosen = resolved.getDefaultOption();
                 List<HourEntry> temporalEntries = day.temporalOffice == null
-                        ? java.util.Collections.emptyList()
+                        ? Collections.emptyList()
                         : DailyHoursRepository.hoursFor(getApplicationContext(), day.temporalOffice, request);
                 List<HourEntry> entries;
-                if (chosen == null) entries = java.util.Collections.emptyList();
+                if (chosen == null) entries = Collections.emptyList();
                 else if (chosen.getSource() == HoursOfficeSource.TEMPORAL) entries = temporalEntries;
                 else entries = DailyHoursRepository.hoursFor(getApplicationContext(), chosen.getOffice(), request);
+                List<CommonOfficeChoice> commons = commonChoicesFor(chosen);
+                CommonOfficeChoice initialCommon = commons.size() == 1 ? commons.get(0) : null;
                 runOnUiThread(() -> {
                     if (!requestKey.equals(key(selectedDate)) || isFinishing()) return;
                     currentDay = day;
                     officeSelection = resolved;
                     selectedOffice = chosen;
+                    commonChoices = commons;
+                    selectedCommon = initialCommon;
                     applyTemporalEntries(temporalEntries);
                     applyEntries(entries);
                     renderResolvedDay();
@@ -165,15 +184,21 @@ public class HoursV5Activity extends ThemedActivity {
         final Calendar request = (Calendar) selectedDate.clone();
         progress.setVisibility(View.VISIBLE);
         hourList.removeAllViews();
+        commonChoice.setEnabled(false);
+        commonChoice.setAlpha(.55f);
         executor.submit(() -> {
             try {
                 List<HourEntry> entries = option.getSource() == HoursOfficeSource.TEMPORAL
                         && !temporalHours.isEmpty()
                         ? new java.util.ArrayList<>(temporalHours.values())
                         : DailyHoursRepository.hoursFor(getApplicationContext(), option.getOffice(), request);
+                List<CommonOfficeChoice> commons = commonChoicesFor(option);
+                CommonOfficeChoice initialCommon = commons.size() == 1 ? commons.get(0) : null;
                 runOnUiThread(() -> {
                     if (!requestKey.equals(key(selectedDate)) || isFinishing()) return;
                     selectedOffice = option;
+                    commonChoices = commons;
+                    selectedCommon = initialCommon;
                     applyEntries(entries);
                     renderResolvedDay();
                 });
@@ -181,14 +206,28 @@ public class HoursV5Activity extends ThemedActivity {
                 runOnUiThread(() -> {
                     if (!requestKey.equals(key(selectedDate)) || isFinishing()) return;
                     selectedOffice = option;
+                    commonChoices = Collections.emptyList();
+                    selectedCommon = null;
                     hours.clear();
                     progress.setVisibility(View.GONE);
                     sourceView.setText("El formulario elegido no tiene contenido local verificable. No se sustituirá con otro oficio.");
                     renderHours();
                     updateOfficeChooser();
+                    updateCommonChooser();
                 });
             }
         });
+    }
+
+    private List<CommonOfficeChoice> commonChoicesFor(HoursOfficeOption option) {
+        if (option == null || option.getSource() != HoursOfficeSource.PROPER) {
+            return Collections.emptyList();
+        }
+        try {
+            return SaintOfficeRepository.commonChoices(getApplicationContext(), option.getOffice());
+        } catch (Exception ignored) {
+            return Collections.emptyList();
+        }
     }
 
     private void applyEntries(List<HourEntry> entries) {
@@ -206,6 +245,8 @@ public class HoursV5Activity extends ThemedActivity {
         currentDay = null;
         officeSelection = null;
         selectedOffice = null;
+        commonChoices = Collections.emptyList();
+        selectedCommon = null;
         hours.clear();
         temporalHours.clear();
         celebrationView.setText("Oficio del día");
@@ -213,6 +254,7 @@ public class HoursV5Activity extends ThemedActivity {
         sourceView.setText("Ministerium no mezclará contenido de otra celebración como sustitución.");
         progress.setVisibility(View.GONE);
         updateOfficeChooser();
+        updateCommonChooser();
         renderHours();
     }
 
@@ -250,9 +292,15 @@ public class HoursV5Activity extends ThemedActivity {
                     ? "Fuente activa: propio del santoral · composición por elementos al abrir cada hora"
                     : "Fuente activa: temporal");
         }
+        if (selectedCommon != null) {
+            source += "\nComún explícito: " + selectedCommon.title;
+        } else if (commonChoices.size() > 1) {
+            source += "\nHay varios comunes legítimos: debes elegir uno; Ministerium no adivinará.";
+        }
         sourceView.setText(source);
         progress.setVisibility(View.GONE);
         updateOfficeChooser();
+        updateCommonChooser();
         renderHours();
     }
 
@@ -263,6 +311,24 @@ public class HoursV5Activity extends ThemedActivity {
         if (selectedOffice == null) officeChoice.setText("Oficio no disponible");
         else if (count > 1) officeChoice.setText("Oficio: " + selectedOffice.getTitle() + " · cambiar");
         else officeChoice.setText("Oficio: " + selectedOffice.getTitle());
+    }
+
+    private void updateCommonChooser() {
+        int count = commonChoices == null ? 0 : commonChoices.size();
+        boolean proper = selectedOffice != null && selectedOffice.getSource() == HoursOfficeSource.PROPER;
+        if (!proper || count == 0) {
+            commonChoice.setText("Común: no necesario o no indicado");
+            commonChoice.setEnabled(false);
+            commonChoice.setAlpha(.55f);
+            return;
+        }
+        if (selectedCommon != null) {
+            commonChoice.setText("Común: " + selectedCommon.title + (count > 1 ? " · cambiar" : ""));
+        } else {
+            commonChoice.setText("Elegir común (" + count + " opciones explícitas)");
+        }
+        commonChoice.setEnabled(count > 1);
+        commonChoice.setAlpha(count > 1 ? 1f : .75f);
     }
 
     private void chooseOffice() {
@@ -281,6 +347,29 @@ public class HoursV5Activity extends ThemedActivity {
                     HoursOfficeOption chosen = options.get(which);
                     dialog.dismiss();
                     loadSelectedOffice(chosen);
+                })
+                .setNegativeButton("Cancelar", null)
+                .show();
+    }
+
+    private void chooseCommon() {
+        if (commonChoices == null || commonChoices.size() <= 1) return;
+        String[] labels = new String[commonChoices.size()];
+        int checked = -1;
+        for (int i = 0; i < commonChoices.size(); i++) {
+            labels[i] = commonChoices.get(i).title;
+            if (selectedCommon == commonChoices.get(i)) checked = i;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Elegir común")
+                .setSingleChoiceItems(labels, checked, (dialog, which) -> {
+                    selectedCommon = commonChoices.get(which);
+                    dialog.dismiss();
+                    renderResolvedDay();
+                })
+                .setNeutralButton("Sin común", (dialog, which) -> {
+                    selectedCommon = null;
+                    renderResolvedDay();
                 })
                 .setNegativeButton("Cancelar", null)
                 .show();
@@ -337,6 +426,13 @@ public class HoursV5Activity extends ThemedActivity {
                 intent.putExtra(HoursV5ReaderActivity.EXTRA_TEMPORAL_FILE_PATH, temporal.filePath);
                 intent.putExtra(HoursV5ReaderActivity.EXTRA_TEMPORAL_FRAGMENT, temporal.fragment);
                 intent.putExtra(HoursV5ReaderActivity.EXTRA_TEMPORAL_SCROLL_TEXT, temporal.scrollText);
+            }
+            if (selectedCommon != null) {
+                intent.putExtra(HoursV5ReaderActivity.EXTRA_COMMON_VOLUME_ID,
+                        selectedOffice.getOffice().volume.id);
+                intent.putExtra(HoursV5ReaderActivity.EXTRA_COMMON_FILE_PATH, selectedCommon.filePath);
+                intent.putExtra(HoursV5ReaderActivity.EXTRA_COMMON_FRAGMENT, selectedCommon.fragment);
+                intent.putExtra(HoursV5ReaderActivity.EXTRA_COMMON_TITLE, selectedCommon.title);
             }
         }
         startActivity(intent);
