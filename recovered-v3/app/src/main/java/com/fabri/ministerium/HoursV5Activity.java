@@ -90,11 +90,6 @@ public class HoursV5Activity extends ThemedActivity {
         sourceView.setPadding(0, dp(4), 0, dp(16));
         root.addView(sourceView);
 
-        TextView principle = text("El oficio temporal se carga aislado. Los propios de santos no se mezclan automáticamente.",
-                13, R.color.muted, false);
-        principle.setPadding(0, 0, 0, dp(14));
-        root.addView(principle);
-
         progress = new ProgressBar(this);
         LinearLayout.LayoutParams progressLp = new LinearLayout.LayoutParams(dp(32), dp(32));
         progressLp.gravity = Gravity.CENTER_HORIZONTAL;
@@ -207,17 +202,13 @@ public class HoursV5Activity extends ThemedActivity {
             startActivity(intent);
             return;
         }
-        Intent intent = new Intent(this, HoursReaderActivity.class);
-        intent.putExtra(HoursReaderActivity.EXTRA_VOLUME_ID, entry.volume.id);
-        intent.putExtra(HoursReaderActivity.EXTRA_FILE_PATH, entry.filePath);
-        intent.putExtra(HoursReaderActivity.EXTRA_FRAGMENT, entry.fragment);
-        intent.putExtra(HoursReaderActivity.EXTRA_ENTRY_TITLE, entry.title);
-        intent.putExtra(HoursReaderActivity.EXTRA_SCROLL_TEXT, entry.scrollText);
-        intent.putExtra(HoursReaderActivity.EXTRA_SHOW_INTENTIONS, entry.showIntentions);
-        intent.putExtra(HoursReaderActivity.EXTRA_EASTER_SEASON,
-                currentDay != null && currentDay.temporalOffice != null && "easter".equals(currentDay.temporalOffice.volume.id));
-        intent.putExtra(HoursReaderActivity.EXTRA_SUNDAY_OR_SOLEMNITY,
-                selectedDate.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY);
+        Intent intent = new Intent(this, HoursV5ReaderActivity.class);
+        intent.putExtra(HoursV5ReaderActivity.EXTRA_VOLUME_ID, entry.volume.id);
+        intent.putExtra(HoursV5ReaderActivity.EXTRA_FILE_PATH, entry.filePath);
+        intent.putExtra(HoursV5ReaderActivity.EXTRA_FRAGMENT, entry.fragment);
+        intent.putExtra(HoursV5ReaderActivity.EXTRA_TITLE, entry.title);
+        intent.putExtra(HoursV5ReaderActivity.EXTRA_SUBTITLE, entry.subtitle);
+        intent.putExtra(HoursV5ReaderActivity.EXTRA_SCROLL_TEXT, entry.scrollText);
         startActivity(intent);
     }
 
