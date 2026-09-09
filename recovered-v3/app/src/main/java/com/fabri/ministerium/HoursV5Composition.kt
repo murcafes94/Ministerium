@@ -23,9 +23,6 @@ object HoursV5Composition {
 
         if (!hasProper && !hasCommon) return temporal ?: empty(key)
 
-        // A feast or solemnity is never repaired from the feria. If an explicit
-        // common was selected/referenced, it may form the base and the proper
-        // replaces only matching semantic roles.
         if (normalizedRank == "F" || normalizedRank == "S") {
             return when {
                 hasCommon && hasProper -> overlay(common!!, proper!!, key, allowPsalmody = true)
@@ -35,10 +32,6 @@ object HoursV5Composition {
             }
         }
 
-        // Memorials keep the feria as their base. Proper material has priority;
-        // an explicit common is only a secondary source for roles absent from the
-        // proper. Psalmody remains temporal unless the proper itself supplies a
-        // complete psalmody; a common never replaces memorial psalmody silently.
         if (normalizedRank == "M" || normalizedRank == "m" || normalizedRank == "m*") {
             if (!hasTemporal) return when {
                 hasProper -> proper!!
@@ -48,8 +41,6 @@ object HoursV5Composition {
             return composeMemory(key, temporal!!, proper, common)
         }
 
-        // Unknown rank: keep the selected non-temporal source isolated rather
-        // than guessing precedence.
         return when {
             hasProper -> proper!!
             hasCommon -> common!!
@@ -58,7 +49,6 @@ object HoursV5Composition {
         }
     }
 
-    // Backward-compatible overload while callers migrate to explicit commons.
     @JvmStatic
     fun compose(
         hourKey: String?,
@@ -78,6 +68,7 @@ object HoursV5Composition {
         val properHasPsalmody = properBlocks.any { it.type == HoursBlockType.PSALMODY }
         val replaceable = linkedSetOf(
             HoursBlockType.HYMN,
+            HoursBlockType.GOSPEL_ANTIPHON,
             HoursBlockType.READING,
             HoursBlockType.RESPONSORY,
             HoursBlockType.CANTICLE,
@@ -109,9 +100,6 @@ object HoursV5Composition {
             }
         }
 
-        // Append only explicit liturgical roles absent from the temporal skeleton.
-        // Generic TEXT/HEADING blocks stay source-local because their provenance
-        // cannot be established safely outside their original document.
         replaceable.forEach { type ->
             if (type !in used && temporal.blocks.none { it.type == type }) {
                 result += replacement(type)
@@ -135,6 +123,7 @@ object HoursV5Composition {
         val replaceable = mutableSetOf(
             HoursBlockType.HYMN,
             HoursBlockType.ANTIPHON,
+            HoursBlockType.GOSPEL_ANTIPHON,
             HoursBlockType.READING,
             HoursBlockType.RESPONSORY,
             HoursBlockType.CANTICLE,
