@@ -21,6 +21,10 @@ object HoursV5Composition {
         val hasCommon = common != null && common.blocks.isNotEmpty()
         val hasTemporal = temporal != null && temporal.blocks.isNotEmpty()
 
+        if (key == "office") {
+            return composeOfficeOfReadings(normalizedRank, temporal, proper, common)
+        }
+
         if (!hasProper && !hasCommon) return temporal ?: empty(key)
 
         if (normalizedRank == "F" || normalizedRank == "S") {
@@ -57,6 +61,136 @@ object HoursV5Composition {
         proper: HoursNativeDocument?
     ): HoursNativeDocument = compose(hourKey, rank, temporal, proper, null)
 
+    /**
+     * Office of Readings has a stricter contract than the other hours:
+     * - memorial: first reading + first responsory remain temporal;
+     * - second reading + its responsory come from the selected saint when present;
+     * - prayer comes from the proper first, explicit common second;
+     * - a feast/solemnity never borrows an incomplete reading cycle from the feria.
+     */
+    private fun composeOfficeOfReadings(
+        rank: String,
+        temporal: HoursNativeDocument?,
+        proper: HoursNativeDocument?,
+        common: HoursNativeDocument?
+    ): HoursNativeDocument {
+        val hasTemporal = temporal != null && temporal.blocks.isNotEmpty()
+        val hasProper = proper != null && proper.blocks.isNotEmpty()
+        val hasCommon = common != null && common.blocks.isNotEmpty()
+        if (!hasProper && !hasCommon) return temporal ?: empty("office")
+
+        if (rank == "F" || rank == "S") {
+            return when {
+                hasProper && completeOfficeCycle(proper!!) -> proper
+                hasCommon && hasProper -> overlayOfficeCommon(common!!, proper!!)
+                hasCommon -> common!!
+                hasProper -> proper!!
+                else -> empty("office")
+            }
+        }
+
+        if (rank != "M" && rank != "m" && rank != "m*") {
+            return when {
+                hasProper -> proper!!
+                hasCommon -> common!!
+                hasTemporal -> temporal!!
+                else -> empty("office")
+            }
+        }
+
+        if (!hasTemporal) return when {
+            hasProper -> proper!!
+            hasCommon -> common!!
+            else -> empty("office")
+        }
+
+        val temporalBlocks = temporal!!.blocks.toMutableList()
+        val properSecond = proper?.blocks?.firstOrNull { it.type == HoursBlockType.SECOND_READING }
+            ?: proper?.blocks?.lastOrNull { it.type == HoursBlockType.READING }
+        val commonSecond = common?.blocks?.firstOrNull { it.type == HoursBlockType.SECOND_READING }
+            ?: common?.blocks?.lastOrNull { it.type == HoursBlockType.READING }
+        val secondReading = properSecond ?: commonSecond
+
+        val secondIndex = temporalBlocks.indexOfFirst { it.type == HoursBlockType.SECOND_READING }
+            .takeIf { it >= 0 }
+            ?: temporalBlocks.indexOfLast { it.type == HoursBlockType.READING }
+        if (secondReading != null && secondIndex >= 0) {
+            temporalBlocks[secondIndex] = secondReading.copy(type = HoursBlockType.SECOND_READING)
+
+            val replacementResponsory = responsoryAfterSecondReading(proper)
+                ?: responsoryAfterSecondReading(common)
+            val temporalResponsory = temporalBlocks.indices.firstOrNull { index ->
+                index > secondIndex && temporalBlocks[index].type == HoursBlockType.RESPONSORY
+            }
+            if (replacementResponsory != null && temporalResponsory != null) {
+                temporalBlocks[temporalResponsory] = replacementResponsory
+            }
+        }
+
+        replaceFirst(temporalBlocks, HoursBlockType.HYMN,
+            proper?.blocks?.firstOrNull { it.type == HoursBlockType.HYMN }
+                ?: common?.blocks?.firstOrNull { it.type == HoursBlockType.HYMN })
+        replaceFirst(temporalBlocks, HoursBlockType.PRAYER,
+            proper?.blocks?.lastOrNull { it.type == HoursBlockType.PRAYER }
+                ?: common?.blocks?.lastOrNull { it.type == HoursBlockType.PRAYER })
+
+        val title = proper?.title?.takeIf { it.isNotBlank() }
+            ?: common?.title?.takeIf { it.isNotBlank() }
+            ?: temporal.title
+        return HoursNativeDocument(title, temporalBlocks)
+    }
+
+    private fun completeOfficeCycle(document: HoursNativeDocument): Boolean {
+        val first = document.blocks.any { it.type == HoursBlockType.FIRST_READING }
+        val second = document.blocks.any { it.type == HoursBlockType.SECOND_READING }
+        val responsories = document.blocks.count { it.type == HoursBlockType.RESPONSORY }
+        return first && second && responsories >= 2
+    }
+
+    private fun responsoryAfterSecondReading(document: HoursNativeDocument?): HoursBlock? {
+        if (document == null) return null
+        val blocks = document.blocks
+        var second = blocks.indexOfFirst { it.type == HoursBlockType.SECOND_READING }
+        if (second < 0) second = blocks.indexOfLast { it.type == HoursBlockType.READING }
+        if (second < 0) return null
+        return blocks.drop(second + 1).firstOrNull { it.type == HoursBlockType.RESPONSORY }
+    }
+
+    private fun overlayOfficeCommon(
+        common: HoursNativeDocument,
+        proper: HoursNativeDocument
+    ): HoursNativeDocument {
+        val result = common.blocks.toMutableList()
+        replaceFirst(result, HoursBlockType.HYMN,
+            proper.blocks.firstOrNull { it.type == HoursBlockType.HYMN })
+        replaceFirst(result, HoursBlockType.FIRST_READING,
+            proper.blocks.firstOrNull { it.type == HoursBlockType.FIRST_READING })
+        replaceFirst(result, HoursBlockType.SECOND_READING,
+            proper.blocks.firstOrNull { it.type == HoursBlockType.SECOND_READING })
+        replaceFirst(result, HoursBlockType.PRAYER,
+            proper.blocks.lastOrNull { it.type == HoursBlockType.PRAYER })
+
+        val properSecondResponsory = responsoryAfterSecondReading(proper)
+        val secondIndex = result.indexOfFirst { it.type == HoursBlockType.SECOND_READING }
+        if (properSecondResponsory != null && secondIndex >= 0) {
+            val responsoryIndex = result.indices.firstOrNull { index ->
+                index > secondIndex && result[index].type == HoursBlockType.RESPONSORY
+            }
+            if (responsoryIndex != null) result[responsoryIndex] = properSecondResponsory
+        }
+        return HoursNativeDocument(proper.title.ifBlank { common.title }, result)
+    }
+
+    private fun replaceFirst(
+        blocks: MutableList<HoursBlock>,
+        type: HoursBlockType,
+        replacement: HoursBlock?
+    ) {
+        if (replacement == null) return
+        val index = blocks.indexOfFirst { it.type == type }
+        if (index >= 0) blocks[index] = replacement
+    }
+
     private fun composeMemory(
         hourKey: String,
         temporal: HoursNativeDocument,
@@ -70,6 +204,8 @@ object HoursV5Composition {
             HoursBlockType.HYMN,
             HoursBlockType.GOSPEL_ANTIPHON,
             HoursBlockType.READING,
+            HoursBlockType.FIRST_READING,
+            HoursBlockType.SECOND_READING,
             HoursBlockType.RESPONSORY,
             HoursBlockType.CANTICLE,
             HoursBlockType.INTERCESSIONS,
@@ -113,7 +249,6 @@ object HoursV5Composition {
         return HoursNativeDocument(preferredTitle, result)
     }
 
-    /** Base common + proper overlay for feasts/solemnities explicitly tied to a common. */
     private fun overlay(
         base: HoursNativeDocument,
         proper: HoursNativeDocument,
@@ -125,6 +260,8 @@ object HoursV5Composition {
             HoursBlockType.ANTIPHON,
             HoursBlockType.GOSPEL_ANTIPHON,
             HoursBlockType.READING,
+            HoursBlockType.FIRST_READING,
+            HoursBlockType.SECOND_READING,
             HoursBlockType.RESPONSORY,
             HoursBlockType.CANTICLE,
             HoursBlockType.INTERCESSIONS,
