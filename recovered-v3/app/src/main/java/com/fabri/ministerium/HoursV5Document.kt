@@ -10,6 +10,8 @@ enum class HoursBlockType {
     GOSPEL_ANTIPHON,
     PSALMODY,
     READING,
+    FIRST_READING,
+    SECOND_READING,
     RESPONSORY,
     CANTICLE,
     INTERCESSIONS,
@@ -63,6 +65,8 @@ object HoursV5DocumentParser {
                 HoursBlockType.GOSPEL_ANTIPHON -> gospelAntiphonTitle(title)
                 HoursBlockType.PSALMODY -> psalmTitle(firstLine)
                 HoursBlockType.READING -> readingTitle(firstLine)
+                HoursBlockType.FIRST_READING -> readingTitle(firstLine).ifBlank { "Primera lectura" }
+                HoursBlockType.SECOND_READING -> readingTitle(firstLine).ifBlank { "Segunda lectura" }
                 HoursBlockType.RESPONSORY -> "Responsorio"
                 HoursBlockType.CANTICLE -> canticleTitle(firstLine)
                 HoursBlockType.INTERCESSIONS -> "Preces"
@@ -108,7 +112,9 @@ object HoursV5DocumentParser {
             n == "HIMNO" || n.startsWith("HIMNO ") -> HoursBlockType.HYMN
             n.startsWith("ANT ") || n.startsWith("ANTIFONA") -> HoursBlockType.ANTIPHON
             n.startsWith("SALMO") || n.startsWith("CANTICO AT") || n.startsWith("CANTICO NT") -> HoursBlockType.PSALMODY
-            n.startsWith("LECTURA") || n.startsWith("PRIMERA LECTURA") || n.startsWith("SEGUNDA LECTURA") -> HoursBlockType.READING
+            n.startsWith("PRIMERA LECTURA") -> HoursBlockType.FIRST_READING
+            n.startsWith("SEGUNDA LECTURA") -> HoursBlockType.SECOND_READING
+            n.startsWith("LECTURA") -> HoursBlockType.READING
             n.startsWith("RESPONSORIO") || n.startsWith("RESP BREVE") -> HoursBlockType.RESPONSORY
             n.contains("BENEDICTUS") || n.contains("MAGNIFICAT") || n.contains("NUNC DIMITTIS") -> HoursBlockType.CANTICLE
             n == "PRECES" || n.startsWith("PRECES ") -> HoursBlockType.INTERCESSIONS
