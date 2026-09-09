@@ -44,6 +44,7 @@
         <activity android:name=".PrayerIntentionsActivity" android:exported="false" />
         <activity android:name=".HoursTodayActivity" android:exported="false" />
         <activity android:name=".HoursV5Activity" android:exported="false" />
+        <activity android:name=".HoursV5ReaderActivity" android:exported="false" />
         <activity android:name=".HoursTocActivity" android:exported="false" />
         <activity android:name=".HoursActivity" android:exported="false" />
         <activity android:name=".RitualReaderActivity" android:exported="false" />
