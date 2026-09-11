@@ -24,6 +24,12 @@ object HoursV5Composition {
         if (key == "office") {
             return composeOfficeOfReadings(normalizedRank, temporal, proper, common)
         }
+        if (key == "invitatory") {
+            return composeInvitatory(normalizedRank, temporal, proper, common)
+        }
+        if (key == "terce" || key == "sext" || key == "none") {
+            return composeIntermediateHour(key, normalizedRank, temporal, proper, common)
+        }
 
         if (!hasProper && !hasCommon) return temporal ?: empty(key)
 
@@ -60,6 +66,106 @@ object HoursV5Composition {
         temporal: HoursNativeDocument?,
         proper: HoursNativeDocument?
     ): HoursNativeDocument = compose(hourKey, rank, temporal, proper, null)
+
+    /**
+     * Invitatory keeps its psalm/invitatory body from the resolved temporal source.
+     * A saint or explicit common may replace only the invitatory antiphon. This
+     * prevents a proper entry from dragging an unrelated psalmody or neighbouring
+     * celebration into the beginning of the office.
+     */
+    private fun composeInvitatory(
+        rank: String,
+        temporal: HoursNativeDocument?,
+        proper: HoursNativeDocument?,
+        common: HoursNativeDocument?
+    ): HoursNativeDocument {
+        val hasTemporal = temporal != null && temporal.blocks.isNotEmpty()
+        val hasProper = proper != null && proper.blocks.isNotEmpty()
+        val hasCommon = common != null && common.blocks.isNotEmpty()
+
+        if (!hasTemporal) {
+            return when {
+                hasProper -> proper!!
+                hasCommon -> common!!
+                else -> empty("invitatory")
+            }
+        }
+        if (!hasProper && !hasCommon) return temporal!!
+
+        val source = proper ?: common
+        val antiphon = source?.blocks?.firstOrNull { it.type == HoursBlockType.ANTIPHON }
+        if (antiphon == null) return temporal!!
+
+        val result = temporal!!.blocks.toMutableList()
+        val index = result.indexOfFirst { it.type == HoursBlockType.ANTIPHON }
+        if (index >= 0) {
+            result[index] = antiphon
+        } else {
+            result.add(0, antiphon)
+        }
+        val title = source.title.takeIf { it.isNotBlank() } ?: temporal.title
+        return HoursNativeDocument(title, result)
+    }
+
+    /**
+     * Tercia, Sexta and Nona use a strict source policy:
+     * - memorials retain the feria psalmody and may replace only reading/prayer;
+     * - feasts/solemnities use their verified proper or explicitly selected common;
+     * - an incomplete major celebration is never silently repaired from the feria.
+     */
+    private fun composeIntermediateHour(
+        hourKey: String,
+        rank: String,
+        temporal: HoursNativeDocument?,
+        proper: HoursNativeDocument?,
+        common: HoursNativeDocument?
+    ): HoursNativeDocument {
+        val hasTemporal = temporal != null && temporal.blocks.isNotEmpty()
+        val hasProper = proper != null && proper.blocks.isNotEmpty()
+        val hasCommon = common != null && common.blocks.isNotEmpty()
+
+        if (rank == "F" || rank == "S") {
+            return when {
+                hasProper && hasCommon -> overlay(common!!, proper!!, hourKey, allowPsalmody = true)
+                hasProper -> proper!!
+                hasCommon -> common!!
+                else -> empty(hourKey)
+            }
+        }
+
+        if (rank == "M" || rank == "m" || rank == "m*") {
+            if (!hasTemporal) {
+                return when {
+                    hasProper -> proper!!
+                    hasCommon -> common!!
+                    else -> empty(hourKey)
+                }
+            }
+            val result = temporal!!.blocks.toMutableList()
+            val sourceReading = proper?.blocks?.firstOrNull { it.type == HoursBlockType.READING }
+                ?: common?.blocks?.firstOrNull { it.type == HoursBlockType.READING }
+            val sourceResponsory = proper?.blocks?.firstOrNull { it.type == HoursBlockType.RESPONSORY }
+                ?: common?.blocks?.firstOrNull { it.type == HoursBlockType.RESPONSORY }
+            val sourcePrayer = proper?.blocks?.lastOrNull { it.type == HoursBlockType.PRAYER }
+                ?: common?.blocks?.lastOrNull { it.type == HoursBlockType.PRAYER }
+
+            replaceFirst(result, HoursBlockType.READING, sourceReading)
+            replaceFirst(result, HoursBlockType.RESPONSORY, sourceResponsory)
+            replaceFirst(result, HoursBlockType.PRAYER, sourcePrayer)
+
+            val title = proper?.title?.takeIf { it.isNotBlank() }
+                ?: common?.title?.takeIf { it.isNotBlank() }
+                ?: temporal.title
+            return HoursNativeDocument(title, result)
+        }
+
+        return when {
+            hasProper -> proper!!
+            hasCommon -> common!!
+            hasTemporal -> temporal!!
+            else -> empty(hourKey)
+        }
+    }
 
     /**
      * Office of Readings has a stricter contract than the other hours:
