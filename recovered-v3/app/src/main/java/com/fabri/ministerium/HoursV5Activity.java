@@ -378,26 +378,50 @@ public class HoursV5Activity extends ThemedActivity {
     private void renderHours() {
         hourList.removeAllViews();
         for (HoursV5Item item : HoursV5Semantic.items()) {
-            HourEntry entry = hours.get(item.getKey());
+            HourEntry properEntry = hours.get(item.getKey());
+            HourEntry entry = properEntry;
+            boolean temporalFallback = false;
+            if (entry == null && canUseMemorialTemporalFallback()) {
+                entry = temporalHours.get(item.getKey());
+                temporalFallback = entry != null;
+            }
+
             LinearLayout card = column();
             card.setPadding(dp(16), dp(14), dp(16), dp(14));
             card.setBackgroundResource(R.drawable.bg_button_secondary);
             card.addView(text(item.getTitle(), 18, entry == null ? R.color.muted : R.color.ink, true));
-            String subtitle = entry == null ? "No disponible en el formulario seleccionado" :
-                    (entry.subtitle == null || entry.subtitle.trim().isEmpty() ? item.getSummary() : entry.subtitle);
+            String subtitle;
+            if (entry == null) {
+                subtitle = "No disponible en el formulario seleccionado";
+            } else if (temporalFallback) {
+                subtitle = "Temporal del día · " + item.getSummary();
+            } else {
+                subtitle = entry.subtitle == null || entry.subtitle.trim().isEmpty()
+                        ? item.getSummary() : entry.subtitle;
+            }
             TextView sub = text(subtitle, 13, R.color.muted, false);
             sub.setPadding(0, dp(4), 0, 0);
             card.addView(sub);
             card.setEnabled(entry != null);
             card.setAlpha(entry == null ? .55f : 1f);
-            if (entry != null) card.setOnClickListener(v -> openHour(entry));
+            if (entry != null) {
+                final HourEntry openEntry = entry;
+                final boolean openAsTemporal = temporalFallback;
+                card.setOnClickListener(v -> openHour(openEntry, openAsTemporal));
+            }
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
             lp.setMargins(0, 0, 0, dp(9));
             hourList.addView(card, lp);
         }
     }
 
-    private void openHour(HourEntry entry) {
+    private boolean canUseMemorialTemporalFallback() {
+        if (selectedOffice == null || selectedOffice.getSource() != HoursOfficeSource.PROPER) return false;
+        String rank = selectedOffice.getOffice().liturgicalRank;
+        return "M".equals(rank) || "m".equals(rank) || "m*".equals(rank);
+    }
+
+    private void openHour(HourEntry entry, boolean temporalFallback) {
         if (entry == null) return;
         if ("compline".equals(entry.key)) {
             Intent intent = new Intent(this, ComplineReaderActivity.class);
@@ -416,7 +440,7 @@ public class HoursV5Activity extends ThemedActivity {
         intent.putExtra(HoursV5ReaderActivity.EXTRA_SCROLL_TEXT, entry.scrollText);
         intent.putExtra(HoursV5ReaderActivity.EXTRA_HOUR_KEY, entry.key);
 
-        if (selectedOffice != null && selectedOffice.getSource() == HoursOfficeSource.PROPER) {
+        if (!temporalFallback && selectedOffice != null && selectedOffice.getSource() == HoursOfficeSource.PROPER) {
             String rank = selectedOffice.getOffice().liturgicalRank == null
                     ? "" : selectedOffice.getOffice().liturgicalRank;
             intent.putExtra(HoursV5ReaderActivity.EXTRA_OFFICE_RANK, rank);
