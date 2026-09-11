@@ -24,7 +24,7 @@ jobs:
 
       - name: Verify preview launcher
         run: |
-          test -s app/src/main/java/com/fabri/ministerium/MainActivityV5.java
+          test -s app/src/main/java/com/fabri/ministerium/MainActivityV5.kt
           grep -q 'MainActivityV5' app/src/main/AndroidManifest.xml
           python - <<'PY'
           from xml.etree import ElementTree
