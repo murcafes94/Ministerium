@@ -32,6 +32,75 @@ jobs:
           print('Ministerium 5 manifest: XML OK')
           PY
 
+      - name: Set up Python for liturgical packages
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache liturgical source PDFs
+        uses: actions/cache@v4
+        with:
+          path: recovered-v3/tools/cache
+          key: ministerium-liturgical-sources-${{ hashFiles('recovered-v3/tools/build_liturgiapapal_missal.py', 'recovered-v3/tools/build_liturgiapapal_rituals.py') }}
+
+      - name: Install content build dependencies
+        run: python -m pip install 'pypdf>=5,<6' 'beautifulsoup4>=4.12,<5'
+
+      - name: Build clean Liturgia de las Horas packages
+        run: |
+          set -euo pipefail
+          python tools/build_clean_hours_31.py --volume all
+          python tools/build_clean_latin_hours_31.py
+          test -s app/src/main/assets/hours-clean/manifest.json
+          test -s app/src/main/assets/hours-clean/latin/2026/manifest.json
+
+      - name: Build verified Missal and ritual packages
+        run: |
+          set -euo pipefail
+          python tools/build_liturgiapapal_missal.py --language all
+          python tools/build_liturgiapapal_rituals.py
+          test -s app/src/main/assets/missal/manifest.json
+          test -s app/src/main/assets/missal/es/initial.txt
+          test -s app/src/main/assets/missal/la/initial.txt
+          test -s app/src/main/assets/rituals/liturgiapapal/manifest.json
+          grep -qi 'El Señor esté con ustedes' app/src/main/assets/missal/es/initial.txt
+          if grep -Eqi 'El Señor esté con vosotros|TOMAD Y COMED|TOMAD Y BEBED|Podéis ir en paz' app/src/main/assets/missal/es/*.txt; then
+            echo 'ERROR: se detectó texto de la edición de España en el paquete ES.' >&2
+            exit 1
+          fi
+
+      - name: Verify bundled package manifest
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          assets = Path('app/src/main/assets')
+          manifest = json.loads((assets / 'package-manifest.json').read_text(encoding='utf-8'))
+          missing = []
+          for package in manifest.get('packages', []):
+              if package.get('delivery', 'bundled') != 'bundled':
+                  continue
+              target = assets / package['asset']
+              if not target.is_file() or target.stat().st_size == 0:
+                  missing.append(str(target))
+          if missing:
+              raise SystemExit('Missing bundled runtime packages:\n' + '\n'.join(missing))
+          print('Bundled runtime packages: OK')
+          PY
+
+      - name: Remove build-input Hours EPUBs from APK payload
+        run: |
+          rm -f \
+            'app/src/main/assets/epubs/LH - 1. ADVIENTO.epub' \
+            'app/src/main/assets/epubs/LH - 2. NAVIDAD.epub' \
+            'app/src/main/assets/epubs/LH - 3. CUARESMA.epub' \
+            'app/src/main/assets/epubs/LH - 4. PASCUA.epub' \
+            'app/src/main/assets/epubs/LH - 5. TIEMPO ORDINARIO.epub' \
+            'app/src/main/assets/epubs/LH - 6. SANTORAL.epub' \
+            'app/src/main/assets/epubs/Liturgia-horarum-2026-latin.epub'
+
       - name: Set up JDK 11
         uses: actions/setup-java@v4
         with:
