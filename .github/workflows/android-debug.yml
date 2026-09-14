@@ -128,8 +128,21 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      - name: Build and lint preview APK
-        run: ./gradlew --no-daemon assembleDebug lintDebug
+      - name: Build preview APK
+        run: ./gradlew --no-daemon assembleDebug
+
+      - name: Lint preview APK
+        run: |
+          set +e
+          ./gradlew --no-daemon lintDebug
+          status=$?
+          echo '--- lint-results-debug.txt ---'
+          if [ -f app/build/reports/lint-results-debug.txt ]; then
+            cat app/build/reports/lint-results-debug.txt
+          else
+            echo 'Lint text report was not generated.'
+          fi
+          exit $status
 
       - name: Compute APK SHA-256
         run: sha256sum app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/app-debug.apk.sha256
