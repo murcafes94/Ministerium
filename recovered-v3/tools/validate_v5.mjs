@@ -1,0 +1,45 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
+const root = process.cwd();
+const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+const expect = (condition, message) => { if (!condition) throw new Error(message); };
+
+const manifest = read('app/src/main/AndroidManifest.xml');
+const mainV5 = read('app/src/main/java/com/fabri/ministerium/MainActivityV5.kt');
+const missalV5 = read('app/src/main/java/com/fabri/ministerium/MissalV5SectionActivity.java');
+const missalRules = read('app/src/main/java/com/fabri/ministerium/MissalDisplayRules.kt');
+const themed = read('app/src/main/java/com/fabri/ministerium/ThemedActivity.java');
+const epub = read('app/src/main/java/com/fabri/ministerium/EpubUtils.java');
+const magisterium = read('app/src/main/java/com/fabri/ministerium/MagisteriumActivity.java');
+const build = read('app/build.gradle');
+
+expect(mainV5.includes('class MainActivityV5'), 'MainActivityV5 is missing.');
+expect(/android:name="\.MainActivityV5"[\s\S]*android.intent.action.MAIN[\s\S]*android.intent.category.LAUNCHER/.test(manifest),
+  'MainActivityV5 must remain the launcher.');
+expect(!/android:name="\.MainActivity"[\s\S]{0,300}android.intent.category.LAUNCHER/.test(manifest),
+  'Legacy MainActivity must not regain the launcher intent filter.');
+
+const code = Number((build.match(/versionCode\s+(\d+)/) || [])[1] || 0);
+const version = (build.match(/versionName\s+'([^']+)'/) || [])[1] || '';
+expect(code >= 50 && /^5\./.test(version), 'Ministerium 5 preview version metadata is not configured.');
+
+expect(missalV5.includes('MissalDisplayRules.resolve(this, selectedDate, celebration)'),
+  'V5 Missal must use the calendar-backed display rules.');
+expect(missalV5.includes('getAllowEucharisticPrayerIV()') && !missalV5.includes('Contenido propio pendiente'),
+  'V5 Missal still has simulated content or unrestricted Eucharistic Prayer IV.');
+expect(missalRules.includes('LiturgicalCalendarRepository.eventsFor')
+    && missalRules.includes('allowEucharisticPrayerIV'),
+  'V5 Missal rules are not backed by the liturgical calendar.');
+
+expect(epub.includes('CleanHoursAssets.isAvailable')
+    && epub.includes('CleanHoursAssets.ensureExtracted'),
+  'Runtime Hours must support the clean package after source EPUB removal.');
+expect(themed.includes('HoursV5ReaderActivity')
+    && themed.includes('MissalV5SectionActivity')
+    && themed.includes('HoursV5ComplineActivity'),
+  'Prayer focus is not wired to all V5 liturgical readers.');
+expect(!magisterium.includes('new Intent(this, MainActivity.class)'),
+  'Magisterium must not jump from V5 back into the legacy launcher.');
+
+console.log('Ministerium 5 runtime contract OK');

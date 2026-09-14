@@ -35,8 +35,8 @@ jobs:
       - name: Validate preserved application contracts
         run: |
           set -euo pipefail
-          node tools/validate_project.mjs
           node tools/validate_release_41.mjs
+          node tools/validate_v5.mjs
 
       - name: Set up Python for liturgical packages
         uses: actions/setup-python@v5

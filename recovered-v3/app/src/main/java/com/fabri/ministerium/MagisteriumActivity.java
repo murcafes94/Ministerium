@@ -41,8 +41,7 @@ public class MagisteriumActivity extends ThemedActivity {
 
         ListView list = findViewById(R.id.listItems);
         list.setAdapter(Rows.adapter(this, rows));
-        list.setOnItemClickListener((parent, view, position, id) ->
-                open(entries.get(position)));
+        list.setOnItemClickListener((parent, view, position, id) -> open(entries.get(position)));
         findViewById(R.id.btnBack).setOnClickListener(v -> goBack());
     }
 
@@ -53,17 +52,13 @@ public class MagisteriumActivity extends ThemedActivity {
         if (section == null) {
             title.setText("Magisterio");
             subtitle.setText("Doctrina, Concilio, derecho y normas litúrgicas");
-            intro.setText("Biblioteca ordenada por materias. Los documentos EPUB y el "
-                    + "Código están disponibles sin conexión; la búsqueda consulta el texto "
-                    + "completo y abre el fragmento encontrado.");
+            intro.setText("Biblioteca ordenada por materias. Los documentos EPUB y el Código están disponibles sin conexión; la búsqueda consulta el texto completo y abre el fragmento encontrado.");
             return;
         }
         title.setText(sectionTitle(section));
         subtitle.setText("Magisterio · biblioteca temática");
         intro.setText(SECTION_LITURGY.equals(section)
-                ? "Normas generales para celebrar y ordenar la liturgia. Los PDF requieren "
-                        + "conexión; la aplicación usa la Ordenación de las Lecturas de la Misa "
-                        + "como fuente de sus reglas del Leccionario."
+                ? "Normas generales para celebrar y ordenar la liturgia. Los PDF requieren conexión; la aplicación usa la Ordenación de las Lecturas de la Misa como fuente de sus reglas del Leccionario."
                 : "Selecciona un documento para consultar su índice y leerlo sin conexión.");
     }
 
@@ -99,7 +94,7 @@ public class MagisteriumActivity extends ThemedActivity {
             entries.add(Entry.web("Ordenación General de la Liturgia de las Horas",
                     "Instrucción general · PDF web", OGLH_URL));
             entries.add(Entry.web("Ordenación de las Lecturas de la Misa",
-                    "Normas del Leccionario · PDF web · fuente de reglas 4.0", OLM_URL));
+                    "Normas del Leccionario · PDF web · fuente de reglas", OLM_URL));
         }
     }
 
@@ -119,8 +114,7 @@ public class MagisteriumActivity extends ThemedActivity {
             try {
                 startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(entry.value)));
             } catch (Exception error) {
-                Toast.makeText(this, "No hay una aplicación disponible para abrir el PDF.",
-                        Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "No hay una aplicación disponible para abrir el PDF.", Toast.LENGTH_LONG).show();
             }
         }
     }
@@ -141,13 +135,8 @@ public class MagisteriumActivity extends ThemedActivity {
     }
 
     private void goBack() {
-        if (section != null) {
-            finish();
-            return;
-        }
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        startActivity(intent);
+        // Finish the current level and let Android restore the real caller.
+        // This keeps both the V5 launcher and the legacy shell compatible.
         finish();
     }
 

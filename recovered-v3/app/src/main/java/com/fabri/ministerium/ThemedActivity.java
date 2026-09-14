@@ -17,11 +17,7 @@ public abstract class ThemedActivity extends Activity {
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
-        // 4.1: sustituye glifos/emoji heredados por vectores centrados y
-        // garantiza zonas táctiles consistentes antes de fijar la cabecera.
         IconConsistency41.apply(this);
-        // Las pantallas basadas en ScrollView conservan su barra superior visible.
-        // Los lectores tienen además su protección específica en ReaderChrome.
         StaticTopBarController.attach(this);
     }
 
@@ -34,11 +30,14 @@ public abstract class ThemedActivity extends Activity {
         String name = getClass().getSimpleName();
         if ("PrayerReaderActivity".equals(name)
                 || "HoursReaderActivity".equals(name)
+                || "HoursV5ReaderActivity".equals(name)
+                || "HoursV5ComplineActivity".equals(name)
                 || "ComplineReaderActivity".equals(name)
                 || "CombinedHoursActivity".equals(name)
                 || "LatinHoursReaderActivity".equals(name)
                 || "MassReadingReaderActivity".equals(name)
                 || "MissalSectionReaderActivity".equals(name)
+                || "MissalV5SectionActivity".equals(name)
                 || "CombinedMassActivity".equals(name)
                 || "RitualReaderActivity".equals(name)) return true;
         if ("BibleReaderActivity".equals(name)) {
