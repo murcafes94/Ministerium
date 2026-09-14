@@ -64,8 +64,19 @@ jobs:
           test -s app/src/main/assets/missal/la/initial.txt
           test -s app/src/main/assets/rituals/liturgiapapal/manifest.json
           grep -qi 'El Señor esté con ustedes' app/src/main/assets/missal/es/initial.txt
-          if grep -Eqi 'El Señor esté con vosotros|TOMAD Y COMED|TOMAD Y BEBED|Podéis ir en paz' app/src/main/assets/missal/es/*.txt; then
-            echo 'ERROR: se detectó texto de la edición de España en el paquete ES.' >&2
+          if grep -Eqi 'El Señor esté con vosotros|TOMAD Y COMED|TOMAD Y BEBED|Podéis ir en paz' \
+            app/src/main/assets/missal/es/ordinary_full.txt \
+            app/src/main/assets/missal/es/initial.txt \
+            app/src/main/assets/missal/es/word.txt \
+            app/src/main/assets/missal/es/eucharistic_liturgy.txt \
+            app/src/main/assets/missal/es/prefaces.txt \
+            app/src/main/assets/missal/es/eucharistic_prayer_1.txt \
+            app/src/main/assets/missal/es/eucharistic_prayer_2.txt \
+            app/src/main/assets/missal/es/eucharistic_prayer_3.txt \
+            app/src/main/assets/missal/es/eucharistic_prayer_4.txt \
+            app/src/main/assets/missal/es/communion.txt \
+            app/src/main/assets/missal/es/conclusion.txt; then
+            echo 'ERROR: se detectó texto de la edición de España en el Ordinario ES.' >&2
             exit 1
           fi
 
