@@ -22,8 +22,9 @@ expect(/android:name="\.MainActivityV5"[\s\S]*android.intent.action.MAIN[\s\S]*a
 expect(!/android:name="\.MainActivity"[\s\S]{0,300}android.intent.category.LAUNCHER/.test(manifest),
   'Legacy MainActivity must not regain the launcher intent filter.');
 
-const code = Number((build.match(/versionCode\s+(\d+)/) || [])[1] || 0);
-const version = (build.match(/versionName\s+'([^']+)'/) || [])[1] || '';
+// Match only real Gradle declarations, never commented compatibility markers.
+const code = Number((build.match(/^\s*versionCode\s+(\d+)\s*$/m) || [])[1] || 0);
+const version = (build.match(/^\s*versionName\s+'([^']+)'\s*$/m) || [])[1] || '';
 expect(code >= 50 && /^5\./.test(version), 'Ministerium 5 preview version metadata is not configured.');
 expect(packageManifest.app?.versionCode === code && packageManifest.app?.versionName === version,
   'Gradle and package-manifest app versions must match.');
