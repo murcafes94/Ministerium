@@ -1,7 +1,6 @@
 package com.fabri.ministerium;
 
 import android.app.Activity;
-import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -37,7 +36,7 @@ public final class StaticTopBarController {
         ViewGroup body = (ViewGroup) bodyView;
         if (body.getChildCount() < 2) return;
         View header = body.getChildAt(0);
-        if (!(header instanceof ViewGroup) || !containsButton(header)) return;
+        if (!isInteractiveHeader(header)) return;
 
         int maxHeader = dp(activity, 180);
         if (header.getHeight() <= 0 || header.getHeight() > maxHeader) return;
@@ -56,12 +55,18 @@ public final class StaticTopBarController {
         });
     }
 
-    private static boolean containsButton(View view) {
-        if (view instanceof Button) return true;
+    /**
+     * Las pantallas heredadas usan Button en su cabecera. Ministerium 5 usa
+     * controles de texto clicables para volver y para acciones compactas como
+     * el cambio de tema. Ambos patrones representan una barra superior real.
+     */
+    private static boolean isInteractiveHeader(View view) {
+        if (view == null) return false;
+        if (view instanceof Button || view.isClickable()) return true;
         if (!(view instanceof ViewGroup)) return false;
         ViewGroup group = (ViewGroup) view;
         for (int i = 0; i < group.getChildCount(); i++) {
-            if (containsButton(group.getChildAt(i))) return true;
+            if (isInteractiveHeader(group.getChildAt(i))) return true;
         }
         return false;
     }
