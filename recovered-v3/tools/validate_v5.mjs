@@ -22,7 +22,6 @@ expect(/android:name="\.MainActivityV5"[\s\S]*android.intent.action.MAIN[\s\S]*a
 expect(!/android:name="\.MainActivity"[\s\S]{0,300}android.intent.category.LAUNCHER/.test(manifest),
   'Legacy MainActivity must not regain the launcher intent filter.');
 
-// Match only real Gradle declarations, never commented compatibility markers.
 const code = Number((build.match(/^\s*versionCode\s+(\d+)\s*$/m) || [])[1] || 0);
 const version = (build.match(/^\s*versionName\s+'([^']+)'\s*$/m) || [])[1] || '';
 expect(code >= 50 && /^5\./.test(version), 'Ministerium 5 preview version metadata is not configured.');
@@ -32,6 +31,19 @@ expect(fs.existsSync(path.join(root, `app/src/main/assets/changelog-${version}.t
   'The current V5 changelog asset is missing.');
 expect(updateCenter.includes('"changelog-" + assetVersion + ".txt"'),
   'Update Center must resolve the changelog from the current build version.');
+
+expect(mainV5.includes('PrayerFocusController.recoverStaleSession')
+    && mainV5.includes('PrayerReminderScheduler.restore')
+    && mainV5.includes('GospelReminderScheduler.restore')
+    && mainV5.includes('BiblePlanReminderScheduler.restore'),
+  'V5 launcher must restore focus and reminder state.');
+for (const required of [
+  'SearchActivity', 'FavoritesActivity', 'DevotionalHubActivity', 'BasicPrayersActivity',
+  'MyStudyActivity', 'LatinHoursActivity', 'MassReadingsActivity', 'LiturgicalCalendarActivity',
+  'RitualCatalogActivity', 'ContinueReadingStore'
+]) {
+  expect(mainV5.includes(required), `V5 launcher lost access to ${required}.`);
+}
 
 expect(missalV5.includes('MissalDisplayRules.resolve(this, selectedDate, celebration)'),
   'V5 Missal must use the calendar-backed display rules.');

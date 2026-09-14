@@ -14,9 +14,10 @@ import android.widget.ScrollView
 import android.widget.TextView
 import java.util.Calendar
 
-/** Main Ministerium 5 shell. */
+/** Main Ministerium 5 shell. Keeps every stable module reachable during migration. */
 class MainActivityV5 : ThemedActivity() {
 
+    private var appliedThemeMode = ""
     private var dark = false
     private var bg = 0
     private var cardColor = 0
@@ -24,10 +25,13 @@ class MainActivityV5 : ThemedActivity() {
     private var muted = 0
     private var wine = 0
     private var gold = 0
+    private lateinit var continueSection: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        appliedThemeMode = ThemeUtils.getMode(this)
         ThemeUtils.apply(this)
         super.onCreate(savedInstanceState)
+
         dark = ThemeUtils.isDark(this)
         bg = Color.parseColor(if (dark) "#12100F" else "#F7F2EA")
         cardColor = Color.parseColor(if (dark) "#211C1A" else "#FFFDF9")
@@ -35,7 +39,25 @@ class MainActivityV5 : ThemedActivity() {
         muted = Color.parseColor(if (dark) "#BFAFA8" else "#756863")
         wine = Color.parseColor(if (dark) "#D89AA3" else "#6D1E2B")
         gold = Color.parseColor("#D2A84A")
+
+        // Preserve behavior that existed in the stable shell. These calls are
+        // idempotent and keep reminders/focus recovery alive after the V5 switch.
+        PrayerFocusController.recoverStaleSession(this)
+        PrayerReminderScheduler.restore(this)
+        GospelReminderScheduler.restore(this)
+        BiblePlanReminderScheduler.restore(this)
+
         setContentView(buildUi())
+        bindContinueReading()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (appliedThemeMode != ThemeUtils.getMode(this)) {
+            recreate()
+            return
+        }
+        if (::continueSection.isInitialized) bindContinueReading()
     }
 
     private fun buildUi(): View {
@@ -66,6 +88,7 @@ class MainActivityV5 : ThemedActivity() {
         header.addView(text("✠", 28f, wine, Typeface.BOLD).apply {
             gravity = Gravity.CENTER
             background = rounded(gold, 16)
+            contentDescription = "Ministerium"
         }, LinearLayout.LayoutParams(dp(52), dp(52)))
 
         val titles = LinearLayout(this).apply {
@@ -78,6 +101,9 @@ class MainActivityV5 : ThemedActivity() {
 
         header.addView(text(if (dark) "☀" else "◐", 22f, ink, Typeface.NORMAL).apply {
             gravity = Gravity.CENTER
+            contentDescription = if (dark) "Activar modo claro" else "Activar modo oscuro"
+            isClickable = true
+            isFocusable = true
             setOnClickListener {
                 ThemeUtils.setMode(this@MainActivityV5, if (dark) ThemeUtils.LIGHT else ThemeUtils.DARK)
                 recreate()
@@ -86,32 +112,116 @@ class MainActivityV5 : ThemedActivity() {
 
         root.addView(text("¿Qué quieres consultar?", 26f, ink, Typeface.BOLD), matchWrap())
         root.addView(text(
-            "Accede directamente a los principales recursos de Ministerium.",
+            "Todos los recursos estables siguen disponibles mientras avanza la interfaz 5.0.",
             14f,
             muted,
             Typeface.NORMAL
         ).apply {
-            setPadding(0, dp(6), 0, dp(14))
+            setPadding(0, dp(6), 0, dp(12))
         }, matchWrap())
 
+        val quick = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+        }
+        quick.addView(quickAction("Buscar") {
+            startActivity(Intent(this, SearchActivity::class.java))
+        }, quickParams(0, 4))
+        quick.addView(quickAction("Favoritos") {
+            startActivity(Intent(this, FavoritesActivity::class.java))
+        }, quickParams(4, 4))
+        quick.addView(quickAction("Avisos") { openReminders() }, quickParams(4, 0))
+        root.addView(quick, LinearLayout.LayoutParams(-1, -2).apply {
+            setMargins(0, 0, 0, dp(12))
+        })
+
+        continueSection = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            visibility = View.GONE
+        }
+        root.addView(continueSection, matchWrap())
+
+        root.addView(sectionLabel("LITURGIA Y ESCRITURA"))
         root.addView(card("B", "Biblia", "Biblia disponible sin conexión") {
             startActivity(Intent(this, BibleActivity::class.java))
         })
-        root.addView(card("M", "Misal", "Celebración del día, lecturas y formularios") {
+        root.addView(card("M", "Misal", "Celebración del día y formularios") {
             startActivity(Intent(this, MissalV5Activity::class.java))
         })
-        root.addView(card("☀", "Liturgia de las Horas", "Oficio del día") { openToday() })
-        root.addView(card("✠", "Rituales y Bendicional", "Celebraciones, ritos y bendiciones") {
+        root.addView(card("H", "Liturgia de las Horas", "Oficio del día · lector nativo") { openToday() })
+        root.addView(card("L", "Lecturas de la Misa", "Leccionario y sincronización local") {
+            startActivity(Intent(this, MassReadingsActivity::class.java))
+        })
+        root.addView(card("C", "Calendario litúrgico", "Celebraciones, colores y calendario de Ecuador") {
+            startActivity(Intent(this, LiturgicalCalendarActivity::class.java))
+        })
+        root.addView(card("LA", "Liturgia Horarum", "Liturgia de las Horas en latín") {
+            startActivity(Intent(this, LatinHoursActivity::class.java))
+        })
+
+        root.addView(sectionLabel("ORACIÓN Y PASTORAL"))
+        root.addView(card("O", "Oraciones", "Oraciones básicas y recursos de oración") {
+            startActivity(Intent(this, BasicPrayersActivity::class.java))
+        })
+        root.addView(card("D", "Devocionario", "Devociones, examen y oración personal") {
+            startActivity(Intent(this, DevotionalHubActivity::class.java))
+        })
+        root.addView(card("R", "Rituales", "Bautismo, enfermos, Viático y exequias") {
             startActivity(Intent(this, PastoralActivity::class.java))
         })
-        root.addView(card("M", "Magisterio y Derecho", "Documentos, magisterio y derecho canónico") {
+        root.addView(card("+", "Bendicional", "Bendiciones para diversas circunstancias") {
+            openBlessings()
+        })
+
+        root.addView(sectionLabel("FORMACIÓN Y ESTUDIO"))
+        root.addView(card("M", "Magisterio y Derecho", "Documentos, catecismo y derecho canónico") {
             startActivity(Intent(this, MagisteriumActivity::class.java))
         })
-        root.addView(card("⚙", "Ajustes", "Tema, lectura, márgenes y preferencias") {
+        root.addView(card("E", "Mi estudio", "Notas, reflexiones y material personal") {
+            startActivity(Intent(this, MyStudyActivity::class.java))
+        })
+
+        root.addView(sectionLabel("APLICACIÓN"))
+        root.addView(card("⚙", "Ajustes", "Tema, lectura, márgenes, recordatorios y actualizaciones") {
             startActivity(Intent(this, SettingsActivity::class.java))
         })
 
         return scroll
+    }
+
+    private fun bindContinueReading() {
+        if (!::continueSection.isInitialized) return
+        continueSection.removeAllViews()
+        val entry = ContinueReadingStore.latest(this)
+        if (entry == null) {
+            continueSection.visibility = View.GONE
+            return
+        }
+        continueSection.visibility = View.VISIBLE
+        continueSection.addView(sectionLabel("CONTINUAR LEYENDO"))
+        continueSection.addView(card("›", entry.title, entry.module + if (entry.scrollY > 0) " · posición guardada" else "") {
+            if (!ContinueReadingStore.open(this, entry)) {
+                continueSection.visibility = View.GONE
+            }
+        })
+    }
+
+    private fun quickAction(label: String, action: () -> Unit) = text(label, 14f, wine, Typeface.BOLD).apply {
+        gravity = Gravity.CENTER
+        background = rounded(cardColor, 14)
+        minHeight = dp(48)
+        isClickable = true
+        isFocusable = true
+        setOnClickListener { action() }
+    }
+
+    private fun quickParams(left: Int, right: Int) = LinearLayout.LayoutParams(0, dp(48), 1f).apply {
+        setMargins(dp(left), 0, dp(right), 0)
+    }
+
+    private fun sectionLabel(value: String) = text(value, 11f, wine, Typeface.BOLD).apply {
+        letterSpacing = .10f
+        setPadding(dp(2), dp(14), 0, dp(6))
     }
 
     private fun card(icon: String, title: String, subtitle: String, action: () -> Unit): View {
@@ -124,13 +234,14 @@ class MainActivityV5 : ThemedActivity() {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { setMargins(0, dp(6), 0, dp(6)) }
+            ).apply { setMargins(0, dp(5), 0, dp(5)) }
             isClickable = true
             isFocusable = true
+            contentDescription = if (subtitle.isBlank()) title else "$title. $subtitle"
             setOnClickListener { action() }
         }
 
-        row.addView(text(icon, 20f, wine, Typeface.BOLD).apply {
+        row.addView(text(icon, if (icon.length > 1) 14f else 20f, wine, Typeface.BOLD).apply {
             gravity = Gravity.CENTER
             background = rounded(
                 if (dark) Color.parseColor("#332821") else Color.parseColor("#F2E2B9"),
@@ -142,9 +253,11 @@ class MainActivityV5 : ThemedActivity() {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(14), 0, dp(8), 0)
             addView(text(title, 17f, ink, Typeface.BOLD))
-            addView(text(subtitle, 13f, muted, Typeface.NORMAL).apply {
-                setPadding(0, dp(3), 0, 0)
-            })
+            if (subtitle.isNotBlank()) {
+                addView(text(subtitle, 13f, muted, Typeface.NORMAL).apply {
+                    setPadding(0, dp(3), 0, 0)
+                })
+            }
         }
         row.addView(body, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         row.addView(text("›", 28f, gold, Typeface.NORMAL), wrapWrap())
@@ -157,6 +270,18 @@ class MainActivityV5 : ThemedActivity() {
             putExtra(HoursV5Activity.EXTRA_YEAR, today.get(Calendar.YEAR))
             putExtra(HoursV5Activity.EXTRA_MONTH, today.get(Calendar.MONTH))
             putExtra(HoursV5Activity.EXTRA_DAY, today.get(Calendar.DAY_OF_MONTH))
+        })
+    }
+
+    private fun openReminders() {
+        startActivity(Intent(this, SettingsActivity::class.java).apply {
+            putExtra(SettingsActivity.EXTRA_OPEN_REMINDERS, true)
+        })
+    }
+
+    private fun openBlessings() {
+        startActivity(Intent(this, RitualCatalogActivity::class.java).apply {
+            putExtra(RitualCatalogActivity.EXTRA_DOCUMENT_ID, RitualRepository.COMMON_BLESSINGS_ID)
         })
     }
 
