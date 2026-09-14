@@ -32,6 +32,12 @@ jobs:
           print('Ministerium 5 manifest: XML OK')
           PY
 
+      - name: Validate preserved application contracts
+        run: |
+          set -euo pipefail
+          node tools/validate_project.mjs
+          node tools/validate_release_41.mjs
+
       - name: Set up Python for liturgical packages
         uses: actions/setup-python@v5
         with:
@@ -122,8 +128,8 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-      - name: Build preview APK
-        run: ./gradlew --no-daemon assembleDebug
+      - name: Build and lint preview APK
+        run: ./gradlew --no-daemon assembleDebug lintDebug
 
       - name: Compute APK SHA-256
         run: sha256sum app/build/outputs/apk/debug/app-debug.apk | tee app/build/outputs/apk/debug/app-debug.apk.sha256

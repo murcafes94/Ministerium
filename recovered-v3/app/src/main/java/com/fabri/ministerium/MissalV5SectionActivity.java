@@ -12,9 +12,12 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.List;
 import java.util.Locale;
 
 /** Native section reader for the Ministerium 5 Missal. */
@@ -26,10 +29,12 @@ public class MissalV5SectionActivity extends ThemedActivity {
     public static final String EXTRA_DAY = "v5_missal_day";
     public static final String EXTRA_CELEBRATION = "v5_missal_celebration";
 
-    private static final String PENDING = "Contenido propio pendiente de una fuente verificada.";
+    private static final String PROPER_UNAVAILABLE =
+            "Propio no disponible localmente para esta celebración. Ministerium no mostrará un formulario supuesto.";
     private static final String MISSAL_UNAVAILABLE =
             "El paquete local verificado del Misal no está disponible. Vuelve a compilar o actualizar el contenido de Ministerium.";
 
+    private final TextView[] prayerButtons = new TextView[4];
     private LinearLayout root;
     private Calendar selectedDate;
     private String sectionId;
@@ -51,7 +56,7 @@ public class MissalV5SectionActivity extends ThemedActivity {
         sectionId = value(EXTRA_SECTION, "initial");
         celebration = value(EXTRA_CELEBRATION, "Celebración del día");
         semanticSection = MissalV5Semantic.section(sectionId);
-        presentation = MissalDisplayRules.resolve(selectedDate, celebration);
+        presentation = MissalDisplayRules.resolve(this, selectedDate, celebration);
         setContentView(buildScreen());
         if (!"word".equals(sectionId)) loadDailyProper();
     }
@@ -81,10 +86,9 @@ public class MissalV5SectionActivity extends ThemedActivity {
         rules.setPadding(0, 0, 0, dp(8));
         root.addView(rules);
 
-        String initialStatus = "word".equals(sectionId)
+        sourceStatus = text("word".equals(sectionId)
                 ? "Lecturas: comprobando contenido local…"
-                : "Propios: comprobando caché local…";
-        sourceStatus = text(initialStatus, 12, R.color.muted, false);
+                : "Propios: comprobando contenido local…", 12, R.color.muted, false);
         sourceStatus.setPadding(0, 0, 0, dp(18));
         root.addView(sourceStatus);
 
@@ -104,13 +108,13 @@ public class MissalV5SectionActivity extends ThemedActivity {
 
     private void renderInitial() {
         heading(sectionTitle("Ritos iniciales"));
-        entranceBody = semanticBlock("entrance_antiphon", PENDING);
+        entranceBody = semanticBlock("entrance_antiphon", PROPER_UNAVAILABLE);
 
         String ordinary = missalComponent("initial");
         if (!presentation.getShowGloria()) ordinary = omitGloria(ordinary);
         roleBlock("ORDINARIO", "Ritos iniciales · edición de México", ordinary);
 
-        collectBody = semanticBlock("collect", PENDING);
+        collectBody = semanticBlock("collect", PROPER_UNAVAILABLE);
     }
 
     private void renderWord() {
@@ -120,22 +124,24 @@ public class MissalV5SectionActivity extends ThemedActivity {
             sourceStatus.setText("Lecturas: esta fecha no está sincronizada en el dispositivo");
             roleBlock("LECTURAS", "Contenido no disponible sin conexión",
                     "Ministerium no mostrará lecturas supuestas. Sincroniza el Leccionario desde Ajustes → Actualizaciones y vuelve a abrir esta fecha.");
-            actionCard("Abrir Actualizaciones", () -> startActivity(new Intent(this, UpdateCenterActivity.class)));
+            actionCard("Abrir Actualizaciones", () ->
+                    startActivity(new Intent(this, UpdateCenterActivity.class)));
             return;
         }
 
         sourceStatus.setText("Lecturas: " + content.getSourceLabel());
         readingBlock(content, "first_reading");
         readingBlock(content, "psalm");
-        readingBlock(content, "second_reading");
+        if (presentation.getShowSecondReading()) readingBlock(content, "second_reading");
         readingBlock(content, "acclamation");
         readingBlock(content, "gospel");
 
         if (presentation.getShowCreed()) {
-            semanticBlock("creed", "El Credo corresponde a esta celebración. El texto fijo se mantiene separado de las lecturas bíblicas.");
+            semanticBlock("creed", assetText("prayers/credo_niceno.txt",
+                    "El Credo corresponde a esta celebración, pero su texto local no pudo abrirse."));
         }
         semanticBlock("universal_prayer",
-                "Las intenciones de la oración universal dependen de la celebración y no se generan cuando no existe un formulario verificado.");
+                "Se hace la oración universal según la celebración y las necesidades de la Iglesia y del mundo. Ministerium no genera intenciones litúrgicas cuando no existe un formulario verificado.");
     }
 
     private void readingBlock(MissalV5WordContent content, String id) {
@@ -151,23 +157,18 @@ public class MissalV5SectionActivity extends ThemedActivity {
 
     private void renderEucharist() {
         heading(sectionTitle("Liturgia eucarística"));
-
         roleBlock("ORDINARIO", "Preparación de los dones",
                 missalHtml(() -> LiturgiaPapalMissalRepository.preparationHtml(this, "es")));
-
-        offeringsBody = semanticBlock("offerings", PENDING);
-
+        offeringsBody = semanticBlock("offerings", PROPER_UNAVAILABLE);
         roleBlock("CELEBRANTE Y ASAMBLEA", "Diálogo del prefacio",
                 missalHtml(() -> LiturgiaPapalMissalRepository.prefaceDialogueHtml(this, "es")));
-
         eucharisticPrayerSelector();
     }
 
     private void renderCommunion() {
         heading(sectionTitle("Rito de la comunión"));
-        communionRiteBody = roleBlock("ORDINARIO", "Rito de la comunión",
-                communionText(null));
-        postCommunionBody = semanticBlock("post_communion", PENDING);
+        communionRiteBody = roleBlock("ORDINARIO", "Rito de la comunión", communionText(null));
+        postCommunionBody = semanticBlock("post_communion", PROPER_UNAVAILABLE);
     }
 
     private void renderConclusion() {
@@ -178,11 +179,10 @@ public class MissalV5SectionActivity extends ThemedActivity {
 
     private void renderOther() {
         heading(sectionTitle("Otros formularios"));
-        block("Comunes", "Pastores, mártires, vírgenes, santos y santas.");
-        block("Por diversas necesidades", "Formularios para la Iglesia, sociedad y necesidades particulares.");
-        block("Misas votivas", "Formularios votivos organizados por tema.");
-        block("Misas de difuntos", "Exequias, aniversarios y otras ocasiones.");
-        block("Propio de los santos", "Santoral por fecha, aislado por celebración para evitar contaminaciones entre santos.");
+        roleBlock("FORMULARIOS", "Índice nativo en transición",
+                "Los formularios de comunes, necesidades, votivas, difuntos y santoral aún no tienen un índice nativo V5 completo. Para evitar botones simulados o formularios incompletos, esta pantalla abre el Misal completo ya funcional.");
+        actionCard("Abrir formularios del Misal completo", () ->
+                startActivity(new Intent(this, MissalActivity.class)));
     }
 
     private TextView semanticBlock(String elementId, CharSequence body) {
@@ -215,16 +215,16 @@ public class MissalV5SectionActivity extends ThemedActivity {
         TextView titleView = text(title, 18, R.color.wine, true);
         titleView.setPadding(0, dp(3), 0, 0);
         card.addView(titleView);
-        TextView p = text("", 15, R.color.ink, false);
-        p.setText(body == null ? "" : body);
-        p.setPadding(0, dp(6), 0, 0);
-        p.setLineSpacing(0, 1.12f);
-        p.setTextIsSelectable(true);
-        card.addView(p);
+        TextView value = text("", 15, R.color.ink, false);
+        value.setText(body == null ? "" : body);
+        value.setPadding(0, dp(6), 0, 0);
+        value.setLineSpacing(0, 1.12f);
+        value.setTextIsSelectable(true);
+        card.addView(value);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.setMargins(0, 0, 0, dp(10));
         root.addView(card, lp);
-        return p;
+        return value;
     }
 
     private void actionCard(String label, Runnable action) {
@@ -238,16 +238,6 @@ public class MissalV5SectionActivity extends ThemedActivity {
         root.addView(button, lp);
     }
 
-    private void semanticSelectable(String elementId, String fallbackTitle) {
-        MassElement element = MissalV5Semantic.element(sectionId, elementId);
-        if (element == null || element.getOptions().isEmpty()) return;
-        List<String> options = element.getOptions();
-        String[] labels = options.toArray(new String[0]);
-        String[] states = new String[labels.length];
-        for (int i = 0; i < labels.length; i++) states[i] = element.getTitle() + " " + labels[i] + " seleccionada";
-        selectable(element.getTitle().isEmpty() ? fallbackTitle : element.getTitle(), labels, states);
-    }
-
     private void eucharisticPrayerSelector() {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
@@ -256,9 +246,13 @@ public class MissalV5SectionActivity extends ThemedActivity {
         for (int i = 0; i < labels.length; i++) {
             final int prayer = i + 1;
             TextView button = text(labels[i], 16, R.color.wine, true);
+            prayerButtons[i] = button;
             button.setGravity(Gravity.CENTER);
             button.setBackgroundResource(R.drawable.bg_button_secondary);
-            button.setOnClickListener(v -> showEucharisticPrayer(prayer));
+            boolean enabled = prayer != 4 || presentation.getAllowEucharisticPrayerIV();
+            button.setEnabled(enabled);
+            button.setAlpha(enabled ? 1f : .42f);
+            if (enabled) button.setOnClickListener(v -> showEucharisticPrayer(prayer));
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(46), 1f);
             lp.setMargins(dp(3), 0, dp(3), 0);
             row.addView(button, lp);
@@ -267,11 +261,21 @@ public class MissalV5SectionActivity extends ThemedActivity {
         rowLp.setMargins(0, 0, 0, dp(8));
         root.addView(row, rowLp);
 
+        if (!presentation.getAllowEucharisticPrayerIV()) {
+            TextView note = text(
+                    "La Plegaria Eucarística IV no se ofrece en esta celebración porque posee prefacio propio e invariable.",
+                    12, R.color.muted, false);
+            note.setPadding(dp(2), 0, dp(2), dp(10));
+            root.addView(note);
+        }
+
         eucharisticPrayerBody = roleBlock("PLEGARIA EUCARÍSTICA", "Plegaria eucarística II",
                 eucharisticPrayerText(2));
+        updatePrayerButtons(2);
     }
 
     private void showEucharisticPrayer(int number) {
+        if (number == 4 && !presentation.getAllowEucharisticPrayerIV()) return;
         if (eucharisticPrayerBody == null) return;
         eucharisticPrayerBody.setText(eucharisticPrayerText(number));
         View parent = (View) eucharisticPrayerBody.getParent();
@@ -280,6 +284,18 @@ public class MissalV5SectionActivity extends ThemedActivity {
             if (card.getChildCount() > 1 && card.getChildAt(1) instanceof TextView) {
                 ((TextView) card.getChildAt(1)).setText("Plegaria eucarística " + roman(number));
             }
+        }
+        updatePrayerButtons(number);
+    }
+
+    private void updatePrayerButtons(int selected) {
+        for (int i = 0; i < prayerButtons.length; i++) {
+            TextView button = prayerButtons[i];
+            if (button == null) continue;
+            boolean active = i + 1 == selected;
+            button.setTypeface(button.getTypeface(), active ? Typeface.BOLD : Typeface.NORMAL);
+            button.setContentDescription("Plegaria eucarística " + roman(i + 1)
+                    + (active ? ", seleccionada" : ""));
         }
     }
 
@@ -331,12 +347,130 @@ public class MissalV5SectionActivity extends ThemedActivity {
                 + initial.substring(end)).trim();
     }
 
+    private void loadDailyProper() {
+        final boolean localOrdinary = applyLocalOrdinaryProper();
+        DailyMassProperRepository.ProperDay cached =
+                DailyMassProperRepository.cached(getApplicationContext(), selectedDate);
+        if (cached != null) {
+            applyProper(cached);
+            sourceStatus.setText("Propios: Arquidiócesis de Guadalajara · caché local");
+            if (cached.isComplete()) return;
+        } else if (localOrdinary) {
+            sourceStatus.setText("Propios: Misal local verificado · Tiempo Ordinario");
+        } else {
+            sourceStatus.setText(MassReadingsRepository.isCurrentMonth(selectedDate)
+                    ? "Propios: buscando fuente verificada…"
+                    : "Propios: no disponibles localmente para esta fecha");
+        }
+
+        if (!MassReadingsRepository.isCurrentMonth(selectedDate)) return;
+        final Calendar requestDate = (Calendar) selectedDate.clone();
+        new Thread(() -> {
+            DailyMassProperRepository.ProperDay proper =
+                    DailyMassProperRepository.getOrSync(getApplicationContext(), requestDate);
+            runOnUiThread(() -> {
+                if (isFinishing()) return;
+                if (proper == null) {
+                    sourceStatus.setText(localOrdinary
+                            ? "Propios: Misal local verificado · sin actualización de red"
+                            : "Propios: fuente verificada no disponible; no se mostrará texto supuesto");
+                    return;
+                }
+                applyProper(proper);
+                sourceStatus.setText("Propios: Arquidiócesis de Guadalajara · guardados localmente");
+            });
+        }, "ministerium-v5-proper").start();
+    }
+
+    private boolean applyLocalOrdinaryProper() {
+        if (!mayUseOrdinaryProper()) return false;
+        try {
+            String entrance = localOrdinaryPart(LiturgiaPapalMissalRepository.ENTRANCE);
+            String collect = localOrdinaryPart(LiturgiaPapalMissalRepository.COLLECT);
+            String offerings = localOrdinaryPart(LiturgiaPapalMissalRepository.OFFERINGS);
+            String communion = localOrdinaryPart(LiturgiaPapalMissalRepository.COMMUNION_ANTIPHON);
+            String post = localOrdinaryPart(LiturgiaPapalMissalRepository.POST_COMMUNION);
+            boolean any = false;
+            any |= setProperText(entranceBody, entrance);
+            any |= setProperText(collectBody, collect);
+            any |= setProperText(offeringsBody, offerings);
+            if (communionRiteBody != null && communion != null && !communion.trim().isEmpty()) {
+                communionRiteBody.setText(communionText(communion));
+                any = true;
+            }
+            any |= setProperText(postCommunionBody, post);
+            return any;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private boolean mayUseOrdinaryProper() {
+        if (LiturgicalResolver.ordinaryWeekNumber(selectedDate) <= 0) return false;
+        if (selectedDate.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) return true;
+        try {
+            LiturgicalEvent primary = LiturgicalResolver.primaryEvent(
+                    LiturgicalCalendarRepository.eventsFor(this, selectedDate));
+            return primary == null || (!primary.isMandatoryMemorial()
+                    && !primary.isFeast() && !primary.isSolemnity());
+        } catch (Exception ignored) {
+            String normalized = normalize(celebration);
+            return normalized.contains("feria") || normalized.contains("tiempo ordinario");
+        }
+    }
+
+    private String localOrdinaryPart(String part) throws Exception {
+        String html = LiturgiaPapalMissalRepository.ordinaryProperPartHtml(this, selectedDate, part);
+        if (html == null || html.trim().isEmpty()) return "";
+        return fromHtml(html).toString().trim();
+    }
+
+    private void applyProper(DailyMassProperRepository.ProperDay proper) {
+        if (proper == null) return;
+        setProperText(entranceBody, proper.entrance);
+        setProperText(collectBody, proper.collect);
+        setProperText(offeringsBody, proper.offerings);
+        if (communionRiteBody != null && proper.communionAntiphon != null
+                && !proper.communionAntiphon.trim().isEmpty()) {
+            communionRiteBody.setText(communionText(proper.communionAntiphon));
+        }
+        setProperText(postCommunionBody, proper.postCommunion);
+    }
+
+    private boolean setProperText(TextView view, String value) {
+        if (view == null) return false;
+        String clean = value == null ? "" : value.trim();
+        if (clean.isEmpty()) return false;
+        view.setText(clean);
+        return true;
+    }
+
+    private String assetText(String path, String fallback) {
+        try (InputStream input = getAssets().open(path);
+             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[4096];
+            int count;
+            while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
+            String value = new String(output.toByteArray(), StandardCharsets.UTF_8).trim();
+            return value.isEmpty() ? fallback : value;
+        } catch (Exception ignored) {
+            return fallback;
+        }
+    }
+
     @SuppressWarnings("deprecation")
     private CharSequence fromHtml(String html) {
         Spanned spanned = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
                 ? Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY)
                 : Html.fromHtml(html);
         return spanned == null ? "" : spanned;
+    }
+
+    private String normalize(String value) {
+        return Normalizer.normalize(value == null ? "" : value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "")
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", " ").trim();
     }
 
     private String roman(int number) {
@@ -350,122 +484,50 @@ public class MissalV5SectionActivity extends ThemedActivity {
     }
 
     private String sectionTitle(String fallback) {
-        return semanticSection == null || semanticSection.getTitle().trim().isEmpty() ? fallback : semanticSection.getTitle();
-    }
-
-    private void loadDailyProper() {
-        DailyMassProperRepository.ProperDay cached = DailyMassProperRepository.cached(getApplicationContext(), selectedDate);
-        if (cached != null) {
-            applyProper(cached);
-            sourceStatus.setText("Propios: Arquidiócesis de Guadalajara · caché local");
-            if (cached.isComplete()) return;
-        } else {
-            sourceStatus.setText(MassReadingsRepository.isCurrentMonth(selectedDate)
-                    ? "Propios: buscando fuente verificada…"
-                    : "Propios: no disponibles todavía para esta fecha");
-        }
-        if (!MassReadingsRepository.isCurrentMonth(selectedDate)) return;
-        final Calendar requestDate = (Calendar) selectedDate.clone();
-        new Thread(() -> {
-            DailyMassProperRepository.ProperDay proper = DailyMassProperRepository.getOrSync(getApplicationContext(), requestDate);
-            runOnUiThread(() -> {
-                if (isFinishing()) return;
-                if (proper == null) {
-                    sourceStatus.setText("Propios: fuente verificada no disponible; no se mostrará texto supuesto");
-                    return;
-                }
-                applyProper(proper);
-                sourceStatus.setText("Propios: Arquidiócesis de Guadalajara · guardados localmente");
-            });
-        }, "ministerium-v5-proper").start();
-    }
-
-    private void applyProper(DailyMassProperRepository.ProperDay proper) {
-        if (proper == null) return;
-        setProperText(entranceBody, proper.entrance);
-        setProperText(collectBody, proper.collect);
-        setProperText(offeringsBody, proper.offerings);
-        if (communionRiteBody != null) communionRiteBody.setText(communionText(proper.communionAntiphon));
-        setProperText(postCommunionBody, proper.postCommunion);
-    }
-
-    private void setProperText(TextView view, String value) {
-        if (view == null) return;
-        String clean = value == null ? "" : value.trim();
-        view.setText(clean.isEmpty() ? PENDING : clean);
-    }
-
-    private void selectable(String title, String[] labels, String[] states) {
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER);
-        LinearLayout statusCard = column();
-        statusCard.setPadding(dp(16), dp(12), dp(16), dp(12));
-        statusCard.setBackgroundResource(R.drawable.bg_button_secondary);
-        TextView statusTitle = text(title, 17, R.color.wine, true);
-        TextView status = text(states[0], 14, R.color.ink, false);
-        status.setPadding(0, dp(4), 0, 0);
-        statusCard.addView(statusTitle);
-        statusCard.addView(status);
-        for (int i = 0; i < labels.length; i++) {
-            final int index = i;
-            TextView button = text(labels[i], 16, R.color.wine, true);
-            button.setGravity(Gravity.CENTER);
-            button.setBackgroundResource(R.drawable.bg_button_secondary);
-            button.setOnClickListener(v -> status.setText(states[index]));
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(46), 1f);
-            lp.setMargins(dp(3), 0, dp(3), 0);
-            row.addView(button, lp);
-        }
-        LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(-1, -2);
-        rowLp.setMargins(0, 0, 0, dp(8));
-        root.addView(row, rowLp);
-        LinearLayout.LayoutParams cardLp = new LinearLayout.LayoutParams(-1, -2);
-        cardLp.setMargins(0, 0, 0, dp(12));
-        root.addView(statusCard, cardLp);
+        return semanticSection == null || semanticSection.getTitle().trim().isEmpty()
+                ? fallback : semanticSection.getTitle();
     }
 
     private void heading(String value) {
-        TextView v = text(value, 28, R.color.ink, true);
-        v.setPadding(0, 0, 0, dp(16));
-        root.addView(v);
+        TextView title = text(value, 28, R.color.ink, true);
+        title.setPadding(0, 0, 0, dp(16));
+        root.addView(title);
     }
-
-    private TextView block(String title, String body) { return roleBlock("SECCIÓN", title, body); }
 
     private Calendar selectedDate() {
         Calendar now = Calendar.getInstance();
-        Calendar c = Calendar.getInstance();
-        c.clear();
-        c.set(getIntent().getIntExtra(EXTRA_YEAR, now.get(Calendar.YEAR)),
+        Calendar value = Calendar.getInstance();
+        value.clear();
+        value.set(getIntent().getIntExtra(EXTRA_YEAR, now.get(Calendar.YEAR)),
                 getIntent().getIntExtra(EXTRA_MONTH, now.get(Calendar.MONTH)),
                 getIntent().getIntExtra(EXTRA_DAY, now.get(Calendar.DAY_OF_MONTH)), 12, 0, 0);
-        return c;
+        return value;
     }
 
     private String dayLabel() {
-        return new SimpleDateFormat("d 'de' MMMM 'de' yyyy", new Locale("es", "EC")).format(selectedDate.getTime());
+        return new SimpleDateFormat("d 'de' MMMM 'de' yyyy", new Locale("es", "EC"))
+                .format(selectedDate.getTime());
     }
 
     private String value(String key, String fallback) {
-        String v = getIntent().getStringExtra(key);
-        return v == null || v.trim().isEmpty() ? fallback : v;
+        String raw = getIntent().getStringExtra(key);
+        return raw == null || raw.trim().isEmpty() ? fallback : raw;
     }
 
     private LinearLayout column() {
-        LinearLayout l = new LinearLayout(this);
-        l.setOrientation(LinearLayout.VERTICAL);
-        l.setLayoutParams(new LinearLayout.LayoutParams(-1, -2));
-        return l;
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setLayoutParams(new LinearLayout.LayoutParams(-1, -2));
+        return layout;
     }
 
     private TextView text(String value, int sp, int colorRes, boolean bold) {
-        TextView v = new TextView(this);
-        v.setText(value);
-        v.setTextSize(sp);
-        v.setTextColor(color(colorRes));
-        if (bold) v.setTypeface(v.getTypeface(), Typeface.BOLD);
-        return v;
+        TextView view = new TextView(this);
+        view.setText(value);
+        view.setTextSize(sp);
+        view.setTextColor(color(colorRes));
+        if (bold) view.setTypeface(view.getTypeface(), Typeface.BOLD);
+        return view;
     }
 
     @SuppressWarnings("deprecation")
