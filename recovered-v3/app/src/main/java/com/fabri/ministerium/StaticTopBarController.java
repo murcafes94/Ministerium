@@ -1,6 +1,7 @@
 package com.fabri.ministerium;
 
 import android.app.Activity;
+import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -40,6 +41,18 @@ public final class StaticTopBarController {
 
         int maxHeader = dp(activity, 180);
         if (header.getHeight() <= 0 || header.getHeight() > maxHeader) return;
+
+        // Las cabeceras V5 construidas por código son transparentes por defecto.
+        // Al fijarlas, el contenido del ScrollView quedaría visible por debajo.
+        // Solo heredamos el fondo del scroll si la cabecera no tiene uno propio,
+        // conservando intactos los encabezados XML heredados (vino, tarjetas, etc.).
+        if (header.getBackground() == null && scroll.getBackground() != null) {
+            Drawable background = scroll.getBackground();
+            Drawable.ConstantState state = background.getConstantState();
+            header.setBackground(state != null
+                    ? state.newDrawable(activity.getResources()).mutate()
+                    : background.mutate());
+        }
 
         header.animate().cancel();
         header.setAlpha(1f);
