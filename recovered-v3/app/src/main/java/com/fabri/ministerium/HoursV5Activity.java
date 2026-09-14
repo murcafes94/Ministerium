@@ -224,7 +224,9 @@ public class HoursV5Activity extends ThemedActivity {
             return Collections.emptyList();
         }
         try {
-            return SaintOfficeRepository.commonChoices(getApplicationContext(), option.getOffice());
+            List<CommonOfficeChoice> raw = SaintOfficeRepository.commonChoices(
+                    getApplicationContext(), option.getOffice());
+            return HoursV5CommonPolicy.filter(option.getOffice(), raw);
         } catch (Exception ignored) {
             return Collections.emptyList();
         }

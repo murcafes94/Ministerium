@@ -7,6 +7,7 @@ const expect = (condition, message) => { if (!condition) throw new Error(message
 
 const manifest = read('app/src/main/AndroidManifest.xml');
 const mainV5 = read('app/src/main/java/com/fabri/ministerium/MainActivityV5.kt');
+const hoursV5 = read('app/src/main/java/com/fabri/ministerium/HoursV5Activity.java');
 const missalV5 = read('app/src/main/java/com/fabri/ministerium/MissalV5SectionActivity.java');
 const missalRules = read('app/src/main/java/com/fabri/ministerium/MissalDisplayRules.kt');
 const themed = read('app/src/main/java/com/fabri/ministerium/ThemedActivity.java');
@@ -45,6 +46,8 @@ for (const required of [
   expect(mainV5.includes(required), `V5 launcher lost access to ${required}.`);
 }
 
+expect(hoursV5.includes('HoursV5CommonPolicy.filter'),
+  'V5 Hours must filter incompatible common-office choices before displaying them.');
 expect(missalV5.includes('MissalDisplayRules.resolve(this, selectedDate, celebration)'),
   'V5 Missal must use the calendar-backed display rules.');
 expect(missalV5.includes('getAllowEucharisticPrayerIV()') && !missalV5.includes('Contenido propio pendiente'),
