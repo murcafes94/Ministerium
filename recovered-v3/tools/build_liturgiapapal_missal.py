@@ -130,6 +130,20 @@ PROPER_FOOTER_RE = re.compile(
     re.IGNORECASE,
 )
 
+ORDINARY_COMPONENTS = {
+    "ordinary_full",
+    "initial",
+    "word",
+    "eucharistic_liturgy",
+    "prefaces",
+    "eucharistic_prayer_1",
+    "eucharistic_prayer_2",
+    "eucharistic_prayer_3",
+    "eucharistic_prayer_4",
+    "communion",
+    "conclusion",
+}
+
 
 def download(url: str, destination: Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -218,7 +232,7 @@ def clean_text(raw: str) -> str:
 
 
 def validate_mexico_ordinary(component: str, text: str) -> list[str]:
-    """Impide que una fuente española de España vuelva a contaminar el paquete ES."""
+    """Valida fórmulas propias del Ordinario mexicano sin alterar el Propio del Tiempo."""
     errors: list[str] = []
     normalized = unicodedata.normalize("NFC", text)
     lower = normalized.lower()
@@ -228,6 +242,12 @@ def validate_mexico_ordinary(component: str, text: str) -> list[str]:
     if component in {"ordinary_full", "eucharistic_prayer_2"}:
         if "por ustedes" not in lower:
             errors.append("no aparece «por ustedes» en la Plegaria II mexicana")
+
+    # Los Propios del Tiempo de la propia fuente mexicana pueden citar rúbricas
+    # pontificales o fórmulas históricas con «vosotros» (p. ej. Misa Crismal).
+    # Esas citas no identifican la edición del Ordinario y no deben reescribirse.
+    if component not in ORDINARY_COMPONENTS:
+        return errors
 
     forbidden = (
         "el señor esté con vosotros",
@@ -239,7 +259,7 @@ def validate_mexico_ordinary(component: str, text: str) -> list[str]:
     )
     for phrase in forbidden:
         if phrase in lower:
-            errors.append(f"se detectó fórmula de España: «{phrase}»")
+            errors.append(f"se detectó fórmula de España en el Ordinario: «{phrase}»")
     return errors
 
 
