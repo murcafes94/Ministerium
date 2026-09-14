@@ -186,6 +186,15 @@ def normalize_chars(value: str) -> str:
     )
 
 
+def strip_diacritics(value: str) -> str:
+    """Devuelve una copia sólo para comparar; el texto litúrgico no se modifica."""
+    return "".join(
+        char
+        for char in unicodedata.normalize("NFD", value)
+        if unicodedata.category(char) != "Mn"
+    )
+
+
 def clean_line(line: str) -> str:
     line = normalize_chars(line).strip()
     if not line:
@@ -284,8 +293,10 @@ def validate_cleaned(language: str, component: str, text: str) -> list[str]:
         errors.extend(validate_mexico_ordinary(component, text))
         if component == "initial" and "En el nombre del Padre" not in text:
             errors.append("no se encontró el comienzo del Ordinario español")
-    if language == "la" and component in {"ordinary_full", "initial"} and "In nomine Patris" not in text:
-        errors.append("no se encontró el comienzo del Ordo latino")
+    if language == "la" and component in {"ordinary_full", "initial"}:
+        comparable = strip_diacritics(text).lower()
+        if "in nomine patris" not in comparable:
+            errors.append("no se encontró el comienzo del Ordo latino")
     return errors
 
 
