@@ -1,0 +1,17 @@
+Ministerium 5.0.0 Preview
+
+Esta compilación inaugura el shell nativo de Ministerium 5 y mantiene los módulos estables de la línea 4.1 mientras se migran de forma progresiva.
+
+Cambios principales de esta preview:
+• Nuevo launcher Ministerium 5 con acceso directo a Biblia, Misal, Liturgia de las Horas, Rituales, Magisterio y Ajustes.
+• Misal V5 nativo conectado al paquete local verificado: ritos iniciales, preparación de dones, Plegarias Eucarísticas I–IV, Comunión y conclusión.
+• Reglas del Misal respaldadas por el calendario litúrgico para Gloria, Credo, segunda lectura y disponibilidad de la Plegaria IV.
+• Propios diarios verificados con caché local y fallback offline seguro del Tiempo Ordinario cuando corresponde.
+• Liturgia de las Horas empaquetada en formato limpio para reducir duplicación de EPUB y mantener lectura sin conexión.
+• Paquetes ES/LAT del Misal y Rituales/Bendicional generados y comprobados durante CI.
+• Barra superior estable en pantallas V5 y compatibilidad con modo claro/oscuro.
+• Modo oración restaurado en los lectores litúrgicos V5.
+• Navegación de Magisterio corregida para regresar al shell que abrió el módulo.
+• Pipeline de preview reforzado con validadores de contratos, lint y verificación de assets antes de publicar el APK.
+
+Estado: preview de desarrollo. Las funciones heredadas que todavía no tienen equivalente V5 completo continúan abriéndose en su implementación estable en vez de simular contenido.

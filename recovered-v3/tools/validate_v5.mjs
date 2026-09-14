@@ -12,7 +12,9 @@ const missalRules = read('app/src/main/java/com/fabri/ministerium/MissalDisplayR
 const themed = read('app/src/main/java/com/fabri/ministerium/ThemedActivity.java');
 const epub = read('app/src/main/java/com/fabri/ministerium/EpubUtils.java');
 const magisterium = read('app/src/main/java/com/fabri/ministerium/MagisteriumActivity.java');
+const updateCenter = read('app/src/main/java/com/fabri/ministerium/UpdateCenterActivity.java');
 const build = read('app/build.gradle');
+const packageManifest = JSON.parse(read('app/src/main/assets/package-manifest.json'));
 
 expect(mainV5.includes('class MainActivityV5'), 'MainActivityV5 is missing.');
 expect(/android:name="\.MainActivityV5"[\s\S]*android.intent.action.MAIN[\s\S]*android.intent.category.LAUNCHER/.test(manifest),
@@ -23,6 +25,12 @@ expect(!/android:name="\.MainActivity"[\s\S]{0,300}android.intent.category.LAUNC
 const code = Number((build.match(/versionCode\s+(\d+)/) || [])[1] || 0);
 const version = (build.match(/versionName\s+'([^']+)'/) || [])[1] || '';
 expect(code >= 50 && /^5\./.test(version), 'Ministerium 5 preview version metadata is not configured.');
+expect(packageManifest.app?.versionCode === code && packageManifest.app?.versionName === version,
+  'Gradle and package-manifest app versions must match.');
+expect(fs.existsSync(path.join(root, `app/src/main/assets/changelog-${version}.txt`)),
+  'The current V5 changelog asset is missing.');
+expect(updateCenter.includes('"changelog-" + assetVersion + ".txt"'),
+  'Update Center must resolve the changelog from the current build version.');
 
 expect(missalV5.includes('MissalDisplayRules.resolve(this, selectedDate, celebration)'),
   'V5 Missal must use the calendar-backed display rules.');

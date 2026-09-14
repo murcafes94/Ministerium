@@ -187,16 +187,30 @@ public class UpdateCenterActivity extends ThemedActivity {
                 runOnUiThread(() -> status.setText(error.getMessage() == null
                         ? "No se pudo completar la verificación local." : error.getMessage()));
             }
-        }).start();
+        }, "ministerium-package-verify").start();
     }
 
     private void showChangelog() {
+        String version = BuildConfig.VERSION_NAME == null ? "" : BuildConfig.VERSION_NAME;
+        String assetVersion = version.endsWith("-test")
+                ? version.substring(0, version.length() - 5) : version;
+        String asset = "changelog-" + assetVersion + ".txt";
         try {
-            new android.app.AlertDialog.Builder(this).setTitle("Ministerium 4.1.0")
-                    .setMessage(readAsset("changelog-4.1.0.txt"))
-                    .setPositiveButton("Cerrar", null).show();
-        } catch (Exception error) {
-            Toast.makeText(this, "No se pudo abrir el historial de cambios.", Toast.LENGTH_SHORT).show();
+            new android.app.AlertDialog.Builder(this)
+                    .setTitle("Ministerium " + version)
+                    .setMessage(readAsset(asset))
+                    .setPositiveButton("Cerrar", null)
+                    .show();
+        } catch (Exception currentError) {
+            try {
+                new android.app.AlertDialog.Builder(this)
+                        .setTitle("Ministerium " + version)
+                        .setMessage(readAsset("changelog-4.1.0.txt"))
+                        .setPositiveButton("Cerrar", null)
+                        .show();
+            } catch (Exception legacyError) {
+                Toast.makeText(this, "No se pudo abrir el historial de cambios.", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
