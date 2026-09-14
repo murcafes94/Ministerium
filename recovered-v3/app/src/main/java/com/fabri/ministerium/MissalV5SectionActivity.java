@@ -2,7 +2,10 @@ package com.fabri.ministerium;
 
 import android.content.Intent;
 import android.graphics.Typeface;
+import android.os.Build;
 import android.os.Bundle;
+import android.text.Html;
+import android.text.Spanned;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -24,6 +27,8 @@ public class MissalV5SectionActivity extends ThemedActivity {
     public static final String EXTRA_CELEBRATION = "v5_missal_celebration";
 
     private static final String PENDING = "Contenido propio pendiente de una fuente verificada.";
+    private static final String MISSAL_UNAVAILABLE =
+            "El paquete local verificado del Misal no está disponible. Vuelve a compilar o actualizar el contenido de Ministerium.";
 
     private LinearLayout root;
     private Calendar selectedDate;
@@ -35,8 +40,9 @@ public class MissalV5SectionActivity extends ThemedActivity {
     private TextView entranceBody;
     private TextView collectBody;
     private TextView offeringsBody;
-    private TextView communionAntiphonBody;
+    private TextView communionRiteBody;
     private TextView postCommunionBody;
+    private TextView eucharisticPrayerBody;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         ThemeUtils.apply(this);
@@ -99,12 +105,11 @@ public class MissalV5SectionActivity extends ThemedActivity {
     private void renderInitial() {
         heading(sectionTitle("Ritos iniciales"));
         entranceBody = semanticBlock("entrance_antiphon", PENDING);
-        semanticBlock("greeting", "Celebrante, respuesta de la asamblea y rúbrica se representarán como elementos distintos.");
-        semanticBlock("penitential_act", "Elige una fórmula. Solo una queda activa.");
-        semanticSelectable("penitential_act", "Fórmula penitencial");
-        if (presentation.getShowGloria()) {
-            semanticBlock("gloria", "Gloria activo para esta celebración. El texto verificado se integrará como elemento propio.");
-        }
+
+        String ordinary = missalComponent("initial");
+        if (!presentation.getShowGloria()) ordinary = omitGloria(ordinary);
+        roleBlock("ORDINARIO", "Ritos iniciales · edición de México", ordinary);
+
         collectBody = semanticBlock("collect", PENDING);
     }
 
@@ -127,10 +132,10 @@ public class MissalV5SectionActivity extends ThemedActivity {
         readingBlock(content, "gospel");
 
         if (presentation.getShowCreed()) {
-            semanticBlock("creed", "El Credo corresponde a esta celebración. El texto fijo se mantendrá como oración litúrgica separada de las lecturas.");
+            semanticBlock("creed", "El Credo corresponde a esta celebración. El texto fijo se mantiene separado de las lecturas bíblicas.");
         }
         semanticBlock("universal_prayer",
-                "Se conserva como elemento propio de la celebración; las intenciones no se inventan cuando no existe un formulario verificado.");
+                "Las intenciones de la oración universal dependen de la celebración y no se generan cuando no existe un formulario verificado.");
     }
 
     private void readingBlock(MissalV5WordContent content, String id) {
@@ -146,26 +151,29 @@ public class MissalV5SectionActivity extends ThemedActivity {
 
     private void renderEucharist() {
         heading(sectionTitle("Liturgia eucarística"));
-        semanticBlock("gifts", "Rúbricas, invitaciones y respuestas se representarán con roles propios.");
+
+        roleBlock("ORDINARIO", "Preparación de los dones",
+                missalHtml(() -> LiturgiaPapalMissalRepository.preparationHtml(this, "es")));
+
         offeringsBody = semanticBlock("offerings", PENDING);
-        semanticBlock("preface", "Se resolverá por celebración, tiempo litúrgico y formulario.");
-        semanticBlock("eucharistic_prayer", "Elige una plegaria. La IV conservará su relación propia con el prefacio.");
-        semanticSelectable("eucharistic_prayer", "Plegaria eucarística");
+
+        roleBlock("CELEBRANTE Y ASAMBLEA", "Diálogo del prefacio",
+                missalHtml(() -> LiturgiaPapalMissalRepository.prefaceDialogueHtml(this, "es")));
+
+        eucharisticPrayerSelector();
     }
 
     private void renderCommunion() {
         heading(sectionTitle("Rito de la comunión"));
-        semanticBlock("our_father", "Texto, embolismo y respuesta se mantendrán como elementos semánticos separados.");
-        semanticBlock("peace", "Rúbrica y fórmulas separadas.");
-        semanticBlock("fraction", "Agnus Dei y gestos rituales como elementos distintos.");
-        communionAntiphonBody = semanticBlock("communion_antiphon", PENDING);
+        communionRiteBody = roleBlock("ORDINARIO", "Rito de la comunión",
+                communionText(null));
         postCommunionBody = semanticBlock("post_communion", PENDING);
     }
 
     private void renderConclusion() {
         heading(sectionTitle("Rito de conclusión"));
-        semanticBlock("blessing", "Bendición simple o solemne según corresponda.");
-        semanticBlock("dismissal", "Fórmula de despedida y respuesta de la asamblea.");
+        roleBlock("ORDINARIO", "Bendición y despedida",
+                missalHtml(() -> LiturgiaPapalMissalRepository.conclusionHtml(this, "es")));
     }
 
     private void renderOther() {
@@ -177,7 +185,7 @@ public class MissalV5SectionActivity extends ThemedActivity {
         block("Propio de los santos", "Santoral por fecha, aislado por celebración para evitar contaminaciones entre santos.");
     }
 
-    private TextView semanticBlock(String elementId, String body) {
+    private TextView semanticBlock(String elementId, CharSequence body) {
         MassElement element = MissalV5Semantic.element(sectionId, elementId);
         String title = element == null ? elementId : element.getTitle();
         MassElementType type = element == null ? MassElementType.PRAYER : element.getType();
@@ -197,7 +205,7 @@ public class MissalV5SectionActivity extends ThemedActivity {
         }
     }
 
-    private TextView roleBlock(String role, String title, String body) {
+    private TextView roleBlock(String role, String title, CharSequence body) {
         LinearLayout card = column();
         card.setPadding(dp(16), dp(14), dp(16), dp(14));
         card.setBackgroundResource(R.drawable.bg_button_secondary);
@@ -207,7 +215,8 @@ public class MissalV5SectionActivity extends ThemedActivity {
         TextView titleView = text(title, 18, R.color.wine, true);
         titleView.setPadding(0, dp(3), 0, 0);
         card.addView(titleView);
-        TextView p = text(body, 15, R.color.ink, false);
+        TextView p = text("", 15, R.color.ink, false);
+        p.setText(body == null ? "" : body);
         p.setPadding(0, dp(6), 0, 0);
         p.setLineSpacing(0, 1.12f);
         p.setTextIsSelectable(true);
@@ -237,6 +246,107 @@ public class MissalV5SectionActivity extends ThemedActivity {
         String[] states = new String[labels.length];
         for (int i = 0; i < labels.length; i++) states[i] = element.getTitle() + " " + labels[i] + " seleccionada";
         selectable(element.getTitle().isEmpty() ? fallbackTitle : element.getTitle(), labels, states);
+    }
+
+    private void eucharisticPrayerSelector() {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER);
+        String[] labels = {"I", "II", "III", "IV"};
+        for (int i = 0; i < labels.length; i++) {
+            final int prayer = i + 1;
+            TextView button = text(labels[i], 16, R.color.wine, true);
+            button.setGravity(Gravity.CENTER);
+            button.setBackgroundResource(R.drawable.bg_button_secondary);
+            button.setOnClickListener(v -> showEucharisticPrayer(prayer));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(46), 1f);
+            lp.setMargins(dp(3), 0, dp(3), 0);
+            row.addView(button, lp);
+        }
+        LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(-1, -2);
+        rowLp.setMargins(0, 0, 0, dp(8));
+        root.addView(row, rowLp);
+
+        eucharisticPrayerBody = roleBlock("PLEGARIA EUCARÍSTICA", "Plegaria eucarística II",
+                eucharisticPrayerText(2));
+    }
+
+    private void showEucharisticPrayer(int number) {
+        if (eucharisticPrayerBody == null) return;
+        eucharisticPrayerBody.setText(eucharisticPrayerText(number));
+        View parent = (View) eucharisticPrayerBody.getParent();
+        if (parent instanceof LinearLayout) {
+            LinearLayout card = (LinearLayout) parent;
+            if (card.getChildCount() > 1 && card.getChildAt(1) instanceof TextView) {
+                ((TextView) card.getChildAt(1)).setText("Plegaria eucarística " + roman(number));
+            }
+        }
+    }
+
+    private CharSequence eucharisticPrayerText(int number) {
+        return missalHtml(() -> LiturgiaPapalMissalRepository.eucharisticPrayerHtml(this, "es", number));
+    }
+
+    private CharSequence communionText(String antiphon) {
+        String antiphonHtml = "";
+        if (antiphon != null && !antiphon.trim().isEmpty()) {
+            antiphonHtml = "<p><b>Antífona de la comunión</b><br>"
+                    + Html.escapeHtml(antiphon.trim()).replace("\n", "<br>") + "</p>";
+        }
+        final String properHtml = antiphonHtml;
+        return missalHtml(() -> LiturgiaPapalMissalRepository.communionHtml(this, "es", properHtml));
+    }
+
+    private CharSequence missalHtml(MissalHtmlSupplier supplier) {
+        try {
+            if (!LiturgiaPapalMissalRepository.isAvailable(this, "es")) return MISSAL_UNAVAILABLE;
+            String html = supplier.get();
+            if (html == null || html.trim().isEmpty()) return MISSAL_UNAVAILABLE;
+            return fromHtml(html);
+        } catch (Exception error) {
+            return MISSAL_UNAVAILABLE;
+        }
+    }
+
+    private String missalComponent(String id) {
+        try {
+            if (!LiturgiaPapalMissalRepository.isAvailable(this, "es")) return MISSAL_UNAVAILABLE;
+            String value = LiturgiaPapalMissalRepository.component(this, "es", id);
+            return value == null || value.trim().isEmpty() ? MISSAL_UNAVAILABLE : value.trim();
+        } catch (Exception error) {
+            return MISSAL_UNAVAILABLE;
+        }
+    }
+
+    private String omitGloria(String initial) {
+        if (initial == null || initial.equals(MISSAL_UNAVAILABLE)) return initial;
+        String lower = initial.toLowerCase(new Locale("es", "EC"));
+        int start = lower.indexOf("gloria a dios en el cielo");
+        if (start < 0) return initial;
+        int end = lower.indexOf("acabado el himno", start);
+        if (end < 0) end = lower.indexOf("oremos", start);
+        if (end < 0 || end <= start) return initial;
+        return (initial.substring(0, start)
+                + "En esta celebración se omite el Gloria.\n\n"
+                + initial.substring(end)).trim();
+    }
+
+    @SuppressWarnings("deprecation")
+    private CharSequence fromHtml(String html) {
+        Spanned spanned = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+                ? Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY)
+                : Html.fromHtml(html);
+        return spanned == null ? "" : spanned;
+    }
+
+    private String roman(int number) {
+        switch (number) {
+            case 1: return "I";
+            case 2: return "II";
+            case 3: return "III";
+            case 4: return "IV";
+            default: return String.valueOf(number);
+        }
     }
 
     private String sectionTitle(String fallback) {
@@ -275,7 +385,7 @@ public class MissalV5SectionActivity extends ThemedActivity {
         setProperText(entranceBody, proper.entrance);
         setProperText(collectBody, proper.collect);
         setProperText(offeringsBody, proper.offerings);
-        setProperText(communionAntiphonBody, proper.communionAntiphon);
+        if (communionRiteBody != null) communionRiteBody.setText(communionText(proper.communionAntiphon));
         setProperText(postCommunionBody, proper.postCommunion);
     }
 
@@ -361,4 +471,8 @@ public class MissalV5SectionActivity extends ThemedActivity {
     @SuppressWarnings("deprecation")
     private int color(int res) { return getResources().getColor(res); }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
+
+    private interface MissalHtmlSupplier {
+        String get() throws Exception;
+    }
 }
