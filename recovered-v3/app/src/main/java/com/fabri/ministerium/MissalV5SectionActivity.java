@@ -63,7 +63,7 @@ public class MissalV5SectionActivity extends ThemedActivity {
 
     @Override protected void onResume() {
         super.onResume();
-        if (root != null) NativeUi.refreshReader(root);
+        if (root != null) NativeUi.refreshReader(findViewById(android.R.id.content));
     }
 
     private View buildScreen() {
@@ -72,7 +72,7 @@ public class MissalV5SectionActivity extends ThemedActivity {
 
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
-        scroll.setBackgroundColor(color(R.color.cream));
+        NativeUi.readerPage(scroll);
 
         root = column();
         root.setPadding(dp(22), dp(18), dp(22), dp(32));
@@ -210,9 +210,11 @@ public class MissalV5SectionActivity extends ThemedActivity {
     private TextView roleBlock(String role, String title, CharSequence body) {
         LinearLayout card = column();
         NativeUi.readerPanel(card);
-        TextView roleView = text(role, 10, R.color.muted, true);
-        roleView.setLetterSpacing(.10f);
-        card.addView(roleView);
+        if (!"ELEMENTO".equals(role) && !role.equalsIgnoreCase(title.trim())) {
+            TextView roleView = text(role, 10, R.color.muted, true);
+            roleView.setLetterSpacing(.10f);
+            card.addView(roleView);
+        }
         TextView titleView = text(title, 18, R.color.wine, true);
         titleView.setPadding(0, dp(3), 0, 0);
         card.addView(titleView);
@@ -222,7 +224,7 @@ public class MissalV5SectionActivity extends ThemedActivity {
         NativeUi.readerBody(this, value);
         card.addView(value);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
-        lp.setMargins(0, 0, 0, dp(10));
+        lp.setMargins(0, 0, 0, dp(4));
         root.addView(card, lp);
         return value;
     }

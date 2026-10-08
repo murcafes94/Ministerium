@@ -52,7 +52,7 @@ class HoursV5ReaderActivity : ThemedActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (::content.isInitialized) NativeUi.refreshReader(content)
+        if (::content.isInitialized) NativeUi.refreshReader(findViewById(android.R.id.content))
     }
 
     override fun onDestroy() {
@@ -63,7 +63,7 @@ class HoursV5ReaderActivity : ThemedActivity() {
     private fun buildScreen(): View {
         val scroll = ScrollView(this).apply {
             isFillViewport = true
-            setBackgroundColor(color(R.color.cream))
+            NativeUi.readerPage(this)
         }
 
         val root = column().apply {
@@ -189,6 +189,8 @@ class HoursV5ReaderActivity : ThemedActivity() {
         document.blocks.forEach { block ->
             val role = role(block.type)
             if (block.title.isEmpty() && block.body.isEmpty()) return@forEach
+            if (block.type == HoursBlockType.HEADING && block.body.isBlank() &&
+                block.title.trim().equals(value(EXTRA_TITLE, ""), ignoreCase = true)) return@forEach
             roleBlock(role, block.title, block.body)
         }
     }
@@ -214,9 +216,12 @@ class HoursV5ReaderActivity : ThemedActivity() {
             NativeUi.readerPanel(this)
         }
 
-        card.addView(text(role, 10, R.color.muted, true).apply {
-            letterSpacing = .10f
-        })
+        if (role != "TEXTO" && role != "SECCIÓN" &&
+            !role.equals(title.trim(), ignoreCase = true)) {
+            card.addView(text(role, 10, R.color.muted, true).apply {
+                letterSpacing = .10f
+            })
+        }
 
         if (title.trim().isNotEmpty()) {
             card.addView(text(title.trim(), 18, R.color.wine, true).apply {
@@ -232,7 +237,7 @@ class HoursV5ReaderActivity : ThemedActivity() {
         }
 
         content.addView(card, LinearLayout.LayoutParams(-1, -2).apply {
-            setMargins(0, 0, 0, dp(10))
+            setMargins(0, 0, 0, dp(2))
         })
     }
 

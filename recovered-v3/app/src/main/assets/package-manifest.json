@@ -2,8 +2,8 @@
   "schema": 3,
   "channel": "testing",
   "app": {
-    "versionName": "5.0.1-preview",
-    "versionCode": 51,
+    "versionName": "5.0.2-preview",
+    "versionCode": 52,
     "released": "2026-10-08",
     "url": "",
     "sha256": "",

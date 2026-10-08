@@ -1,0 +1,5 @@
+Ministerium 5.0.2 preview
+
+• Lectura continua de Horas y Misal, sin cuadros alrededor de cada párrafo.
+• Se eliminan las etiquetas genéricas TEXTO y los títulos repetidos.
+• Se conservan títulos, párrafos, rúbricas, preferencias de lectura y contenidos litúrgicos.

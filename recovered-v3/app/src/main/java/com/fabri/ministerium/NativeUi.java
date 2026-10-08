@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -84,7 +83,13 @@ public final class NativeUi {
         view.setTextIsSelectable(true);
     }
 
+    public static void readerPage(View view) {
+        view.setTag("reader-page");
+        view.setBackgroundColor(Color.parseColor(ReaderVisualPalette.from(view.getContext()).background));
+    }
+
     public static void refreshReader(View view) {
+        if ("reader-page".equals(view.getTag())) readerPage(view);
         if (view instanceof TextView && "reader-body".equals(view.getTag())) readerBody(view.getContext(), (TextView) view);
         if (view instanceof LinearLayout && "reader-panel".equals(view.getTag())) readerPanel((LinearLayout) view);
         if (view instanceof ViewGroup) {
@@ -96,13 +101,9 @@ public final class NativeUi {
     public static void readerPanel(LinearLayout panel) {
         panel.setTag("reader-panel");
         Context context = panel.getContext();
-        ReaderVisualPalette palette = ReaderVisualPalette.from(context);
-        GradientDrawable background = new GradientDrawable();
-        background.setColor(Color.parseColor(palette.background));
-        background.setCornerRadius(dp(context, 20));
-        background.setStroke(dp(context, 1), Color.parseColor(palette.divider));
-        panel.setBackground(background);
+        // Paragraph containers have no visual frame; the whole reader is one page.
+        panel.setBackgroundColor(Color.TRANSPARENT);
         int horizontal = dp(context, Math.min(40, ReaderPreferences.horizontalPaddingPx(context)));
-        panel.setPadding(horizontal, dp(context, 20), horizontal, dp(context, 22));
+        panel.setPadding(horizontal, dp(context, 6), horizontal, dp(context, 8));
     }
 }

@@ -35,8 +35,8 @@ android {
         // 4.1 contract lineage markers retained for the legacy release validator:
         // versionCode 41
         // versionName '4.1.0'
-        versionCode 51
-        versionName '5.0.1-preview'
+        versionCode 52
+        versionName '5.0.2-preview'
     }
 
     buildTypes {
