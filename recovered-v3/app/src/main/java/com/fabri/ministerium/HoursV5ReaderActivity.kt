@@ -50,6 +50,11 @@ class HoursV5ReaderActivity : ThemedActivity() {
         loadDocument()
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (::content.isInitialized) NativeUi.refreshReader(content)
+    }
+
     override fun onDestroy() {
         executor.shutdownNow()
         super.onDestroy()
@@ -64,13 +69,10 @@ class HoursV5ReaderActivity : ThemedActivity() {
         val root = column().apply {
             setPadding(dp(22), dp(18), dp(22), dp(34))
         }
-        scroll.addView(root)
+        NativeUi.addCenteredRoot(scroll, root, 820)
 
         val title = value(EXTRA_TITLE, "Liturgia de las Horas")
-        root.addView(text("‹  $title", 23, R.color.wine, true).apply {
-            setPadding(0, dp(6), 0, dp(5))
-            setOnClickListener { finish() }
-        })
+        root.addView(NativeUi.header(this, title, true))
 
         val subtitle = value(EXTRA_SUBTITLE, "")
         if (subtitle.isNotEmpty()) {
@@ -143,9 +145,9 @@ class HoursV5ReaderActivity : ThemedActivity() {
                         return@runOnUiThread
                     }
                     status.text = when {
-                        finalComposed && usedCommon -> "Texto local · temporal/propio/común con procedencia explícita"
-                        finalComposed -> "Texto local · composición litúrgica semántica controlada"
-                        else -> "Texto local · lector nativo"
+                        finalComposed && usedCommon -> "Texto del oficio · temporal, propio y común"
+                        finalComposed -> "Texto del oficio · temporal y propio"
+                        else -> "Texto del oficio · sin conexión"
                     }
                     render(finalDocument)
                 }
@@ -209,8 +211,7 @@ class HoursV5ReaderActivity : ThemedActivity() {
 
     private fun roleBlock(role: String, title: String, body: String) {
         val card = column().apply {
-            setPadding(dp(16), dp(14), dp(16), dp(14))
-            setBackgroundResource(R.drawable.bg_button_secondary)
+            NativeUi.readerPanel(this)
         }
 
         card.addView(text(role, 10, R.color.muted, true).apply {
@@ -226,8 +227,7 @@ class HoursV5ReaderActivity : ThemedActivity() {
         if (body.trim().isNotEmpty()) {
             card.addView(text(body.trim(), 16, R.color.ink, false).apply {
                 setPadding(0, dp(7), 0, 0)
-                setLineSpacing(0f, 1.18f)
-                setTextIsSelectable(true)
+                NativeUi.readerBody(this@HoursV5ReaderActivity, this)
             })
         }
 

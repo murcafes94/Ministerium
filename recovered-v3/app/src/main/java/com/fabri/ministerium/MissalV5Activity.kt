@@ -25,8 +25,14 @@ class MissalV5Activity : ThemedActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeUtils.apply(this)
         super.onCreate(savedInstanceState)
+        savedInstanceState?.let { selectedDate.timeInMillis = it.getLong("selected-date", selectedDate.timeInMillis) }
         setContentView(buildScreen())
         refreshDay()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putLong("selected-date", selectedDate.timeInMillis)
+        super.onSaveInstanceState(outState)
     }
 
     private fun buildScreen(): View {
@@ -38,12 +44,9 @@ class MissalV5Activity : ThemedActivity() {
         val root = column().apply {
             setPadding(dp(20), dp(18), dp(20), dp(28))
         }
-        scroll.addView(root)
+        NativeUi.addCenteredRoot(scroll, root, 900)
 
-        root.addView(text("‹  Misal Diario Romano", 24, R.color.wine, true).apply {
-            setPadding(0, dp(6), 0, dp(8))
-            setOnClickListener { finish() }
-        })
+        root.addView(NativeUi.header(this, "Misal Diario Romano", false))
 
         root.addView(text("Misal · celebración del día", 13, R.color.muted, false).apply {
             setPadding(0, 0, 0, dp(18))
@@ -55,16 +58,19 @@ class MissalV5Activity : ThemedActivity() {
         }
 
         dateRow.addView(action("‹").apply {
+            NativeUi.dateControl(this, "Día anterior")
             setOnClickListener { moveDay(-1) }
         }, LinearLayout.LayoutParams(dp(48), dp(52)))
 
         dateView = text("", 18, R.color.ink, true).apply {
             gravity = Gravity.CENTER
+            NativeUi.dateControl(this, "Elegir fecha")
             setOnClickListener { chooseDate() }
         }
-        dateRow.addView(dateView, LinearLayout.LayoutParams(0, dp(52), 1f))
+        dateRow.addView(dateView, LinearLayout.LayoutParams(0, -2, 1f))
 
         dateRow.addView(action("›").apply {
+            NativeUi.dateControl(this, "Día siguiente")
             setOnClickListener { moveDay(1) }
         }, LinearLayout.LayoutParams(dp(48), dp(52)))
         root.addView(dateRow)

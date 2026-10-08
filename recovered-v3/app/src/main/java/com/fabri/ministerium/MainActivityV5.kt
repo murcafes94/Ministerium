@@ -9,10 +9,13 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Locale
 
 /** Main Ministerium 5 shell. Keeps every stable module reachable during migration. */
 class MainActivityV5 : ThemedActivity() {
@@ -26,6 +29,7 @@ class MainActivityV5 : ThemedActivity() {
     private var wine = 0
     private var gold = 0
     private lateinit var continueSection: LinearLayout
+    private lateinit var todayLabel: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         appliedThemeMode = ThemeUtils.getMode(this)
@@ -33,12 +37,12 @@ class MainActivityV5 : ThemedActivity() {
         super.onCreate(savedInstanceState)
 
         dark = ThemeUtils.isDark(this)
-        bg = Color.parseColor(if (dark) "#12100F" else "#F7F2EA")
-        cardColor = Color.parseColor(if (dark) "#211C1A" else "#FFFDF9")
-        ink = Color.parseColor(if (dark) "#F5EEE8" else "#2B211E")
-        muted = Color.parseColor(if (dark) "#BFAFA8" else "#756863")
-        wine = Color.parseColor(if (dark) "#D89AA3" else "#6D1E2B")
-        gold = Color.parseColor("#D2A84A")
+        bg = resources.getColor(R.color.cream)
+        cardColor = resources.getColor(R.color.paper)
+        ink = resources.getColor(R.color.ink)
+        muted = resources.getColor(R.color.muted)
+        wine = resources.getColor(R.color.wine)
+        gold = resources.getColor(R.color.gold)
 
         // Preserve behavior that existed in the stable shell. These calls are
         // idempotent and keep reminders/focus recovery alive after the V5 switch.
@@ -49,6 +53,7 @@ class MainActivityV5 : ThemedActivity() {
 
         setContentView(buildUi())
         bindContinueReading()
+        refreshTodayLabel()
     }
 
     override fun onResume() {
@@ -58,6 +63,7 @@ class MainActivityV5 : ThemedActivity() {
             return
         }
         if (::continueSection.isInitialized) bindContinueReading()
+        if (::todayLabel.isInitialized) refreshTodayLabel()
     }
 
     private fun buildUi(): View {
@@ -65,128 +71,107 @@ class MainActivityV5 : ThemedActivity() {
             isFillViewport = true
             setBackgroundColor(bg)
         }
-
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(18), dp(18), dp(32))
+            setPadding(dp(20), dp(14), dp(20), dp(32))
         }
-        scroll.addView(
-            root,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-        )
-
+        NativeUi.addCenteredRoot(scroll, root, 1040)
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(4), dp(6), dp(4), dp(18))
+            setPadding(0, dp(4), 0, dp(16))
         }
-        root.addView(header, matchWrap())
-
-        header.addView(text("✠", 28f, wine, Typeface.BOLD).apply {
-            gravity = Gravity.CENTER
-            background = rounded(gold, 16)
+        header.addView(icon(R.drawable.ic_cross_41, wine).apply {
+            background = rounded(if (dark) Color.parseColor("#403023") else Color.parseColor("#F0DFC0"), 16)
             contentDescription = "Ministerium"
-        }, LinearLayout.LayoutParams(dp(52), dp(52)))
-
+        }, LinearLayout.LayoutParams(dp(48), dp(48)))
         val titles = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(14), 0, 0, 0)
-            addView(text("MINISTERIUM", 24f, ink, Typeface.BOLD))
-            addView(text("Oración, liturgia y estudio de la fe", 12f, muted, Typeface.NORMAL))
+            setPadding(dp(12), 0, dp(4), 0)
+            addView(text("Ministerium", 25f, ink, Typeface.BOLD).apply { typeface = Typeface.create("serif", Typeface.BOLD) })
+            addView(text("Oración, liturgia y estudio", 12f, muted, Typeface.NORMAL))
         }
-        header.addView(titles, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-
-        header.addView(text(if (dark) "☀" else "◐", 22f, ink, Typeface.NORMAL).apply {
-            gravity = Gravity.CENTER
+        header.addView(titles, LinearLayout.LayoutParams(0, -2, 1f))
+        header.addView(icon(R.drawable.ic_theme, wine).apply {
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
             contentDescription = if (dark) "Activar modo claro" else "Activar modo oscuro"
-            isClickable = true
+            setBackgroundResource(R.drawable.bg_button_secondary)
             isFocusable = true
             setOnClickListener {
                 ThemeUtils.setMode(this@MainActivityV5, if (dark) ThemeUtils.LIGHT else ThemeUtils.DARK)
                 recreate()
             }
         }, LinearLayout.LayoutParams(dp(48), dp(48)))
+        root.addView(header, matchWrap())
 
-        root.addView(text("¿Qué quieres consultar?", 26f, ink, Typeface.BOLD), matchWrap())
-        root.addView(text(
-            "Todos los recursos estables siguen disponibles mientras avanza la interfaz 5.0.",
-            14f,
-            muted,
-            Typeface.NORMAL
-        ).apply {
-            setPadding(0, dp(6), 0, dp(12))
-        }, matchWrap())
-
-        val quick = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-        }
-        quick.addView(quickAction("Buscar") {
-            startActivity(Intent(this, SearchActivity::class.java))
-        }, quickParams(0, 4))
-        quick.addView(quickAction("Favoritos") {
-            startActivity(Intent(this, FavoritesActivity::class.java))
-        }, quickParams(4, 4))
-        quick.addView(quickAction("Avisos") { openReminders() }, quickParams(4, 0))
-        root.addView(quick, LinearLayout.LayoutParams(-1, -2).apply {
-            setMargins(0, 0, 0, dp(12))
-        })
-
-        continueSection = LinearLayout(this).apply {
+        val today = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            visibility = View.GONE
+            setPadding(dp(20), dp(20), dp(20), dp(20))
+            background = rounded(resources.getColor(R.color.wine_dark), 22)
         }
+        todayLabel = text("", 12f, Color.parseColor("#E8D5BD"), Typeface.BOLD)
+        today.addView(todayLabel)
+        today.addView(text("Tu oración de hoy", 26f, Color.WHITE, Typeface.BOLD).apply {
+            setPadding(0, dp(8), 0, dp(6))
+            typeface = Typeface.create("serif", Typeface.BOLD)
+        })
+        today.addView(text("Un espacio para rezar, leer y profundizar en la fe.", 14f, Color.parseColor("#EFE4DA"), Typeface.NORMAL))
+        val dailyActions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(16), 0, 0) }
+        dailyActions.addView(quickAction("Horas de hoy") { openToday() }, quickParams(0, 5))
+        dailyActions.addView(quickAction("Misal") { startActivity(Intent(this, MissalV5Activity::class.java)) }, quickParams(5, 0))
+        today.addView(dailyActions)
+        root.addView(today, LinearLayout.LayoutParams(-1, -2).apply { setMargins(0, 0, 0, dp(14)) })
+
+        val quick = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+        quick.addView(quickAction("Buscar", R.drawable.ic_search) { startActivity(Intent(this, SearchActivity::class.java)) }, quickParams(0, 4))
+        quick.addView(quickAction("Favoritos", R.drawable.ic_star_41) { startActivity(Intent(this, FavoritesActivity::class.java)) }, quickParams(4, 4))
+        quick.addView(quickAction("Avisos", R.drawable.ic_bell_41) { openReminders() }, quickParams(4, 0))
+        root.addView(quick, matchWrap())
+        continueSection = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; visibility = View.GONE }
         root.addView(continueSection, matchWrap())
 
-        root.addView(sectionLabel("LITURGIA Y ESCRITURA"))
-        root.addView(card("B", "Biblia", "Biblia disponible sin conexión") {
-            startActivity(Intent(this, BibleActivity::class.java))
-        })
-        root.addView(card("M", "Misal", "Celebración del día y formularios") {
-            startActivity(Intent(this, MissalV5Activity::class.java))
-        })
-        root.addView(card("H", "Liturgia de las Horas", "Oficio del día · lector nativo") { openToday() })
-        root.addView(card("L", "Lecturas de la Misa", "Leccionario y sincronización local") {
-            startActivity(Intent(this, MassReadingsActivity::class.java))
-        })
-        root.addView(card("C", "Calendario litúrgico", "Celebraciones, colores y calendario de Ecuador") {
-            startActivity(Intent(this, LiturgicalCalendarActivity::class.java))
-        })
-        root.addView(card("LA", "Liturgia Horarum", "Liturgia de las Horas en latín") {
-            startActivity(Intent(this, LatinHoursActivity::class.java))
-        })
-
-        root.addView(sectionLabel("ORACIÓN Y PASTORAL"))
-        root.addView(card("O", "Oraciones", "Oraciones básicas y recursos de oración") {
-            startActivity(Intent(this, BasicPrayersActivity::class.java))
-        })
-        root.addView(card("D", "Devocionario", "Devociones, examen y oración personal") {
-            startActivity(Intent(this, DevotionalHubActivity::class.java))
-        })
-        root.addView(card("R", "Rituales", "Bautismo, enfermos, Viático y exequias") {
-            startActivity(Intent(this, PastoralActivity::class.java))
-        })
-        root.addView(card("+", "Bendicional", "Bendiciones para diversas circunstancias") {
-            openBlessings()
-        })
-
-        root.addView(sectionLabel("FORMACIÓN Y ESTUDIO"))
-        root.addView(card("M", "Magisterio y Derecho", "Documentos, catecismo y derecho canónico") {
-            startActivity(Intent(this, MagisteriumActivity::class.java))
-        })
-        root.addView(card("E", "Mi estudio", "Notas, reflexiones y material personal") {
-            startActivity(Intent(this, MyStudyActivity::class.java))
-        })
-
+        addModules(root, "LITURGIA Y ESCRITURA", listOf(
+            card(R.drawable.ic_book_41, "Biblia", "Escritura y planes de lectura") { startActivity(Intent(this, BibleActivity::class.java)) },
+            card(R.drawable.ic_cross_41, "Misal", "Celebración del día y formularios") { startActivity(Intent(this, MissalV5Activity::class.java)) },
+            card(R.drawable.ic_sun_41, "Liturgia de las Horas", "Oración del día") { openToday() },
+            card(R.drawable.ic_document_41, "Lecturas de la Misa", "Leccionario del día") { startActivity(Intent(this, MassReadingsActivity::class.java)) },
+            card(R.drawable.ic_calendar, "Calendario litúrgico", "Celebraciones de Ecuador") { startActivity(Intent(this, LiturgicalCalendarActivity::class.java)) },
+            card(R.drawable.ic_book_41, "Liturgia Horarum", "Liturgia de las Horas en latín") { startActivity(Intent(this, LatinHoursActivity::class.java)) }
+        ))
+        addModules(root, "ORACIÓN Y PASTORAL", listOf(
+            card(R.drawable.ic_cross_41, "Oraciones", "Oraciones básicas") { startActivity(Intent(this, BasicPrayersActivity::class.java)) },
+            card(R.drawable.ic_star_41, "Devocionario", "Devociones y oración personal") { startActivity(Intent(this, DevotionalHubActivity::class.java)) },
+            card(R.drawable.ic_cross_41, "Rituales", "Sacramentos y atención pastoral") { startActivity(Intent(this, PastoralActivity::class.java)) },
+            card(R.drawable.ic_cross_41, "Bendicional", "Bendiciones") { openBlessings() }
+        ))
+        addModules(root, "FORMACIÓN Y ESTUDIO", listOf(
+            card(R.drawable.ic_document_41, "Magisterio y Derecho", "Documentos, catecismo y derecho canónico") { startActivity(Intent(this, MagisteriumActivity::class.java)) },
+            card(R.drawable.ic_edit_41, "Mi estudio", "Notas y reflexiones personales") { startActivity(Intent(this, MyStudyActivity::class.java)) }
+        ))
         root.addView(sectionLabel("APLICACIÓN"))
-        root.addView(card("⚙", "Ajustes", "Tema, lectura, márgenes, recordatorios y actualizaciones") {
-            startActivity(Intent(this, SettingsActivity::class.java))
-        })
-
+        root.addView(card(R.drawable.ic_settings_41, "Ajustes", "Apariencia, lectura, respaldos y recordatorios") { startActivity(Intent(this, SettingsActivity::class.java)) })
         return scroll
+    }
+
+    private fun refreshTodayLabel() {
+        todayLabel.text = SimpleDateFormat("EEEE, d 'de' MMMM", Locale("es", "EC")).format(Calendar.getInstance().time)
+    }
+
+    private fun addModules(root: LinearLayout, title: String, cards: List<View>) {
+        root.addView(sectionLabel(title))
+        // Large text keeps one column so labels do not become squeezed on tablets.
+        if (resources.configuration.screenWidthDp < 600 || resources.configuration.fontScale > 1.3f) {
+            cards.forEach { root.addView(it) }
+            return
+        }
+        cards.chunked(2).forEach { pair ->
+            val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.TOP }
+            pair.forEachIndexed { index, view ->
+                row.addView(view, LinearLayout.LayoutParams(0, -2, 1f).apply { setMargins(if (index == 0) 0 else dp(6), dp(5), if (index == 0) dp(6) else 0, dp(5)) })
+            }
+            if (pair.size == 1) row.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+            root.addView(row, matchWrap())
+        }
     }
 
     private fun bindContinueReading() {
@@ -199,23 +184,30 @@ class MainActivityV5 : ThemedActivity() {
         }
         continueSection.visibility = View.VISIBLE
         continueSection.addView(sectionLabel("CONTINUAR LEYENDO"))
-        continueSection.addView(card("›", entry.title, entry.module + if (entry.scrollY > 0) " · posición guardada" else "") {
+        continueSection.addView(card(R.drawable.ic_book_41, entry.title, entry.module + if (entry.scrollY > 0) " · posición guardada" else "") {
             if (!ContinueReadingStore.open(this, entry)) {
                 continueSection.visibility = View.GONE
             }
         })
     }
 
-    private fun quickAction(label: String, action: () -> Unit) = text(label, 14f, wine, Typeface.BOLD).apply {
+    private fun quickAction(label: String, iconRes: Int = 0, action: () -> Unit) = text(label, 14f, wine, Typeface.BOLD).apply {
         gravity = Gravity.CENTER
-        background = rounded(cardColor, 14)
-        minHeight = dp(48)
-        isClickable = true
+        setBackgroundResource(R.drawable.bg_button_secondary)
+        minHeight = dp(52)
+        setPadding(dp(8), dp(8), dp(8), dp(8))
+        if (iconRes != 0) {
+            val drawable = resources.getDrawable(iconRes, theme).mutate()
+            drawable.setTint(wine)
+            drawable.setBounds(0, 0, dp(18), dp(18))
+            setCompoundDrawables(null, drawable, null, null)
+            compoundDrawablePadding = dp(3)
+        }
         isFocusable = true
         setOnClickListener { action() }
     }
 
-    private fun quickParams(left: Int, right: Int) = LinearLayout.LayoutParams(0, dp(48), 1f).apply {
+    private fun quickParams(left: Int, right: Int) = LinearLayout.LayoutParams(0, -2, 1f).apply {
         setMargins(dp(left), 0, dp(right), 0)
     }
 
@@ -224,13 +216,13 @@ class MainActivityV5 : ThemedActivity() {
         setPadding(dp(2), dp(14), 0, dp(6))
     }
 
-    private fun card(icon: String, title: String, subtitle: String, action: () -> Unit): View {
+    private fun card(iconRes: Int, title: String, subtitle: String, action: () -> Unit): View {
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(16), dp(15), dp(16), dp(15))
-            background = rounded(cardColor, 16)
-            elevation = dp(1).toFloat()
+            setBackgroundResource(R.drawable.bg_card)
+            minimumHeight = dp(94)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -241,12 +233,8 @@ class MainActivityV5 : ThemedActivity() {
             setOnClickListener { action() }
         }
 
-        row.addView(text(icon, if (icon.length > 1) 14f else 20f, wine, Typeface.BOLD).apply {
-            gravity = Gravity.CENTER
-            background = rounded(
-                if (dark) Color.parseColor("#332821") else Color.parseColor("#F2E2B9"),
-                14
-            )
+        row.addView(icon(iconRes, wine).apply {
+            background = rounded(if (dark) Color.parseColor("#403023") else Color.parseColor("#F0DFC0"), 14)
         }, LinearLayout.LayoutParams(dp(48), dp(48)))
 
         val body = LinearLayout(this).apply {
@@ -260,7 +248,7 @@ class MainActivityV5 : ThemedActivity() {
             }
         }
         row.addView(body, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        row.addView(text("›", 28f, gold, Typeface.NORMAL), wrapWrap())
+        row.addView(icon(R.drawable.ic_chevron_right, wine).apply { setPadding(0, 0, 0, 0) }, LinearLayout.LayoutParams(dp(24), dp(24)))
         return row
     }
 
@@ -283,6 +271,13 @@ class MainActivityV5 : ThemedActivity() {
         startActivity(Intent(this, RitualCatalogActivity::class.java).apply {
             putExtra(RitualCatalogActivity.EXTRA_DOCUMENT_ID, RitualRepository.COMMON_BLESSINGS_ID)
         })
+    }
+
+    private fun icon(resource: Int, tint: Int) = ImageView(this).apply {
+        setImageResource(resource)
+        setColorFilter(tint)
+        setPadding(dp(12), dp(12), dp(12), dp(12))
+        importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
     }
 
     private fun text(value: String, sp: Float, color: Int, style: Int) = TextView(this).apply {

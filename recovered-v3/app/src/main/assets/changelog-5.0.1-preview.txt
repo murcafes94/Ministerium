@@ -1,0 +1,8 @@
+Ministerium 5.0.1 preview
+
+• Portada renovada con iconos originales, accesos rápidos y disposición para tablet.
+• Mejor contraste en modo oscuro; identidad burdeos y dorado.
+• Controles accesibles para volver, elegir fechas y preferencias de lectura.
+• Los lectores nativos de Horas y Misal aplican tamaño, fuente, interlineado y márgenes.
+• El Misal conserva la fecha al recrear la pantalla.
+• Se mantienen los datos personales y los módulos de Ministerium 5.

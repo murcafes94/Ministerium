@@ -22,4 +22,5 @@
     <color name="ministerium_accent">@color/wine</color>
     <color name="ministerium_accent_secondary">@color/gold</color>
     <color name="ministerium_divider">@color/line</color>
+    <color name="button_fill">#6E1D2A</color>
 </resources>

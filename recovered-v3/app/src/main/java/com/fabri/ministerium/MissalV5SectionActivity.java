@@ -61,6 +61,11 @@ public class MissalV5SectionActivity extends ThemedActivity {
         if (!"word".equals(sectionId)) loadDailyProper();
     }
 
+    @Override protected void onResume() {
+        super.onResume();
+        if (root != null) NativeUi.refreshReader(root);
+    }
+
     private View buildScreen() {
         String fallbackTitle = value(EXTRA_TITLE, "Misal");
         String title = semanticSection == null ? fallbackTitle : semanticSection.getTitle();
@@ -71,12 +76,9 @@ public class MissalV5SectionActivity extends ThemedActivity {
 
         root = column();
         root.setPadding(dp(22), dp(18), dp(22), dp(32));
-        scroll.addView(root);
+        NativeUi.addCenteredRoot(scroll, root, 820);
 
-        TextView back = text("‹  " + title, 23, R.color.wine, true);
-        back.setPadding(0, dp(6), 0, dp(6));
-        back.setOnClickListener(v -> finish());
-        root.addView(back);
+        root.addView(NativeUi.header(this, title, true));
 
         TextView context = text(dayLabel() + "\n" + celebration, 13, R.color.muted, false);
         context.setPadding(0, 0, 0, dp(8));
@@ -92,7 +94,7 @@ public class MissalV5SectionActivity extends ThemedActivity {
         sourceStatus.setPadding(0, 0, 0, dp(18));
         root.addView(sourceStatus);
 
-        TextView badge = text("MISAL · LECTOR NATIVO", 11, R.color.wine, true);
+        TextView badge = text("MISAL · ORACIÓN Y CELEBRACIÓN", 11, R.color.wine, true);
         badge.setLetterSpacing(.10f);
         badge.setPadding(0, 0, 0, dp(20));
         root.addView(badge);
@@ -207,8 +209,7 @@ public class MissalV5SectionActivity extends ThemedActivity {
 
     private TextView roleBlock(String role, String title, CharSequence body) {
         LinearLayout card = column();
-        card.setPadding(dp(16), dp(14), dp(16), dp(14));
-        card.setBackgroundResource(R.drawable.bg_button_secondary);
+        NativeUi.readerPanel(card);
         TextView roleView = text(role, 10, R.color.muted, true);
         roleView.setLetterSpacing(.10f);
         card.addView(roleView);
@@ -218,8 +219,7 @@ public class MissalV5SectionActivity extends ThemedActivity {
         TextView value = text("", 15, R.color.ink, false);
         value.setText(body == null ? "" : body);
         value.setPadding(0, dp(6), 0, 0);
-        value.setLineSpacing(0, 1.12f);
-        value.setTextIsSelectable(true);
+        NativeUi.readerBody(this, value);
         card.addView(value);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.setMargins(0, 0, 0, dp(10));
