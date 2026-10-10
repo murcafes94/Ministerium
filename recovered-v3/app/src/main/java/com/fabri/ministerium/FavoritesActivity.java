@@ -8,7 +8,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,10 +34,10 @@ public class FavoritesActivity extends ThemedActivity {
         Set<String> saved = FavoritesStore.all(this);
         keys.clear();
         keys.addAll(saved);
-        keys.sort(Comparator.naturalOrder());
+        java.util.Collections.sort(keys);
         itemKeys.clear();
         itemKeys.addAll(FavoritesStore.allItems(this));
-        itemKeys.sort(Comparator.naturalOrder());
+        java.util.Collections.sort(itemKeys);
 
         List<Map<String, String>> rows = new ArrayList<>();
         List<Runnable> actions = new ArrayList<>();

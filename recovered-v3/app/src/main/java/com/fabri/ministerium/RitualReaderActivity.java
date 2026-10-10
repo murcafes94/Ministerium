@@ -54,13 +54,13 @@ public class RitualReaderActivity extends ThemedActivity {
     private void configureReadingTypography(TextView view) {
         view.setLineSpacing(0f, 1.12f);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            view.setBreakStrategy(Layout.BREAK_STRATEGY_HIGH_QUALITY);
+            view.setBreakStrategy(android.graphics.text.LineBreaker.BREAK_STRATEGY_HIGH_QUALITY);
             view.setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_NORMAL);
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // Las líneas litúrgicas breves terminan como párrafos independientes,
             // por lo que permanecen naturales; el beneficio se aplica al cuerpo largo.
-            view.setJustificationMode(Layout.JUSTIFICATION_MODE_INTER_WORD);
+            view.setJustificationMode(android.graphics.text.LineBreaker.JUSTIFICATION_MODE_INTER_WORD);
         }
     }
 

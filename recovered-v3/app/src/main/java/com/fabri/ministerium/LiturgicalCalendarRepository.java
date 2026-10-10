@@ -229,7 +229,9 @@ public final class LiturgicalCalendarRepository {
                     String psalter = matcher.find() ? matcher.group(1) : "";
                     LiturgicalEvent event = new LiturgicalEvent(
                             date, cleanSummary, rank, psalter, color);
-                    result.computeIfAbsent(date, ignored -> new ArrayList<>()).add(event);
+                    List<LiturgicalEvent> events = result.get(date);
+                    if (events == null) { events = new ArrayList<>(); result.put(date, events); }
+                    events.add(event);
                 }
                 inEvent = false;
                 continue;

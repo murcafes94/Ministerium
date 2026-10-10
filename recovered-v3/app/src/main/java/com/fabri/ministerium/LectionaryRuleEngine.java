@@ -120,7 +120,7 @@ public final class LectionaryRuleEngine {
     }
 
     static String sundayCycle(int liturgicalYear) {
-        int remainder = Math.floorMod(liturgicalYear, 3);
+        int remainder = ((liturgicalYear % 3) + 3) % 3;
         if (remainder == 1) return "A";
         if (remainder == 2) return "B";
         return "C";

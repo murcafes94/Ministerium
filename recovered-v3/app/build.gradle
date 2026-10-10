@@ -35,8 +35,8 @@ android {
         // 4.1 contract lineage markers retained for the legacy release validator:
         // versionCode 41
         // versionName '4.1.0'
-        versionCode 53
-        versionName '5.0.3-preview'
+        versionCode 54
+        versionName '5.0.4-preview'
     }
 
     buildTypes {
@@ -63,10 +63,9 @@ android {
         jvmTarget = '1.8'
     }
 
-    // Lint remains enabled and its report is printed by CI. It must not prevent
-    // generation of a debug/test APK; release validation can enforce stricter gates.
+    // Lint errors block CI; warnings remain available in the artifact report.
     lintOptions {
-        abortOnError false
+        abortOnError true
         checkReleaseBuilds false
     }
 }

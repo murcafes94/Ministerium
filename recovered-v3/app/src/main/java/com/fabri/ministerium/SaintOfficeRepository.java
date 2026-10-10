@@ -12,7 +12,6 @@ import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -72,7 +71,7 @@ public final class SaintOfficeRepository {
             located.add(new LocatedChoice(at, new CommonOfficeChoice(candidate.title,
                     entry.filePath, entry.fragment)));
         }
-        Collections.sort(located, Comparator.comparingInt(value -> value.position));
+        Collections.sort(located, (left, right) -> Integer.compare(left.position, right.position));
         List<CommonOfficeChoice> result = new ArrayList<>();
         for (LocatedChoice choice : located) result.add(choice.choice);
         return result;

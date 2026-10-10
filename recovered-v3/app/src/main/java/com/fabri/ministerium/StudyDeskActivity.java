@@ -14,7 +14,6 @@ import android.widget.Toast;
 import java.io.OutputStream;
 import java.text.Normalizer;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -91,7 +90,7 @@ public class StudyDeskActivity extends ThemedActivity {
                         entry.title.isEmpty() ? entry.reference : entry.title,
                         entry.body.isEmpty() ? entry.quote : entry.body, null, entry));
             }
-            found.sort(Comparator.comparing(value -> value.source));
+            java.util.Collections.sort(found, (left, right) -> left.source.compareTo(right.source));
             runOnUiThread(() -> display(found));
         });
     }

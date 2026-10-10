@@ -6,7 +6,6 @@ import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -78,7 +77,7 @@ public final class BibleChapterDocument {
         File[] siblings = first.getParentFile().listFiles((directory, name) ->
                 name.toLowerCase(Locale.ROOT).endsWith(".html"));
         if (siblings == null) return result;
-        Arrays.sort(siblings, Comparator.comparing(File::getName));
+        Arrays.sort(siblings, (left, right) -> left.getName().compareTo(right.getName()));
         int firstAt = indexOf(siblings, first.getName());
         int lastAt = indexOf(siblings, last.getName());
         if (firstAt < 0 || lastAt <= firstAt) return result;
