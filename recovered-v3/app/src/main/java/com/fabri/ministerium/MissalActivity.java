@@ -55,6 +55,7 @@ public class MissalActivity extends ThemedActivity {
     @Override protected void onCreate(Bundle savedInstanceState) {
         ThemeUtils.apply(this);
         super.onCreate(savedInstanceState);
+        if (LegacyMissalRedirect.open(this)) return;
         setContentView(R.layout.activity_missal);
 
         Calendar now = Calendar.getInstance();

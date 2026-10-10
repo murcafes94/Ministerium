@@ -12,6 +12,8 @@ import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import org.json.JSONObject;
+import org.json.JSONArray;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Collections;
@@ -32,6 +34,8 @@ public class HoursV5Activity extends ThemedActivity {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Map<String, HourEntry> hours = new HashMap<>();
     private final Map<String, HourEntry> temporalHours = new HashMap<>();
+    private int requestGeneration;
+    private String restoredOptionId = "";
     private Calendar selectedDate;
     private LiturgicalDay currentDay;
     private HoursOfficeSelection officeSelection;
@@ -42,6 +46,10 @@ public class HoursV5Activity extends ThemedActivity {
     private TextView celebrationView;
     private TextView detailsView;
     private TextView sourceView;
+    private TextView sourceChoice;
+    private JSONObject dailyDay;
+    private JSONObject dailyOption;
+    private boolean preferLibrary;
     private TextView officeChoice;
     private TextView commonChoice;
     private LinearLayout hourList;
@@ -50,9 +58,11 @@ public class HoursV5Activity extends ThemedActivity {
     @Override protected void onCreate(Bundle savedInstanceState) {
         ThemeUtils.apply(this);
         super.onCreate(savedInstanceState);
+        preferLibrary = getSharedPreferences("hours_source_v5", MODE_PRIVATE).getBoolean("library", false);
         selectedDate = selectedDate();
         if (savedInstanceState != null && savedInstanceState.containsKey(STATE_SELECTED_DATE)) {
             selectedDate.setTimeInMillis(savedInstanceState.getLong(STATE_SELECTED_DATE));
+            restoredOptionId = savedInstanceState.getString("daily-option", "");
         }
         setContentView(buildScreen());
         loadDate();
@@ -60,6 +70,7 @@ public class HoursV5Activity extends ThemedActivity {
 
     @Override protected void onSaveInstanceState(Bundle outState) {
         if (selectedDate != null) outState.putLong(STATE_SELECTED_DATE, selectedDate.getTimeInMillis());
+        if (dailyOption != null) outState.putString("daily-option", dailyOption.optString("id"));
         super.onSaveInstanceState(outState);
     }
 
@@ -101,6 +112,14 @@ public class HoursV5Activity extends ThemedActivity {
         sourceView = text("", 12, R.color.muted, false);
         sourceView.setPadding(0, dp(4), 0, dp(10));
         root.addView(sourceView);
+        sourceChoice = text("Fuente de los oficios", 15, R.color.wine, true);
+        NativeUi.dateControl(sourceChoice, "Elegir fuente de los oficios");
+        sourceChoice.setGravity(Gravity.CENTER);
+        sourceChoice.setOnClickListener(v -> new AlertDialog.Builder(this).setTitle("Fuente de los oficios")
+                .setSingleChoiceItems(new String[]{"Repositorio diario · sin conexión", "Biblioteca local · calendario de Ecuador"}, preferLibrary ? 1 : 0,
+                    (dialog, which) -> { preferLibrary = which == 1; getSharedPreferences("hours_source_v5", MODE_PRIVATE).edit().putBoolean("library", preferLibrary).apply(); dialog.dismiss(); loadDate(); })
+                .setNegativeButton("Cancelar", null).show());
+        root.addView(sourceChoice);
         officeChoice = text("Elegir oficio", 15, R.color.wine, true);
         officeChoice.setMinHeight(dp(52));
         officeChoice.setGravity(Gravity.CENTER);
@@ -138,9 +157,21 @@ public class HoursV5Activity extends ThemedActivity {
     }
 
     private void loadDate() {
+        final int generation = ++requestGeneration;
         final Calendar request = (Calendar) selectedDate.clone();
         final String requestKey = key(request);
         renderDate();
+        dailyDay = preferLibrary ? null : HoursDailyRepository.day(this, request);
+        dailyOption = dailyDay == null ? null : dailyDay.optJSONArray("options").optJSONObject(0);
+        if (dailyOption != null) {
+            JSONArray options = dailyDay.optJSONArray("options");
+            for (int i = 0; i < options.length(); i++) if (restoredOptionId.equals(options.optJSONObject(i).optString("id"))) dailyOption = options.optJSONObject(i);
+            restoredOptionId = "";
+            renderDailyDay(); return;
+        }
+        sourceChoice.setText("Fuente: biblioteca local · cambiar");
+        officeChoice.setVisibility(View.VISIBLE);
+        commonChoice.setVisibility(View.VISIBLE);
         progress.setVisibility(View.VISIBLE);
         hourList.removeAllViews();
         officeChoice.setEnabled(false);
@@ -160,16 +191,17 @@ public class HoursV5Activity extends ThemedActivity {
                 List<CommonOfficeChoice> commons = commonChoicesFor(chosen);
                 CommonOfficeChoice initialCommon = commons.size() == 1 ? commons.get(0) : null;
                 runOnUiThread(() -> {
-                    if (!requestKey.equals(key(selectedDate)) || isFinishing()) return;
+                    if (generation != requestGeneration || !requestKey.equals(key(selectedDate)) || isFinishing()) return;
                     currentDay = day; officeSelection = resolved; selectedOffice = chosen; commonChoices = commons; selectedCommon = initialCommon;
                     applyTemporalEntries(temporalEntries); applyEntries(entries); renderResolvedDay();
                 });
-            } catch (Exception error) { runOnUiThread(() -> showResolveError(requestKey)); }
+            } catch (Exception error) { runOnUiThread(() -> showResolveError(requestKey, generation)); }
         });
     }
 
     private void loadSelectedOffice(HoursOfficeOption option) {
         if (option == null || currentDay == null) return;
+        final int generation = ++requestGeneration;
         final String requestKey = key(selectedDate);
         final Calendar request = (Calendar) selectedDate.clone();
         progress.setVisibility(View.VISIBLE); hourList.removeAllViews(); commonChoice.setEnabled(false); commonChoice.setAlpha(.55f);
@@ -179,12 +211,12 @@ public class HoursV5Activity extends ThemedActivity {
                 List<CommonOfficeChoice> commons = commonChoicesFor(option);
                 CommonOfficeChoice initialCommon = commons.size() == 1 ? commons.get(0) : null;
                 runOnUiThread(() -> {
-                    if (!requestKey.equals(key(selectedDate)) || isFinishing()) return;
+                    if (generation != requestGeneration || !requestKey.equals(key(selectedDate)) || isFinishing()) return;
                     selectedOffice = option; commonChoices = commons; selectedCommon = initialCommon; applyEntries(entries); renderResolvedDay();
                 });
             } catch (Exception error) {
                 runOnUiThread(() -> {
-                    if (!requestKey.equals(key(selectedDate)) || isFinishing()) return;
+                    if (generation != requestGeneration || !requestKey.equals(key(selectedDate)) || isFinishing()) return;
                     selectedOffice = option; commonChoices = Collections.emptyList(); selectedCommon = null; hours.clear(); progress.setVisibility(View.GONE);
                     sourceView.setText("El formulario elegido no tiene contenido local verificable. No se sustituirá con otro oficio.");
                     renderHours(); updateOfficeChooser(); updateCommonChooser();
@@ -200,8 +232,8 @@ public class HoursV5Activity extends ThemedActivity {
     }
     private void applyEntries(List<HourEntry> entries) { hours.clear(); for (HourEntry entry : entries) hours.put(entry.key, entry); }
     private void applyTemporalEntries(List<HourEntry> entries) { temporalHours.clear(); for (HourEntry entry : entries) temporalHours.put(entry.key, entry); }
-    private void showResolveError(String requestKey) {
-        if (!requestKey.equals(key(selectedDate)) || isFinishing()) return;
+    private void showResolveError(String requestKey, int generation) {
+        if (generation != requestGeneration || !requestKey.equals(key(selectedDate)) || isFinishing()) return;
         currentDay = null; officeSelection = null; selectedOffice = null; commonChoices = Collections.emptyList(); selectedCommon = null; hours.clear(); temporalHours.clear();
         celebrationView.setText("Oficio del día"); detailsView.setText("No se pudo resolver el oficio para esta fecha."); sourceView.setText("Ministerium no mezclará contenido de otra celebración como sustitución."); progress.setVisibility(View.GONE);
         updateOfficeChooser(); updateCommonChooser(); renderHours();
@@ -237,6 +269,15 @@ public class HoursV5Activity extends ThemedActivity {
         commonChoice.setEnabled(count > 1); commonChoice.setAlpha(count > 1 ? 1f : .75f);
     }
     private void chooseOffice() {
+        if (dailyDay != null && dailyOption != null) {
+            JSONArray options = dailyDay.optJSONArray("options");
+            String[] labels = new String[options.length()];
+            int checked = 0;
+            for (int i = 0; i < labels.length; i++) { labels[i] = options.optJSONObject(i).optString("title"); if (options.optJSONObject(i).optString("id").equals(dailyOption.optString("id"))) checked = i; }
+            new AlertDialog.Builder(this).setTitle("Oficios publicados para esta fecha").setSingleChoiceItems(labels, checked,
+                (dialog, which) -> { dailyOption = options.optJSONObject(which); dialog.dismiss(); renderDailyDay(); }).setNegativeButton("Cancelar", null).show();
+            return;
+        }
         if (officeSelection == null || officeSelection.getOptions().size() <= 1) return;
         List<HoursOfficeOption> options = officeSelection.getOptions(); String[] labels = new String[options.size()]; int checked = 0;
         for (int i = 0; i < options.size(); i++) { HoursOfficeOption option = options.get(i); labels[i] = option.getTitle() + "\n" + option.getSubtitle(); if (selectedOffice != null && option.getOffice() == selectedOffice.getOffice()) checked = i; }
@@ -248,8 +289,41 @@ public class HoursV5Activity extends ThemedActivity {
         for (int i = 0; i < commonChoices.size(); i++) { labels[i] = commonChoices.get(i).title; if (selectedCommon == commonChoices.get(i)) checked = i; }
         new AlertDialog.Builder(this).setTitle("Elegir común").setSingleChoiceItems(labels, checked, (dialog, which) -> { selectedCommon = commonChoices.get(which); dialog.dismiss(); renderResolvedDay(); }).setNeutralButton("Sin común", (dialog, which) -> { selectedCommon = null; renderResolvedDay(); }).setNegativeButton("Cancelar", null).show();
     }
+    private void renderDailyDay() {
+        progress.setVisibility(View.GONE);
+        selectedOffice = null; selectedCommon = null; hours.clear(); temporalHours.clear();
+        sourceChoice.setText("Fuente: repositorio diario · cambiar");
+        celebrationView.setText(dailyOption.optString("title", "Oficio del día"));
+        detailsView.setText("Oficios publicados para " + dailyDay.optString("date"));
+        sourceView.setText("Liturgiadelashoras.github.io · contenido guardado sin conexión. Las celebraciones locales se consultan en el calendario de Ecuador.");
+        int count = dailyDay.optJSONArray("options").length();
+        officeChoice.setVisibility(count > 1 ? View.VISIBLE : View.GONE);
+        officeChoice.setEnabled(count > 1); officeChoice.setAlpha(1f);
+        officeChoice.setText("Elegir celebración (" + count + " opciones)");
+        commonChoice.setVisibility(View.GONE);
+        renderHours();
+    }
+
     private void renderHours() {
         hourList.removeAllViews();
+        if (dailyOption != null) {
+            JSONObject published = dailyOption.optJSONObject("hours");
+            for (HoursV5Item item : HoursV5Semantic.items()) {
+                final String asset = published.optString(item.getKey());
+                LinearLayout card = column(); card.setPadding(dp(18), dp(16), dp(18), dp(16)); card.setBackgroundResource(R.drawable.bg_card);
+                card.addView(text(item.getTitle(), 18, asset.isEmpty() ? R.color.muted : R.color.ink, true));
+                TextView sub = text(asset.isEmpty() ? "No publicado para esta celebración" : item.getSummary(), 13, R.color.muted, false); sub.setPadding(0, dp(4), 0, 0); card.addView(sub);
+                card.setEnabled(!asset.isEmpty()); card.setAlpha(asset.isEmpty() ? .55f : 1f); card.setFocusable(!asset.isEmpty());
+                if (!asset.isEmpty()) card.setOnClickListener(v -> {
+                    Intent intent = new Intent(this, HoursV5ReaderActivity.class);
+                    intent.putExtra(HoursDailyRepository.EXTRA_ASSET, asset); intent.putExtra(HoursDailyRepository.EXTRA_DATE, dailyDay.optString("date"));
+                    intent.putExtra(HoursV5ReaderActivity.EXTRA_TITLE, item.getTitle()); intent.putExtra(HoursV5ReaderActivity.EXTRA_SUBTITLE, dateView.getText().toString());
+                    startActivity(intent);
+                });
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2); lp.setMargins(0, 0, 0, dp(9)); hourList.addView(card, lp);
+            }
+            return;
+        }
         for (HoursV5Item item : HoursV5Semantic.items()) {
             HourEntry entry = hours.get(item.getKey()); boolean temporalFallback = false;
             if (entry == null && canUseMemorialTemporalFallback()) { entry = temporalHours.get(item.getKey()); temporalFallback = entry != null; }
@@ -264,7 +338,7 @@ public class HoursV5Activity extends ThemedActivity {
     private boolean canUseMemorialTemporalFallback() { if (selectedOffice == null || selectedOffice.getSource() != HoursOfficeSource.PROPER) return false; String rank = selectedOffice.getOffice().liturgicalRank; return "M".equals(rank) || "m".equals(rank) || "m*".equals(rank); }
     private void openHour(HourEntry entry, boolean temporalFallback) {
         if (entry == null) return;
-        if ("compline".equals(entry.key)) { Intent intent = new Intent(this, ComplineReaderActivity.class); intent.putExtra(ComplineReaderActivity.EXTRA_YEAR, selectedDate.get(Calendar.YEAR)); intent.putExtra(ComplineReaderActivity.EXTRA_MONTH, selectedDate.get(Calendar.MONTH)); intent.putExtra(ComplineReaderActivity.EXTRA_DAY, selectedDate.get(Calendar.DAY_OF_MONTH)); startActivity(intent); return; }
+        if ("compline".equals(entry.key)) { Intent intent = new Intent(this, HoursV5ComplineActivity.class); intent.putExtra(HoursV5ComplineActivity.EXTRA_YEAR, selectedDate.get(Calendar.YEAR)); intent.putExtra(HoursV5ComplineActivity.EXTRA_MONTH, selectedDate.get(Calendar.MONTH)); intent.putExtra(HoursV5ComplineActivity.EXTRA_DAY, selectedDate.get(Calendar.DAY_OF_MONTH)); startActivity(intent); return; }
         Intent intent = new Intent(this, HoursV5ReaderActivity.class);
         intent.putExtra(HoursV5ReaderActivity.EXTRA_VOLUME_ID, entry.volume.id); intent.putExtra(HoursV5ReaderActivity.EXTRA_FILE_PATH, entry.filePath); intent.putExtra(HoursV5ReaderActivity.EXTRA_FRAGMENT, entry.fragment); intent.putExtra(HoursV5ReaderActivity.EXTRA_TITLE, entry.title); intent.putExtra(HoursV5ReaderActivity.EXTRA_SUBTITLE, entry.subtitle); intent.putExtra(HoursV5ReaderActivity.EXTRA_SCROLL_TEXT, entry.scrollText); intent.putExtra(HoursV5ReaderActivity.EXTRA_HOUR_KEY, entry.key);
         if (!temporalFallback && selectedOffice != null && selectedOffice.getSource() == HoursOfficeSource.PROPER) {
@@ -276,7 +350,11 @@ public class HoursV5Activity extends ThemedActivity {
         startActivity(intent);
     }
     private void openMassWord() {
-        Intent intent = new Intent(this, MissalV5SectionActivity.class); intent.putExtra(MissalV5SectionActivity.EXTRA_SECTION, "word"); intent.putExtra(MissalV5SectionActivity.EXTRA_TITLE, "Liturgia de la Palabra"); intent.putExtra(MissalV5SectionActivity.EXTRA_YEAR, selectedDate.get(Calendar.YEAR)); intent.putExtra(MissalV5SectionActivity.EXTRA_MONTH, selectedDate.get(Calendar.MONTH)); intent.putExtra(MissalV5SectionActivity.EXTRA_DAY, selectedDate.get(Calendar.DAY_OF_MONTH)); intent.putExtra(MissalV5SectionActivity.EXTRA_CELEBRATION, selectedOffice == null ? (currentDay == null ? "Celebración del día" : currentDay.celebration) : selectedOffice.getTitle()); startActivity(intent);
+        Intent intent = new Intent(this, MassReadingsActivity.class);
+        intent.putExtra(MassReadingsActivity.EXTRA_YEAR, selectedDate.get(Calendar.YEAR));
+        intent.putExtra(MassReadingsActivity.EXTRA_MONTH, selectedDate.get(Calendar.MONTH));
+        intent.putExtra(MassReadingsActivity.EXTRA_DAY, selectedDate.get(Calendar.DAY_OF_MONTH));
+        startActivity(intent);
     }
     private void chooseDate() { new DatePickerDialog(this, (view, year, month, day) -> { selectedDate.clear(); selectedDate.set(year, month, day, 12, 0, 0); loadDate(); }, selectedDate.get(Calendar.YEAR), selectedDate.get(Calendar.MONTH), selectedDate.get(Calendar.DAY_OF_MONTH)).show(); }
     private void moveDay(int amount) { selectedDate.add(Calendar.DATE, amount); loadDate(); }

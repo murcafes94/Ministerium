@@ -25,6 +25,7 @@ public class HoursV5ComplineActivity extends ThemedActivity {
     private Calendar selectedDate;
     private JSONArray hymns = new JSONArray();
     private int hymnIndex = 0;
+    private int hymnPosition = -1;
     private LinearLayout hymnContainer;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -38,20 +39,22 @@ public class HoursV5ComplineActivity extends ThemedActivity {
     private View buildScreen() {
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
-        scroll.setBackgroundColor(color(R.color.cream));
+        NativeUi.readerPage(scroll);
         content = column();
         content.setPadding(dp(22), dp(18), dp(22), dp(34));
-        scroll.addView(content);
+        NativeUi.addCenteredRoot(scroll, content, 820);
 
-        TextView back = text("‹  Completas", 23, R.color.wine, true);
-        back.setPadding(0, dp(6), 0, dp(4));
-        back.setOnClickListener(v -> finish());
-        content.addView(back);
+        content.addView(NativeUi.header(this, "Completas", true));
 
         TextView date = text(dateLabel(), 13, R.color.muted, false);
         date.setPadding(0, 0, 0, dp(14));
         content.addView(date);
         return scroll;
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        if (content != null) NativeUi.refreshReader(findViewById(android.R.id.content));
     }
 
     private void load() {
@@ -123,7 +126,8 @@ public class HoursV5ComplineActivity extends ThemedActivity {
     private void renderHymn() {
         if (hymnContainer != null) content.removeView(hymnContainer);
         hymnContainer = column();
-        int insertion = Math.min(4, content.getChildCount());
+        int insertion = hymnPosition < 0 ? content.getChildCount() : Math.min(hymnPosition, content.getChildCount());
+        hymnPosition = insertion;
         content.addView(hymnContainer, insertion);
         if (hymns.length() == 0) return;
 
@@ -178,8 +182,7 @@ public class HoursV5ComplineActivity extends ThemedActivity {
     private void addRoleBlock(LinearLayout parent, String role, String title, String body) {
         if ((title == null || title.trim().isEmpty()) && (body == null || body.trim().isEmpty())) return;
         LinearLayout card = column();
-        card.setPadding(dp(16), dp(14), dp(16), dp(14));
-        card.setBackgroundResource(R.drawable.bg_button_secondary);
+        NativeUi.readerPanel(card);
         TextView roleView = text(role, 10, R.color.muted, true);
         roleView.setLetterSpacing(.10f);
         card.addView(roleView);
@@ -191,8 +194,7 @@ public class HoursV5ComplineActivity extends ThemedActivity {
         if (body != null && !body.trim().isEmpty()) {
             TextView b = text(body.trim(), 16, R.color.ink, false);
             b.setPadding(0, dp(7), 0, 0);
-            b.setLineSpacing(0, 1.18f);
-            b.setTextIsSelectable(true);
+            NativeUi.readerBody(this, b);
             card.addView(b);
         }
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);

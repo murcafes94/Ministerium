@@ -185,7 +185,7 @@ const appBuild = fs.readFileSync(path.join(root, "app/build.gradle"), "utf8");
 if (!appBuild.includes("compileSdkVersion 30") || !appBuild.includes("JavaVersion.VERSION_1_8")) {
   throw new Error("El módulo no está adaptado a Android Studio 4.2.1");
 }
-if (!appBuild.includes("versionCode 30") || !appBuild.includes("versionName '3.0.0'")) {
+if (!/^\s*versionCode\s+(?:5[3-9]|[6-9]\d|\d{3,})\s*$/m.test(appBuild) || !/^\s*versionName '5\./m.test(appBuild)) {
   throw new Error("La versión actualizada de la aplicación no está configurada");
 }
 
@@ -250,5 +250,5 @@ const layouts = fs.readdirSync(layoutDirectory).filter((name) => name.endsWith("
 if (layouts.length < 28) throw new Error("Faltan pantallas XML de la aplicación");
 
 process.stdout.write(
-  `Proyecto 3.0.0 válido para Android Studio 4.2.1: ${javaFiles.length} clases, ${layouts.length} diseños, diecinueve EPUB, cuatro diccionarios, Derecho canónico bilingüe, estudio, planes, TTS, Leccionario y Misal organizado\n`,
+  `Proyecto Ministerium 5 válido para Android Studio 4.2.1: ${javaFiles.length} clases, ${layouts.length} diseños, diecinueve EPUB, cuatro diccionarios, Derecho canónico bilingüe, estudio, planes, TTS, Leccionario y lectura litúrgica\n`,
 );

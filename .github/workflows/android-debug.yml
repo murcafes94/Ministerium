@@ -35,8 +35,13 @@ jobs:
       - name: Validate preserved application contracts
         run: |
           set -euo pipefail
+          node tools/validate_project.mjs
+          node tools/validate_content.mjs
+          node tools/validate_prayer_experience_40.mjs
+          node tools/validate_calendar_31.mjs
           node tools/validate_release_41.mjs
           node tools/validate_v5.mjs
+          node tools/validate_lectionary_40.mjs
 
       - name: Set up Python for liturgical packages
         uses: actions/setup-python@v5
@@ -60,31 +65,20 @@ jobs:
           test -s app/src/main/assets/hours-clean/manifest.json
           test -s app/src/main/assets/hours-clean/latin/2026/manifest.json
 
-      - name: Build verified Missal and ritual packages
+      - name: Build dated offline Hours from pinned repository
         run: |
-          set -euo pipefail
-          python tools/build_liturgiapapal_missal.py --language all
+          python tools/build_daily_hours.py
+          python tools/test_daily_hours.py
+
+      - name: Build verified ritual packages
+        run: |
           python tools/build_liturgiapapal_rituals.py
-          test -s app/src/main/assets/missal/manifest.json
-          test -s app/src/main/assets/missal/es/initial.txt
-          test -s app/src/main/assets/missal/la/initial.txt
           test -s app/src/main/assets/rituals/liturgiapapal/manifest.json
-          grep -qi 'El Señor esté con ustedes' app/src/main/assets/missal/es/initial.txt
-          if grep -Eqi 'El Señor esté con vosotros|TOMAD Y COMED|TOMAD Y BEBED|Podéis ir en paz' \
-            app/src/main/assets/missal/es/ordinary_full.txt \
-            app/src/main/assets/missal/es/initial.txt \
-            app/src/main/assets/missal/es/word.txt \
-            app/src/main/assets/missal/es/eucharistic_liturgy.txt \
-            app/src/main/assets/missal/es/prefaces.txt \
-            app/src/main/assets/missal/es/eucharistic_prayer_1.txt \
-            app/src/main/assets/missal/es/eucharistic_prayer_2.txt \
-            app/src/main/assets/missal/es/eucharistic_prayer_3.txt \
-            app/src/main/assets/missal/es/eucharistic_prayer_4.txt \
-            app/src/main/assets/missal/es/communion.txt \
-            app/src/main/assets/missal/es/conclusion.txt; then
-            echo 'ERROR: se detectó texto de la edición de España en el Ordinario ES.' >&2
-            exit 1
-          fi
+
+      - name: Remove withdrawn full Missal from APK payload
+        run: |
+          rm -rf app/src/main/assets/missal
+          rm -f app/src/main/assets/epubs/Misal-Diario-Romano.epub app/src/main/assets/missal-reference-catalog.json
 
       - name: Verify bundled package manifest
         run: |
@@ -140,7 +134,16 @@ jobs:
           if [ -f app/build/reports/lint-results-debug.txt ]; then
             cat app/build/reports/lint-results-debug.txt
           else
-            echo 'Lint text report was not generated.'
+            python - <<'PYLINT'
+          import xml.etree.ElementTree as ET
+          from collections import Counter
+          tree = ET.parse('app/build/reports/lint-results-debug.xml')
+          issues = tree.findall('issue')
+          print('Lint summary:', dict(Counter(i.get('severity') for i in issues)))
+          for i in issues:
+              if i.get('severity') in ('Error', 'Fatal'):
+                  print(i.get('id'), i.get('message'), i.find('location').attrib if i.find('location') is not None else '')
+          PYLINT
           fi
           exit $status
 
@@ -154,5 +157,6 @@ jobs:
           path: |
             recovered-v3/app/build/outputs/apk/debug/app-debug.apk
             recovered-v3/app/build/outputs/apk/debug/app-debug.apk.sha256
+            recovered-v3/app/build/reports/lint-results-debug.xml
           if-no-files-found: error
           retention-days: 14

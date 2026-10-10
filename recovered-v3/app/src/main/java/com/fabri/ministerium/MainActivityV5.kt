@@ -118,7 +118,7 @@ class MainActivityV5 : ThemedActivity() {
         today.addView(text("Un espacio para rezar, leer y profundizar en la fe.", 14f, Color.parseColor("#EFE4DA"), Typeface.NORMAL))
         val dailyActions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(16), 0, 0) }
         dailyActions.addView(quickAction("Horas de hoy") { openToday() }, quickParams(0, 5))
-        dailyActions.addView(quickAction("Misal") { startActivity(Intent(this, MissalV5Activity::class.java)) }, quickParams(5, 0))
+        dailyActions.addView(quickAction("Leccionario") { startActivity(Intent(this, MassReadingsActivity::class.java)) }, quickParams(5, 0))
         today.addView(dailyActions)
         root.addView(today, LinearLayout.LayoutParams(-1, -2).apply { setMargins(0, 0, 0, dp(14)) })
 
@@ -132,9 +132,8 @@ class MainActivityV5 : ThemedActivity() {
 
         addModules(root, "LITURGIA Y ESCRITURA", listOf(
             card(R.drawable.ic_book_41, "Biblia", "Escritura y planes de lectura") { startActivity(Intent(this, BibleActivity::class.java)) },
-            card(R.drawable.ic_cross_41, "Misal", "Celebración del día y formularios") { startActivity(Intent(this, MissalV5Activity::class.java)) },
             card(R.drawable.ic_sun_41, "Liturgia de las Horas", "Oración del día") { openToday() },
-            card(R.drawable.ic_document_41, "Lecturas de la Misa", "Leccionario del día") { startActivity(Intent(this, MassReadingsActivity::class.java)) },
+            card(R.drawable.ic_document_41, "Leccionario", "Lecturas de la Misa por fecha") { startActivity(Intent(this, MassReadingsActivity::class.java)) },
             card(R.drawable.ic_calendar, "Calendario litúrgico", "Celebraciones de Ecuador") { startActivity(Intent(this, LiturgicalCalendarActivity::class.java)) },
             card(R.drawable.ic_book_41, "Liturgia Horarum", "Liturgia de las Horas en latín") { startActivity(Intent(this, LatinHoursActivity::class.java)) }
         ))

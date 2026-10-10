@@ -2,9 +2,9 @@
   "schema": 3,
   "channel": "testing",
   "app": {
-    "versionName": "5.0.2-preview",
-    "versionCode": 52,
-    "released": "2026-10-08",
+    "versionName": "5.0.3-preview",
+    "versionCode": 53,
+    "released": "2026-10-10",
     "url": "",
     "sha256": "",
     "installation": "user-confirmed"
@@ -41,15 +41,6 @@
       "runtimeFormat": "clean-html"
     },
     {
-      "id": "missal-liturgiapapal",
-      "title": "Misal · Liturgia Papal México",
-      "version": "3.1.1",
-      "updated": "2026-08-24",
-      "asset": "missal/manifest.json",
-      "verification": "generated-build",
-      "delivery": "bundled"
-    },
-    {
       "id": "rituals-liturgiapapal",
       "title": "Rituales y Bendicional · Liturgia Papal",
       "version": "3.1.1",
@@ -67,6 +58,17 @@
       "verification": "generated-build",
       "delivery": "bundled",
       "runtimeFormat": "ranked-full-text"
+    },
+    {
+      "id": "hours-daily-2026",
+      "title": "Oficios diarios · Liturgia de las Horas",
+      "version": "45ea5e0c",
+      "updated": "2026-10-01",
+      "asset": "hours-daily/manifest.json",
+      "verification": "generated-build",
+      "delivery": "bundled",
+      "source": "https://github.com/liturgiadelashoras/liturgiadelashoras.github.io",
+      "sourceCommit": "45ea5e0c73c6df1b312f75c7f79cd5889e81d4cd"
     }
   ],
   "optionalUpdates": [

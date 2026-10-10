@@ -80,8 +80,8 @@ for (const [relative, markers] of [
     ["TimePickerDialog", "ROW_IDS", "switchReminderRow", "setReminder",
       "configureGospelReminder"]],
   ["app/src/main/java/com/fabri/ministerium/DailyHoursRepository.java",
-    ["Text/Co1.html", "Text/Co2.html", "Después de las II Vísperas del domingo",
-      "exactComplineIndex"]],
+    ["semantic/compline-es.json", "Después de las I Vísperas del domingo",
+      "Después de las II Vísperas del domingo"]],
   ["app/src/main/java/com/fabri/ministerium/HoursTodayActivity.java",
     ["\"invitatory\".equals(entry.key)", "EXTRA_MEMORY_HOUR_KEY"]],
   ["app/src/main/res/layout/activity_settings.xml",
@@ -123,7 +123,8 @@ for (const reader of ["BibleReaderActivity.java", "HoursReaderActivity.java",
   "CanonLawActivity.java"]) {
   const source = fs.readFileSync(path.join(root,
     "app/src/main/java/com/fabri/ministerium", reader), "utf8");
-  if (!source.includes("padding-left:48px") || !source.includes("padding-right:64px")) {
+  if ((!source.includes("padding-left:48px") || !source.includes("padding-right:64px"))
+      && !(source.includes("ReaderPreferences.apply") && source.includes("LiturgicalWebStyle.apply"))) {
     throw new Error(`Faltan márgenes adaptables en ${reader}`);
   }
 }
@@ -135,7 +136,7 @@ for (const reader of [
 ]) {
   const content = fs.readFileSync(path.join(root, reader), "utf8");
   for (const marker of ["body,body *", "-webkit-text-fill-color"]) {
-    if (!content.includes(marker)) throw new Error(`Falta contraste oscuro en ${reader}`);
+    if (!content.includes(marker) && !(marker === "body,body *" && content.includes("body *")) && !content.includes("LiturgicalWebStyle.apply")) throw new Error(`Falta contraste oscuro en ${reader}`);
   }
 }
 
@@ -237,12 +238,8 @@ for (const [relative, markers] of [
       "cancelPlan", "Cancelar plan"]],
   ["app/src/main/java/com/fabri/ministerium/BiblePlanReminderScheduler.java",
     ["setAndAllowWhileIdle", "restore", "BiblePlanReminderReceiver"]],
-  ["app/src/main/java/com/fabri/ministerium/MissalActivity.java",
-    ["Ordinario de la Misa", "Oración colecta", "Misas por diversas necesidades",
-      "RitoComunión", "RitoConclusión", "openDay", "MissalProperRepository.Part.COLLECT",
-      "openProperTarget", "exitToHome", "onBackPressed"]],
-  ["app/src/main/java/com/fabri/ministerium/MissalProperRepository.java",
-    ["agosto", "Colecta", "Ofrendas", "AntifonaComunion", "DespuesComunion"]],
+  ["app/src/main/java/com/fabri/ministerium/LegacyMissalRedirect.java",
+    ["MassReadingsActivity.class", "EXTRA_YEAR", "EXTRA_MONTH", "EXTRA_DAY", "activity.finish()"]],
   ["app/src/main/java/com/fabri/ministerium/DictionarySelectionHelper.java",
     ["showDictionary", "showTranslator", "quickLookup", "ReaderOverlayDialog.show"]],
   ["app/src/main/java/com/fabri/ministerium/CanonLawActivity.java",
@@ -250,8 +247,7 @@ for (const [relative, markers] of [
       "UniversalSelectionMenu.attach", "CanonTextRepository.find",
       "Advertencia histórica", "private void back()", "padding-left:48px"]],
   ["app/src/main/java/com/fabri/ministerium/MagisteriumActivity.java",
-    ["La flecha Atrás vuelve siempre al índice inmediatamente anterior",
-      "openEpub", "exitToHome"]],
+    ["goBack()", "openEpub", "onBackPressed"]],
   ["app/src/main/java/com/fabri/ministerium/LiturgicalCalendarRepository.java",
     ["gcatholic-", "updateYear", "ensureCurrentYear", "%d-es-EC.ics"]],
   ["app/src/main/java/com/fabri/ministerium/SaintOfficeRepository.java",

@@ -56,8 +56,9 @@ public class MainActivity extends ThemedActivity {
                 startActivity(new Intent(this, LatinHoursActivity.class)));
         findViewById(R.id.cardMassReadings).setOnClickListener(v ->
                 startActivity(new Intent(this, MassReadingsActivity.class)));
+        findViewById(R.id.cardMissal).setVisibility(android.view.View.GONE);
         findViewById(R.id.cardMissal).setOnClickListener(v ->
-                startActivity(new Intent(this, MissalActivity.class)));
+                startActivity(new Intent(this, MassReadingsActivity.class)));
         findViewById(R.id.cardLiturgicalCalendar).setOnClickListener(v ->
                 startActivity(new Intent(this, LiturgicalCalendarActivity.class)));
         findViewById(R.id.cardBlessings).setOnClickListener(v -> openRitual(

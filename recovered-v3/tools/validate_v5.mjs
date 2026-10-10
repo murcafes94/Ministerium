@@ -8,8 +8,6 @@ const expect = (condition, message) => { if (!condition) throw new Error(message
 const manifest = read('app/src/main/AndroidManifest.xml');
 const mainV5 = read('app/src/main/java/com/fabri/ministerium/MainActivityV5.kt');
 const hoursV5 = read('app/src/main/java/com/fabri/ministerium/HoursV5Activity.java');
-const missalV5 = read('app/src/main/java/com/fabri/ministerium/MissalV5SectionActivity.java');
-const missalRules = read('app/src/main/java/com/fabri/ministerium/MissalDisplayRules.kt');
 const themed = read('app/src/main/java/com/fabri/ministerium/ThemedActivity.java');
 const epub = read('app/src/main/java/com/fabri/ministerium/EpubUtils.java');
 const magisterium = read('app/src/main/java/com/fabri/ministerium/MagisteriumActivity.java');
@@ -48,13 +46,14 @@ for (const required of [
 
 expect(hoursV5.includes('HoursV5CommonPolicy.filter'),
   'V5 Hours must filter incompatible common-office choices before displaying them.');
-expect(missalV5.includes('MissalDisplayRules.resolve(this, selectedDate, celebration)'),
-  'V5 Missal must use the calendar-backed display rules.');
-expect(missalV5.includes('getAllowEucharisticPrayerIV()') && !missalV5.includes('Contenido propio pendiente'),
-  'V5 Missal still has simulated content or unrestricted Eucharistic Prayer IV.');
-expect(missalRules.includes('LiturgicalCalendarRepository.eventsFor')
-    && missalRules.includes('allowEucharisticPrayerIV'),
-  'V5 Missal rules are not backed by the liturgical calendar.');
+expect(!mainV5.includes('MissalV5Activity::class') && mainV5.includes('MassReadingsActivity::class'),
+  'Full Missal must be withdrawn while Lectionary remains reachable.');
+expect(!packageManifest.packages.some(p => p.id === 'missal-liturgiapapal')
+    && packageManifest.packages.some(p => p.id === 'hours-daily-2026'),
+  'Package manifest must omit full Missal and include dated Hours.');
+expect(hoursV5.includes('HoursDailyRepository.day') && hoursV5.includes('HoursV5ComplineActivity.class')
+    && hoursV5.includes('MassReadingsActivity.class'),
+  'Hours must use the dated repository, native Compline and independent Lectionary.');
 
 expect(epub.includes('CleanHoursAssets.isAvailable')
     && epub.includes('CleanHoursAssets.ensureExtracted'),

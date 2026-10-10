@@ -25,6 +25,7 @@ class MissalV5Activity : ThemedActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeUtils.apply(this)
         super.onCreate(savedInstanceState)
+        if (LegacyMissalRedirect.open(this)) return
         savedInstanceState?.let { selectedDate.timeInMillis = it.getLong("selected-date", selectedDate.timeInMillis) }
         setContentView(buildScreen())
         refreshDay()

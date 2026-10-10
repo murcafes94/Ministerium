@@ -52,6 +52,7 @@ public class MissalV5SectionActivity extends ThemedActivity {
     @Override protected void onCreate(Bundle savedInstanceState) {
         ThemeUtils.apply(this);
         super.onCreate(savedInstanceState);
+        if (LegacyMissalRedirect.open(this)) return;
         selectedDate = selectedDate();
         sectionId = value(EXTRA_SECTION, "initial");
         celebration = value(EXTRA_CELEBRATION, "Celebración del día");

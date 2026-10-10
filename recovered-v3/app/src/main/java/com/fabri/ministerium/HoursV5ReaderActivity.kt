@@ -8,6 +8,7 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
+import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
@@ -39,6 +40,8 @@ class HoursV5ReaderActivity : ThemedActivity() {
     }
 
     private val executor: ExecutorService = Executors.newSingleThreadExecutor()
+    private lateinit var readerScroll: ScrollView
+    private var restoredScroll = 0
     private lateinit var content: LinearLayout
     private lateinit var progress: ProgressBar
     private lateinit var status: TextView
@@ -46,6 +49,7 @@ class HoursV5ReaderActivity : ThemedActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeUtils.apply(this)
         super.onCreate(savedInstanceState)
+        restoredScroll = savedInstanceState?.getInt("reader-scroll") ?: intent.getIntExtra("restore_scroll_y", 0)
         setContentView(buildScreen())
         loadDocument()
     }
@@ -53,6 +57,23 @@ class HoursV5ReaderActivity : ThemedActivity() {
     override fun onResume() {
         super.onResume()
         if (::content.isInitialized) NativeUi.refreshReader(findViewById(android.R.id.content))
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putInt("reader-scroll", readerScroll.scrollY)
+        super.onSaveInstanceState(outState)
+    }
+
+    override fun onPause() {
+        if (::readerScroll.isInitialized) {
+            val extras = JSONObject()
+            intent.extras?.let { bundle -> bundle.keySet().forEach { key ->
+                if (key != "restore_scroll_y") extras.put(key, bundle.get(key))
+            } }
+            ContinueReadingStore.save(this, "hours", value(EXTRA_TITLE, "Liturgia de las Horas"),
+                HoursV5ReaderActivity::class.java, extras, readerScroll.scrollY)
+        }
+        super.onPause()
     }
 
     override fun onDestroy() {
@@ -66,6 +87,7 @@ class HoursV5ReaderActivity : ThemedActivity() {
             NativeUi.readerPage(this)
         }
 
+        readerScroll = scroll
         val root = column().apply {
             setPadding(dp(22), dp(18), dp(22), dp(34))
         }
@@ -98,6 +120,29 @@ class HoursV5ReaderActivity : ThemedActivity() {
     }
 
     private fun loadDocument() {
+        val dailyAsset = value(HoursDailyRepository.EXTRA_ASSET, "")
+        if (dailyAsset.isNotEmpty()) {
+            executor.submit {
+                try {
+                    val document = HoursDailyRepository.document(this, dailyAsset,
+                        value(HoursDailyRepository.EXTRA_DATE, ""), value(EXTRA_TITLE, "Liturgia de las Horas"))
+                    runOnUiThread {
+                        if (isFinishing || isDestroyed) return@runOnUiThread
+                        progress.visibility = View.GONE
+                        status.text = "Repositorio de Liturgia de las Horas · guardado sin conexión"
+                        render(document)
+                    }
+                } catch (_: Exception) {
+                    runOnUiThread {
+                        if (isFinishing || isDestroyed) return@runOnUiThread
+                        progress.visibility = View.GONE
+                        status.text = "No se pudo abrir el oficio de esta fecha."
+                        addEmptyState()
+                    }
+                }
+            }
+            return
+        }
         val volumeId = value(EXTRA_VOLUME_ID, "")
         val filePath = value(EXTRA_FILE_PATH, "")
         val fragment = value(EXTRA_FRAGMENT, "")
@@ -193,6 +238,7 @@ class HoursV5ReaderActivity : ThemedActivity() {
                 block.title.trim().equals(value(EXTRA_TITLE, ""), ignoreCase = true)) return@forEach
             roleBlock(role, block.title, block.body)
         }
+        readerScroll.post { readerScroll.scrollTo(0, restoredScroll) }
     }
 
     private fun role(type: HoursBlockType): String = when (type) {

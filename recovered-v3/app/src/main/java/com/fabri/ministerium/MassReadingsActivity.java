@@ -50,6 +50,8 @@ public class MassReadingsActivity extends ThemedActivity {
                     12, 0, 0);
         }
 
+        if (savedInstanceState != null) selectedDate.setTimeInMillis(savedInstanceState.getLong("selected-date", selectedDate.getTimeInMillis()));
+
         dateLabel = findViewById(R.id.txtMassDate);
         status = findViewById(R.id.txtReadingsStatus);
         progress = findViewById(R.id.readingsProgress);
@@ -65,7 +67,7 @@ public class MassReadingsActivity extends ThemedActivity {
         findViewById(R.id.btnNextDay).setOnClickListener(v -> moveDate(1));
         findViewById(R.id.btnChooseDate).setOnClickListener(v -> chooseDate());
         dateLabel.setOnClickListener(v -> chooseDate());
-        findViewById(R.id.btnOpenMissal).setOnClickListener(v -> openMissal());
+        findViewById(R.id.btnOpenMissal).setVisibility(View.GONE);
         readButton.setOnClickListener(v -> openReading());
         syncButton.setText("Sincronizar desde Ajustes");
         syncButton.setOnClickListener(v -> openUpdates());
@@ -144,12 +146,9 @@ public class MassReadingsActivity extends ThemedActivity {
         startActivity(intent);
     }
 
-    private void openMissal() {
-        Intent intent = new Intent(this, MissalActivity.class);
-        intent.putExtra(MissalActivity.EXTRA_YEAR, selectedDate.get(Calendar.YEAR));
-        intent.putExtra(MissalActivity.EXTRA_MONTH, selectedDate.get(Calendar.MONTH));
-        intent.putExtra(MissalActivity.EXTRA_DAY, selectedDate.get(Calendar.DAY_OF_MONTH));
-        startActivity(intent);
+    @Override protected void onSaveInstanceState(Bundle outState) {
+        outState.putLong("selected-date", selectedDate.getTimeInMillis());
+        super.onSaveInstanceState(outState);
     }
 
     private void chooseDate() {

@@ -1,0 +1,8 @@
+Ministerium 5.0.3 preview
+
+• Oficios diarios importados del repositorio Liturgia de las Horas, guardados sin conexión.
+• Elección de celebraciones publicadas y fuente local separada para Ecuador.
+• Tercia, Sexta y Nona utilizan los textos propios de cada hora publicada.
+• Completas usa el oficio de la fecha; se corrige la ubicación del himno en la biblioteca local.
+• Se retira el Misal completo y se mantiene el Leccionario.
+• Lectura continua, preferencias tipográficas y selección de fecha conservadas.

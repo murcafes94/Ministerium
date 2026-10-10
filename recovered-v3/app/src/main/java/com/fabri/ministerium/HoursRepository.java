@@ -89,7 +89,7 @@ public final class HoursRepository {
     public static HoursVolume find(String id) {
         if (DEVOTIONAL.id.equals(id)) return DEVOTIONAL;
         if (LATIN_2026.id.equals(id)) return LATIN_2026;
-        if (ROMAN_MISSAL.id.equals(id)) return ROMAN_MISSAL;
+        if (ROMAN_MISSAL.id.equals(id)) return null;
         if (BIBLE.id.equals(id)) return BIBLE;
         if (SPANISH_DICTIONARY.id.equals(id)) return SPANISH_DICTIONARY;
         if (BIBLICAL_DICTIONARY.id.equals(id)) return BIBLICAL_DICTIONARY;
@@ -156,7 +156,7 @@ public final class HoursRepository {
         List<HoursVolume> sources = new ArrayList<>(VOLUMES);
         sources.add(DEVOTIONAL);
         sources.add(RATZINGER_WAY_OF_CROSS);
-        sources.add(ROMAN_MISSAL);
+        // Full Missal withdrawn; Lectionary has its own repository.
 
         // Reference EPUBs are searched by MagisteriumIndexRepository using their
         // complete text; keeping them here would duplicate title-only results.

@@ -28,6 +28,7 @@ public class MissalSectionReaderActivity extends ThemedActivity {
     @Override protected void onCreate(Bundle savedInstanceState) {
         ThemeUtils.apply(this);
         super.onCreate(savedInstanceState);
+        if (LegacyMissalRedirect.open(this)) return;
         setContentView(R.layout.activity_hours_reader);
         Calendar now = Calendar.getInstance();
         date = Calendar.getInstance();

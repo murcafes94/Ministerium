@@ -1,2 +1,5 @@
 # Local Android Studio / Windows build output
 Ministerium-APK/
+
+# Rebuilt from pinned upstream corpus in CI
+recovered-v3/app/src/main/assets/hours-daily/
