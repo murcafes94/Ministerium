@@ -77,6 +77,7 @@ class MainActivityV5 : ThemedActivity() {
         }
         NativeUi.addCenteredRoot(scroll, root, 1040)
         val header = LinearLayout(this).apply {
+            tag = StaticTopBarController.HEADER_TAG
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             setPadding(0, dp(4), 0, dp(16))

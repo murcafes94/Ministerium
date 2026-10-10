@@ -125,6 +125,9 @@ jobs:
       - name: Build preview APK
         run: ./gradlew --no-daemon assembleDebug
 
+      - name: Test fixed native headers
+        run: ./gradlew --no-daemon testDebugUnitTest
+
       - name: Lint preview APK
         run: |
           set +e

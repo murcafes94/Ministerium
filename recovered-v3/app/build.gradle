@@ -35,8 +35,8 @@ android {
         // 4.1 contract lineage markers retained for the legacy release validator:
         // versionCode 41
         // versionName '4.1.0'
-        versionCode 54
-        versionName '5.0.4-preview'
+        versionCode 55
+        versionName '5.0.5-preview'
     }
 
     buildTypes {
@@ -63,9 +63,18 @@ android {
         jvmTarget = '1.8'
     }
 
+    testOptions {
+        unitTests.includeAndroidResources = true
+    }
+
     // Lint errors block CI; warnings remain available in the artifact report.
     lintOptions {
         abortOnError true
         checkReleaseBuilds false
     }
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.robolectric:robolectric:4.7.3'
 }

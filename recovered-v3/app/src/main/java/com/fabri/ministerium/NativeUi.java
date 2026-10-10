@@ -30,6 +30,7 @@ public final class NativeUi {
 
     public static LinearLayout header(Activity activity, String title, boolean reader) {
         LinearLayout row = new LinearLayout(activity);
+        row.setTag(StaticTopBarController.HEADER_TAG);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setPadding(0, dp(activity, 4), 0, dp(activity, 12));

@@ -1,0 +1,7 @@
+Ministerium 5.0.5 · prueba
+
+• Barra superior independiente del área de desplazamiento: el texto y las tarjetas ya no pasan por encima ni quedan tapados.
+• Se conserva la anchura centrada, los márgenes y el fondo del lector al cambiar sus preferencias.
+• La cabecera admite tamaños de letra grandes y mantiene accesibles Volver, Aa y el cambio de tema.
+• Pruebas de regresión de desplazamiento, diseño y cambio de himnos de Completas.
+• Se mantiene el Leccionario y la Liturgia de las Horas sin conexión.
